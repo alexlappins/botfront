@@ -1,4 +1,5 @@
-const API_BASE = "/api"
+/** Базовый URL API. По умолчанию "/api" (тот же origin). Для деплоя на другой домен задать VITE_API_URL, например https://api.example.com/api */
+const API_BASE = import.meta.env.VITE_API_URL ?? "/api"
 
 const fetchOptions: RequestInit = {
   credentials: "include",
@@ -546,5 +547,5 @@ export async function installServerTemplate(
   }
 }
 
-export const LOGIN_URL = `${typeof window !== "undefined" ? window.location.origin : ""}/api/auth/discord`
-export const LOGOUT_URL = `${typeof window !== "undefined" ? window.location.origin : ""}/api/auth/logout`
+export const LOGIN_URL = `${API_BASE}/auth/discord`
+export const LOGOUT_URL = `${API_BASE}/auth/logout`
