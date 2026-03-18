@@ -57,8 +57,8 @@ export function GuildInstallTemplatePage() {
   if (!guildId) return null
 
   return (
-    <div className="space-y-8">
-      <Card>
+    <div className="space-y-6 sm:space-y-8">
+      <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ServerCog className="h-5 w-5" />
@@ -93,15 +93,43 @@ export function GuildInstallTemplatePage() {
                     {t.description && (
                       <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{t.description}</p>
                     )}
-                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">{formatDate(t.createdAt)}</p>
+                    {t.discordTemplateUrl && (
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 break-all">
+                        Discord‑шаблон:{" "}
+                        <a
+                          href={t.discordTemplateUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[hsl(var(--primary))] hover:underline"
+                        >
+                          открыть
+                        </a>
+                      </p>
+                    )}
+                    <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
+                      {formatDate(t.createdAt)}
+                    </p>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleInstall(t.id)}
-                    disabled={!!installingId}
-                  >
-                    {installingId === t.id ? "Установка…" : "Установить на этот сервер"}
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    {t.discordTemplateUrl && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        asChild
+                      >
+                        <a href={t.discordTemplateUrl} target="_blank" rel="noreferrer">
+                          Открыть Discord‑шаблон
+                        </a>
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={() => handleInstall(t.id)}
+                      disabled={!!installingId}
+                    >
+                      {installingId === t.id ? "Установка…" : "Установить на этот сервер"}
+                    </Button>
+                  </div>
                 </li>
               ))}
             </ul>

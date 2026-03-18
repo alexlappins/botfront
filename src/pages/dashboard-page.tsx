@@ -59,13 +59,15 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
       <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3 flex-wrap">
           <h1 className="text-xl font-semibold">Мои серверы</h1>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
             <Button variant="outline" size="sm" asChild>
               <Link to="/server-templates">Редактор шаблонов</Link>
             </Button>
-            <span className="text-sm text-[hsl(var(--muted-foreground))]">{user.username}</span>
+            <span className="text-sm text-[hsl(var(--muted-foreground))] max-w-[140px] truncate text-right">
+              {user.username}
+            </span>
             <Button variant="outline" size="sm" asChild>
               <a href={LOGOUT_URL}>Выйти</a>
             </Button>
@@ -73,7 +75,7 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8">
         {error && (
           <div className="mb-4 p-4 rounded-lg bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
             {error}

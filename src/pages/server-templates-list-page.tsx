@@ -35,6 +35,7 @@ export function ServerTemplatesListPage() {
   const [createDescription, setCreateDescription] = useState("")
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
+  const [createDiscordUrl, setCreateDiscordUrl] = useState("")
 
   useEffect(() => {
     if (!user) return
@@ -57,11 +58,13 @@ export function ServerTemplatesListPage() {
       const created = await createServerTemplate({
         name,
         description: createDescription.trim() || null,
+        discordTemplateUrl: createDiscordUrl.trim() || null,
       })
       setTemplates((prev) => [created, ...prev])
       setCreateOpen(false)
       setCreateName("")
       setCreateDescription("")
+      setCreateDiscordUrl("")
       navigate(`/server-templates/${created.id}`)
     } catch (e) {
       setCreateError(e instanceof Error ? e.message : "Ошибка создания")
@@ -81,22 +84,24 @@ export function ServerTemplatesListPage() {
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
       <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-4">
+        <div className="container mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
             <Link
               to="/"
-              className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+              className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] shrink-0"
             >
               ← Серверы
             </Link>
-            <h1 className="text-xl font-semibold flex items-center gap-2">
-              <FileStack className="h-5 w-5" />
-              Редактор шаблонов сервера
+            <h1 className="text-xl font-semibold flex items-center gap-2 min-w-0">
+              <FileStack className="h-5 w-5 shrink-0" />
+              <span className="break-words">Редактор шаблонов сервера</span>
             </h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-[hsl(var(--muted-foreground))]">{user.username}</span>
-            <Button variant="outline" size="sm" asChild>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <span className="text-sm text-[hsl(var(--muted-foreground))] truncate max-w-[120px] sm:max-w-none">
+              {user.username}
+            </span>
+            <Button variant="outline" size="sm" className="shrink-0" asChild>
               <a href={LOGOUT_URL}>Выйти</a>
             </Button>
           </div>
@@ -132,20 +137,42 @@ export function ServerTemplatesListPage() {
           <ul className="space-y-3">
             {templates.map((t) => (
               <li key={t.id}>
-                <Link to={`/server-templates/${t.id}`}>
-                  <Card className="hover:border-[hsl(var(--primary))] transition-colors">
-                    <CardHeader className="flex flex-row items-start justify-between gap-4">
-                      <div className="min-w-0">
-                        <CardTitle className="text-lg">{t.name}</CardTitle>
-                        {t.description && (
-                          <CardDescription className="mt-1">{t.description}</CardDescription>
-                        )}
-                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">{formatDate(t.createdAt)}</p>
-                      </div>
-                      <span className="text-sm text-[hsl(var(--muted-foreground))]">→</span>
-                    </CardHeader>
-                  </Card>
-                </Link>
+                <Card className="hover:border-[hsl(var(--primary))] transition-colors">
+                  <CardHeader className="flex flex-row items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <Link to={`/server-templates/${t.id}`}>
+                        <CardTitle className="text-lg hover:underline">{t.name}</CardTitle>
+                      </Link>
+                      {t.description && (
+                        <CardDescription className="mt-1">{t.description}</CardDescription>
+                      )}
+                      {t.discordTemplateUrl && (
+                        <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 break-all">
+                          Discord‑шаблон:{" "}
+                          <a
+                            href={t.discordTemplateUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[hsl(var(--primary))] hover:underline"
+                          >
+                            {t.discordTemplateUrl}
+                          </a>
+                        </p>
+                      )}
+                      <p className="text-xs text-[hsl(var(--muted-foreground))] mt-2">
+                        {formatDate(t.createdAt)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <Link
+                        to={`/server-templates/${t.id}`}
+                        className="text-sm text-[hsl(var(--primary))] hover:underline"
+                      >
+                        Открыть редактор
+                      </Link>
+                    </div>
+                  </CardHeader>
+                </Card>
               </li>
             ))}
           </ul>
@@ -175,6 +202,15 @@ export function ServerTemplatesListPage() {
                 value={createDescription}
                 onChange={(e) => setCreateDescription(e.target.value)}
                 placeholder="Краткое описание шаблона"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="st-discord-url">Ссылка Discord‑шаблона</Label>
+              <Input
+                id="st-discord-url"
+                value={createDiscordUrl}
+                onChange={(e) => setCreateDiscordUrl(e.target.value)}
+                placeholder="https://discord.new/..."
               />
             </div>
             {createError && (

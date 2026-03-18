@@ -240,6 +240,10 @@ export type ServerTemplate = {
   id: string
   name: string
   description: string | null
+  /**
+   * Ссылка на Discord‑шаблон сервера (если используется развёртывание через нативные шаблоны Discord)
+   */
+  discordTemplateUrl: string | null
   createdAt: string
 }
 
@@ -316,7 +320,11 @@ export async function getServerTemplate(id: string): Promise<ServerTemplateDetai
   return res.json()
 }
 
-export async function createServerTemplate(body: { name: string; description?: string | null }): Promise<ServerTemplate> {
+export async function createServerTemplate(body: {
+  name: string
+  description?: string | null
+  discordTemplateUrl?: string | null
+}): Promise<ServerTemplate> {
   const res = await fetch(ST, { ...fetchOptions, method: "POST", body: JSON.stringify(body) })
   if (!res.ok) throw new Error("Failed to create template")
   return res.json()
@@ -324,7 +332,7 @@ export async function createServerTemplate(body: { name: string; description?: s
 
 export async function updateServerTemplate(
   id: string,
-  body: { name?: string; description?: string | null }
+  body: { name?: string; description?: string | null; discordTemplateUrl?: string | null }
 ): Promise<ServerTemplate> {
   const res = await fetch(st(id), { ...fetchOptions, method: "PATCH", body: JSON.stringify(body) })
   if (!res.ok) throw new Error("Failed to update template")

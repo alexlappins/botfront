@@ -75,6 +75,7 @@ export function ServerTemplateEditorPage() {
   const [editMetaOpen, setEditMetaOpen] = useState(false)
   const [metaName, setMetaName] = useState("")
   const [metaDescription, setMetaDescription] = useState("")
+  const [metaDiscordUrl, setMetaDiscordUrl] = useState("")
   const [savingMeta, setSavingMeta] = useState(false)
   const [addRoleOpen, setAddRoleOpen] = useState(false)
   const [addCategoryOpen, setAddCategoryOpen] = useState(false)
@@ -94,6 +95,7 @@ export function ServerTemplateEditorPage() {
       setTemplate(data)
       setMetaName(data.name)
       setMetaDescription(data.description ?? "")
+      setMetaDiscordUrl(data.discordTemplateUrl ?? "")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки")
     } finally {
@@ -109,6 +111,7 @@ export function ServerTemplateEditorPage() {
     if (template) {
       setMetaName(template.name)
       setMetaDescription(template.description ?? "")
+      setMetaDiscordUrl(template.discordTemplateUrl ?? "")
     }
   }, [template])
 
@@ -166,6 +169,7 @@ export function ServerTemplateEditorPage() {
       const updated = await updateServerTemplate(id!, {
         name: metaName.trim(),
         description: metaDescription.trim() || null,
+        discordTemplateUrl: metaDiscordUrl.trim() || null,
       })
       setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
       setEditMetaOpen(false)
@@ -205,6 +209,46 @@ export function ServerTemplateEditorPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
+        {/* Блок Discord‑шаблона (основной сценарий развёртывания) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Discord‑шаблон сервера</CardTitle>
+            <CardDescription>
+              Укажи ссылку на нативный Discord‑шаблон. Через него создаётся структура ролей и каналов,
+              а бот сверху накидывает сообщения, автороли и логи.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid gap-2">
+              <Label htmlFor="meta-discord-url">Ссылка Discord‑шаблона</Label>
+              <Input
+                id="meta-discord-url"
+                value={metaDiscordUrl}
+                onChange={(e) => setMetaDiscordUrl(e.target.value)}
+                placeholder="https://discord.new/..."
+              />
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button size="sm" onClick={handleSaveMeta} disabled={savingMeta}>
+                {savingMeta ? "Сохранение…" : "Сохранить"}
+              </Button>
+              {template.discordTemplateUrl && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  asChild
+                >
+                  <a href={template.discordTemplateUrl} target="_blank" rel="noreferrer">
+                    Открыть в Discord
+                  </a>
+                </Button>
+              )}
+            </div>
+            {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
+          </CardContent>
+        </Card>
+
+        {/* Расширенный режим: наши сущности поверх Discord‑шаблона */}
         <SectionRoles
           templateId={id}
           roles={template.roles}
@@ -292,11 +336,22 @@ export function ServerTemplateEditorPage() {
               <Label>Описание</Label>
               <Input value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="meta-discord-url-modal">Ссылка Discord‑шаблона</Label>
+              <Input
+                id="meta-discord-url-modal"
+                value={metaDiscordUrl}
+                onChange={(e) => setMetaDiscordUrl(e.target.value)}
+                placeholder="https://discord.new/..."
+              />
+            </div>
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditMetaOpen(false)}>Отмена</Button>
-            <Button onClick={handleSaveMeta} disabled={savingMeta}>{savingMeta ? "Сохранение…" : "Сохранить"}</Button>
+            <Button onClick={handleSaveMeta} disabled={savingMeta}>
+              {savingMeta ? "Сохранение…" : "Сохранить"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
