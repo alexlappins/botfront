@@ -23,6 +23,9 @@ import { useAuth } from "@/contexts/auth-context"
 import {
   getServerTemplate,
   updateServerTemplate,
+  getGuilds,
+  getChannels,
+  getGuildRoles,
   createTemplateRole,
   deleteTemplateRole,
   createTemplateCategory,
@@ -43,6 +46,9 @@ import {
   type TemplateReactionRole,
   type TemplateLogChannel,
   type TemplateLogType,
+  type Guild,
+  type Channel,
+  type GuildRole,
   LOG_TYPES,
 } from "@/lib/api"
 import {
@@ -66,6 +72,120 @@ const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
   banKick: "Бан/кик",
 }
 
+/** Подсказка, если живой сервер не выбран */
+const CHANNEL_NAME_HINT_MANUAL =
+  "Имя канала без #. Можно выбрать сервер выше — подставятся каналы из Discord (кэш бота). Или введите вручную."
+
+function ChannelNameField({
+  id,
+  value,
+  onChange,
+  channels,
+  liveChannels = [],
+  placeholder = "например general",
+}: {
+  id: string
+  value: string
+  onChange: (v: string) => void
+  channels: TemplateChannel[]
+  /** Каналы с живого сервера: GET /api/guilds/:guildId/channels */
+  liveChannels?: Channel[]
+  placeholder?: string
+}) {
+  const listId = `${id}-channel-datalist`
+  const seen = new Set<string>()
+  const options: { key: string; name: string }[] = []
+  for (const c of channels) {
+    if (!seen.has(c.name)) {
+      seen.add(c.name)
+      options.push({ key: `t-${c.id}`, name: c.name })
+    }
+  }
+  for (const c of liveChannels) {
+    if (!seen.has(c.name)) {
+      seen.add(c.name)
+      options.push({ key: `g-${c.id}`, name: c.name })
+    }
+  }
+  const hint =
+    liveChannels.length > 0
+      ? "Имена из выбранного сервера (кэш бота) и из блока «Каналы» шаблона. Можно ввести другое имя вручную."
+      : CHANNEL_NAME_HINT_MANUAL
+  return (
+    <div className="grid gap-2">
+      <Input
+        id={id}
+        list={listId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      <datalist id={listId}>
+        {options.map((o) => (
+          <option key={o.key} value={o.name} />
+        ))}
+      </datalist>
+      <p className="text-xs text-[hsl(var(--muted-foreground))]">{hint}</p>
+    </div>
+  )
+}
+
+function RoleNameField({
+  id,
+  value,
+  onChange,
+  roles,
+  liveRoles = [],
+  placeholder = "например Member",
+}: {
+  id: string
+  value: string
+  onChange: (v: string) => void
+  roles: TemplateRole[]
+  /** Роли с живого сервера: GET /api/guilds/:guildId/roles */
+  liveRoles?: GuildRole[]
+  placeholder?: string
+}) {
+  const listId = `${id}-role-datalist`
+  const seen = new Set<string>()
+  const options: { key: string; name: string }[] = []
+  for (const r of roles) {
+    if (!seen.has(r.name)) {
+      seen.add(r.name)
+      options.push({ key: `t-${r.id}`, name: r.name })
+    }
+  }
+  for (const r of liveRoles) {
+    if (!seen.has(r.name)) {
+      seen.add(r.name)
+      options.push({ key: `g-${r.id}`, name: r.name })
+    }
+  }
+  const hint =
+    liveRoles.length > 0
+      ? "Имена из выбранного сервера и из блока «Роли» шаблона. Можно ввести вручную."
+      : "Имя роли как на сервере. Выберите сервер выше для подсказок из Discord или введите вручную."
+  return (
+    <div className="grid gap-2">
+      <Input
+        id={id}
+        list={listId}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        autoComplete="off"
+      />
+      <datalist id={listId}>
+        {options.map((o) => (
+          <option key={o.key} value={o.name} />
+        ))}
+      </datalist>
+      <p className="text-xs text-[hsl(var(--muted-foreground))]">{hint}</p>
+    </div>
+  )
+}
+
 export function ServerTemplateEditorPage() {
   const { id } = useParams<{ id: string }>()
   const { user, loading: authLoading } = useAuth()
@@ -85,6 +205,14 @@ export function ServerTemplateEditorPage() {
   const [addLogChannelOpen, setAddLogChannelOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  /** Подсказки каналов/ролей с живого сервера (GET /api/guilds/:id/channels, /roles) */
+  const [guilds, setGuilds] = useState<Guild[]>([])
+  const [sourceGuildId, setSourceGuildId] = useState("")
+  const [liveChannels, setLiveChannels] = useState<Channel[]>([])
+  const [liveRoles, setLiveRoles] = useState<GuildRole[]>([])
+  const [loadingLive, setLoadingLive] = useState(false)
+  const [liveError, setLiveError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -106,6 +234,36 @@ export function ServerTemplateEditorPage() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    getGuilds()
+      .then(setGuilds)
+      .catch(() => {
+        /* список гильдий опционален */
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!sourceGuildId) {
+      setLiveChannels([])
+      setLiveRoles([])
+      setLiveError(null)
+      return
+    }
+    setLoadingLive(true)
+    setLiveError(null)
+    Promise.all([getChannels(sourceGuildId), getGuildRoles(sourceGuildId)])
+      .then(([ch, r]) => {
+        setLiveChannels(ch)
+        setLiveRoles(r)
+      })
+      .catch((e) => {
+        setLiveError(e instanceof Error ? e.message : "Не удалось загрузить каналы и роли сервера")
+        setLiveChannels([])
+        setLiveRoles([])
+      })
+      .finally(() => setLoadingLive(false))
+  }, [sourceGuildId])
 
   useEffect(() => {
     if (template) {
@@ -248,6 +406,50 @@ export function ServerTemplateEditorPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle>Подсказки с живого сервера</CardTitle>
+            <CardDescription>
+              После того как сервер уже создан по Discord-шаблону, выберите его здесь — в формах ниже в подсказках появятся реальные имена каналов и ролей из кэша бота (
+              <code className="text-xs">GET /api/guilds/…/channels</code>,{" "}
+              <code className="text-xs">GET /api/guilds/…/roles</code>
+              ). Это не меняет записи шаблона в БД — только помогает ввести те же имена, что при установке.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 max-w-lg">
+            <div className="grid gap-2">
+              <Label htmlFor="source-guild">Сервер для подсказок</Label>
+              <Select
+                value={sourceGuildId || "__none__"}
+                onValueChange={(v) => setSourceGuildId(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger id="source-guild">
+                  <SelectValue placeholder="Не выбрано" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Не выбрано</SelectItem>
+                  {guilds.map((g) => (
+                    <SelectItem key={g.id} value={g.id}>
+                      {g.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {loadingLive && (
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">Загрузка каналов и ролей…</p>
+            )}
+            {liveError && (
+              <p className="text-sm text-[hsl(var(--destructive))]">{liveError}</p>
+            )}
+            {sourceGuildId && !loadingLive && !liveError && (
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                Загружено: {liveChannels.length} каналов, {liveRoles.length} ролей (без @everyone и managed).
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Расширенный режим: наши сущности поверх Discord‑шаблона */}
         <SectionRoles
           templateId={id}
@@ -287,6 +489,7 @@ export function ServerTemplateEditorPage() {
           templateId={id}
           messages={template.messages}
           channels={template.channels}
+          liveChannels={liveChannels}
           onUpdate={load}
           addOpen={addMessageOpen}
           setAddOpen={setAddMessageOpen}
@@ -300,6 +503,8 @@ export function ServerTemplateEditorPage() {
           reactionRoles={template.reactionRoles}
           channels={template.channels}
           roles={template.roles}
+          liveChannels={liveChannels}
+          liveRoles={liveRoles}
           onUpdate={load}
           addOpen={addRROpen}
           setAddOpen={setAddRROpen}
@@ -312,6 +517,7 @@ export function ServerTemplateEditorPage() {
           templateId={id}
           logChannels={template.logChannels}
           channels={template.channels}
+          liveChannels={liveChannels}
           onUpdate={load}
           addOpen={addLogChannelOpen}
           setAddOpen={setAddLogChannelOpen}
@@ -709,6 +915,7 @@ function SectionMessages({
   templateId,
   messages,
   channels,
+  liveChannels,
   onUpdate,
   addOpen,
   setAddOpen,
@@ -720,6 +927,7 @@ function SectionMessages({
   templateId: string
   messages: TemplateMessage[]
   channels: TemplateChannel[]
+  liveChannels: Channel[]
   onUpdate: () => void
   addOpen: boolean
   setAddOpen: (v: boolean) => void
@@ -768,7 +976,9 @@ function SectionMessages({
             <MessageSquare className="h-5 w-5" />
             Сообщения
           </CardTitle>
-          <CardDescription>{"Сообщения и эмбеды по каналам. В кнопках: rr/{{RoleName}}"}</CardDescription>
+          <CardDescription>
+            Сообщения по имени канала. В кнопках: rr/{"{{"}RoleName{"}}"}. Выберите сервер в блоке «Подсказки с живого сервера» — подставятся имена каналов из Discord.
+          </CardDescription>
         </div>
         <Button size="sm" onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
@@ -798,17 +1008,14 @@ function SectionMessages({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Канал (имя) *</Label>
-              <Select value={channelName} onValueChange={setChannelName}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите канал" />
-                </SelectTrigger>
-                <SelectContent>
-                  {channels.map((c) => (
-                    <SelectItem key={c.id} value={c.name}># {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor={`msg-ch-${templateId}`}>Канал (имя) *</Label>
+              <ChannelNameField
+                id={`msg-ch-${templateId}`}
+                value={channelName}
+                onChange={setChannelName}
+                channels={channels}
+                liveChannels={liveChannels}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Текст (content)</Label>
@@ -831,6 +1038,8 @@ function SectionReactionRoles({
   reactionRoles,
   channels,
   roles,
+  liveChannels,
+  liveRoles,
   onUpdate,
   addOpen,
   setAddOpen,
@@ -843,6 +1052,8 @@ function SectionReactionRoles({
   reactionRoles: TemplateReactionRole[]
   channels: TemplateChannel[]
   roles: TemplateRole[]
+  liveChannels: Channel[]
+  liveRoles: GuildRole[]
   onUpdate: () => void
   addOpen: boolean
   setAddOpen: (v: boolean) => void
@@ -892,7 +1103,9 @@ function SectionReactionRoles({
             <Smile className="h-5 w-5" />
             Автороли
           </CardTitle>
-          <CardDescription>Реакция → роль по имени канала и сообщения</CardDescription>
+          <CardDescription>
+            Реакция → роль. Имена канала и роли можно взять из блока «Подсказки с живого сервера» или ввести вручную.
+          </CardDescription>
         </div>
         <Button size="sm" onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
@@ -922,34 +1135,28 @@ function SectionReactionRoles({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Канал (имя) *</Label>
-              <Select value={channelName} onValueChange={setChannelName}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите канал" />
-                </SelectTrigger>
-                <SelectContent>
-                  {channels.map((c) => (
-                    <SelectItem key={c.id} value={c.name}># {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor={`rr-ch-${templateId}`}>Канал (имя) *</Label>
+              <ChannelNameField
+                id={`rr-ch-${templateId}`}
+                value={channelName}
+                onChange={setChannelName}
+                channels={channels}
+                liveChannels={liveChannels}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Эмодзи (emojiKey) *</Label>
               <Input value={emojiKey} onChange={(e) => setEmojiKey(e.target.value)} placeholder="✅ или name:id" />
             </div>
             <div className="grid gap-2">
-              <Label>Роль (имя) *</Label>
-              <Select value={roleName} onValueChange={setRoleName}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите роль" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((r) => (
-                    <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor={`rr-role-${templateId}`}>Роль (имя) *</Label>
+              <RoleNameField
+                id={`rr-role-${templateId}`}
+                value={roleName}
+                onChange={setRoleName}
+                roles={roles}
+                liveRoles={liveRoles}
+              />
             </div>
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
@@ -967,6 +1174,7 @@ function SectionLogChannels({
   templateId,
   logChannels,
   channels,
+  liveChannels,
   onUpdate,
   addOpen,
   setAddOpen,
@@ -978,6 +1186,7 @@ function SectionLogChannels({
   templateId: string
   logChannels: TemplateLogChannel[]
   channels: TemplateChannel[]
+  liveChannels: Channel[]
   onUpdate: () => void
   addOpen: boolean
   setAddOpen: (v: boolean) => void
@@ -1022,7 +1231,9 @@ function SectionLogChannels({
             <ScrollText className="h-5 w-5" />
             Лог-каналы
           </CardTitle>
-          <CardDescription>Тип лога и имя канала в шаблоне</CardDescription>
+          <CardDescription>
+            Тип лога и имя канала. Имя можно взять из «Подсказки с живого сервера» или ввести вручную.
+          </CardDescription>
         </div>
         <Button size="sm" onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
@@ -1065,17 +1276,14 @@ function SectionLogChannels({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label>Канал (имя) *</Label>
-              <Select value={channelName} onValueChange={setChannelName}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите канал" />
-                </SelectTrigger>
-                <SelectContent>
-                  {channels.map((c) => (
-                    <SelectItem key={c.id} value={c.name}># {c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor={`log-ch-${templateId}`}>Канал (имя) *</Label>
+              <ChannelNameField
+                id={`log-ch-${templateId}`}
+                value={channelName}
+                onChange={setChannelName}
+                channels={channels}
+                liveChannels={liveChannels}
+              />
             </div>
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
