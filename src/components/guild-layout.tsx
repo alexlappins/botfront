@@ -10,7 +10,6 @@ import {
   ScrollText,
   MessageSquare,
   ServerCog,
-  LayoutTemplate,
   Menu,
   X,
 } from "lucide-react"
@@ -23,9 +22,6 @@ const navItems = [
   { to: "logs", end: false, label: "Логи", icon: ScrollText },
   { to: "reaction-roles", end: false, label: "Роли по реакции", icon: MessageSquare },
 ] as const
-
-/** Ссылка на глобальный редактор шаблонов (создать/редактировать шаблон сервера) */
-const SERVER_TEMPLATES_LINK = { to: "/server-templates" as const, label: "Создать шаблон сервера", icon: LayoutTemplate }
 
 function GuildLayoutInner() {
   const { guild, loading, error } = useGuildData()
@@ -42,7 +38,7 @@ function GuildLayoutInner() {
   if (error || !guild) {
     return (
       <div className="min-h-screen p-4 bg-[hsl(var(--background))]">
-        <Link to="/" className="text-[hsl(var(--primary))] hover:underline">
+        <Link to="/my-servers" className="text-[hsl(var(--primary))] hover:underline">
           ← Назад к серверам
         </Link>
         <div className="mt-4 p-4 rounded-lg bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
@@ -66,11 +62,11 @@ function GuildLayoutInner() {
           </button>
           <div className="flex flex-col min-w-0">
             <Link
-              to="/"
+              to="/my-servers"
               className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
             >
               <ArrowLeft className="h-3 w-3" />
-              Серверы
+              Мои серверы
             </Link>
             <span className="text-sm font-semibold truncate" title={guild.name}>
               {guild.name}
@@ -101,11 +97,11 @@ function GuildLayoutInner() {
       >
         <div className="hidden lg:block p-4 border-b border-[hsl(var(--border))]">
           <Link
-            to="/"
+            to="/my-servers"
             className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Серверы
+            Мои серверы
           </Link>
           <h1 className="mt-3 font-semibold truncate" title={guild.name}>
             {guild.name}
@@ -131,16 +127,6 @@ function GuildLayoutInner() {
               {label}
             </NavLink>
           ))}
-          <div className="pt-2 mt-2 border-t border-[hsl(var(--border))]">
-            <Link
-              to={SERVER_TEMPLATES_LINK.to}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[hsl(var(--foreground))] hover:bg-[hsl(var(--muted))] transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              <SERVER_TEMPLATES_LINK.icon className="h-4 w-4 shrink-0" />
-              {SERVER_TEMPLATES_LINK.label}
-            </Link>
-          </div>
         </nav>
         <div className="hidden lg:block p-2 border-t border-[hsl(var(--border))]">
           <Button variant="outline" size="sm" className="w-full" asChild>

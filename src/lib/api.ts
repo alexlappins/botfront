@@ -6,9 +6,24 @@ const fetchOptions: RequestInit = {
   headers: { "Content-Type": "application/json" },
 }
 
+export class ApiError extends Error {
+  status: number
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
+}
+
+async function throwApiError(res: Response, fallback: string): Promise<never> {
+  const data = await res.json().catch(() => ({}))
+  const message = typeof data.message === "string" ? data.message : fallback
+  throw new ApiError(res.status, message)
+}
+
 export type User = {
   id: string
   username: string
+  role?: "admin" | "customer"
   discriminator?: string
   avatar?: string
 }
@@ -47,8 +62,7 @@ export async function getMe(): Promise<User | null> {
 
 export async function getGuilds(): Promise<Guild[]> {
   const res = await fetch(`${API_BASE}/guilds`, { ...fetchOptions, method: "GET" })
-  if (res.status === 401 || res.status === 403) throw new Error("Unauthorized")
-  if (!res.ok) throw new Error("Failed to fetch guilds")
+  if (!res.ok) await throwApiError(res, "Failed to fetch guilds")
   return res.json()
 }
 
@@ -553,6 +567,166 @@ export async function installServerTemplate(
     const data = await res.json().catch(() => ({}))
     throw new Error(typeof data.message === "string" ? data.message : "Ошибка установки шаблона")
   }
+}
+
+export type StoreTemplateProduct = {
+  id?: string
+  templateId: string
+  name: string
+  description: string | null
+  discordTemplateUrl: string | null
+  price: number
+  currency: string
+  isActive?: boolean
+  template?: {
+    id: string
+    name: string
+    description: string | null
+    discordTemplateUrl: string | null
+  } | null
+}
+
+export type Purchase = {
+  id: string
+  templateId: string
+  templateName?: string
+  amount?: number
+  currency?: string
+  createdAt: string
+}
+
+export type InstallCheckResult = {
+  warnings?: string[]
+  checks?: {
+    missingChannels?: string[]
+    missingRoles?: string[]
+    missingMessages?: string[]
+    missingLogChannels?: string[]
+  }
+}
+
+export type InstallApplyResult = {
+  summary?: Record<string, number>
+  skipped?: Record<string, string[]>
+  warnings?: string[]
+}
+
+export async function getStoreTemplates(): Promise<StoreTemplateProduct[]> {
+  const res = await fetch(`${API_BASE}/store/templates`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to fetch store templates")
+  const raw = await res.json()
+  if (!Array.isArray(raw)) return []
+  return raw.map((item: any) => {
+    const nested = item?.template ?? null
+    return {
+      id: typeof item?.id === "string" ? item.id : undefined,
+      templateId: typeof item?.templateId === "string" ? item.templateId : (nested?.id ?? ""),
+      name:
+        typeof item?.name === "string"
+          ? item.name
+          : typeof nested?.name === "string"
+            ? nested.name
+            : "Без названия",
+      description:
+        typeof item?.description === "string"
+          ? item.description
+          : typeof nested?.description === "string"
+            ? nested.description
+            : null,
+      discordTemplateUrl:
+        typeof item?.discordTemplateUrl === "string"
+          ? item.discordTemplateUrl
+          : typeof nested?.discordTemplateUrl === "string"
+            ? nested.discordTemplateUrl
+            : null,
+      price: typeof item?.price === "number" ? item.price : 0,
+      currency: typeof item?.currency === "string" ? item.currency : "USD",
+      isActive: typeof item?.isActive === "boolean" ? item.isActive : undefined,
+      template: nested,
+    } as StoreTemplateProduct
+  })
+}
+
+export async function checkoutTemplate(templateId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/store/checkout`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ templateId }),
+  })
+  if (!res.ok) await throwApiError(res, "Checkout failed")
+}
+
+export async function getMyPurchases(): Promise<Purchase[]> {
+  const res = await fetch(`${API_BASE}/store/my-purchases`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to fetch purchases")
+  return res.json()
+}
+
+export async function getMyServerTemplates(): Promise<ServerTemplate[]> {
+  const res = await fetch(`${API_BASE}/my/server-templates`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to fetch my templates")
+  return res.json()
+}
+
+export async function checkInstallServerTemplate(
+  guildId: string,
+  templateId: string
+): Promise<InstallCheckResult> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/install-template/check`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ templateId }),
+  })
+  if (!res.ok) await throwApiError(res, "Install check failed")
+  return res.json()
+}
+
+export async function installServerTemplateWithResult(
+  guildId: string,
+  templateId: string
+): Promise<InstallApplyResult> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/install-template`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ templateId }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new ApiError(res.status, typeof data.message === "string" ? data.message : "Install failed")
+  return data
+}
+
+export async function adminUpsertStoreTemplate(body: {
+  templateId: string
+  price: number
+  currency: string
+  isActive: boolean
+}): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/store/templates/upsert`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to upsert store card")
+}
+
+export async function adminGrantTemplateAccess(body: {
+  userId: string
+  templateId: string
+}): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/template-access`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to grant access")
+}
+
+export async function adminRevokeTemplateAccess(userId: string, templateId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/template-access/${userId}/${templateId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to revoke access")
 }
 
 export const LOGIN_URL = `${API_BASE}/auth/discord`

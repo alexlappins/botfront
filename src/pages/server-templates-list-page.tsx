@@ -12,9 +12,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { AdminHeader } from "@/components/admin-header"
 import { useAuth } from "@/contexts/auth-context"
-import { getServerTemplates, createServerTemplate, LOGOUT_URL, type ServerTemplate } from "@/lib/api"
-import { FileStack, Plus } from "lucide-react"
+import { getServerTemplates, createServerTemplate, type ServerTemplate } from "@/lib/api"
+import { Plus } from "lucide-react"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU", {
@@ -83,30 +84,7 @@ export function ServerTemplatesListPage() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-        <div className="container mx-auto px-4 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
-            <Link
-              to="/"
-              className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))] shrink-0"
-            >
-              ← Серверы
-            </Link>
-            <h1 className="text-xl font-semibold flex items-center gap-2 min-w-0">
-              <FileStack className="h-5 w-5 shrink-0" />
-              <span className="break-words">Редактор шаблонов сервера</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <span className="text-sm text-[hsl(var(--muted-foreground))] truncate max-w-[120px] sm:max-w-none">
-              {user.username}
-            </span>
-            <Button variant="outline" size="sm" className="shrink-0" asChild>
-              <a href={LOGOUT_URL}>Выйти</a>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AdminHeader title="Редактор шаблонов сервера" />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {error && (

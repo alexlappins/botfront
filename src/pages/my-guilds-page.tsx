@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/contexts/auth-context"
-import { getGuilds, LOGOUT_URL, type Guild } from "@/lib/api"
+import { CustomerHeader } from "@/components/customer-header"
+import { ApiError, getGuilds, type Guild } from "@/lib/api"
 import { Server } from "lucide-react"
 
 function GuildIcon({ guild }: { guild: Guild }) {
@@ -23,59 +22,31 @@ function GuildIcon({ guild }: { guild: Guild }) {
   )
 }
 
-export function DashboardPage() {
-  const { user, loading: authLoading } = useAuth()
+/** Список серверов Discord, где у пользователя есть доступ к боту — логи, автороли, сообщения и т.д. */
+export function MyGuildsPage() {
   const navigate = useNavigate()
   const [guilds, setGuilds] = useState<Guild[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!user) return
     getGuilds()
       .then(setGuilds)
-      .catch((e) => setError(e.message))
+      .catch((e) => {
+        if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
+        if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
+        setError(e instanceof Error ? e.message : "Ошибка загрузки")
+      })
       .finally(() => setLoading(false))
-  }, [user])
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/login", { replace: true })
-    }
-  }, [authLoading, user, navigate])
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Загрузка...</div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null
-  }
+  }, [navigate])
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-3 flex-wrap">
-          <h1 className="text-xl font-semibold">Мои серверы</h1>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/server-templates">Редактор шаблонов</Link>
-            </Button>
-            <span className="text-sm text-[hsl(var(--muted-foreground))] max-w-[140px] truncate text-right">
-              {user.username}
-            </span>
-            <Button variant="outline" size="sm" asChild>
-              <a href={LOGOUT_URL}>Выйти</a>
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-6 sm:py-8">
+      <CustomerHeader title="Мои серверы" />
+      <main className="container mx-auto px-4 py-8 max-w-4xl">
+        <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6">
+          Здесь серверы, где бот установлен и у вас есть права. Настройте логи, автороли и сообщения на своём сервере.
+        </p>
         {error && (
           <div className="mb-4 p-4 rounded-lg bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
             {error}
@@ -92,7 +63,7 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {guilds.map((guild) => (
               <Link key={guild.id} to={`/guild/${guild.id}`}>
                 <Card className="hover:border-[hsl(var(--primary))] transition-colors h-full">
@@ -102,7 +73,7 @@ export function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                      Управление шаблонами и отправка сообщений
+                      Сообщения, шаблоны, логи, роли по реакции
                     </p>
                   </CardContent>
                 </Card>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
+import { AdminHeader } from "@/components/admin-header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -52,7 +53,6 @@ import {
   LOG_TYPES,
 } from "@/lib/api"
 import {
-  FileStack,
   Shield,
   Folder,
   Hash,
@@ -340,33 +340,20 @@ export function ServerTemplateEditorPage() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <header className="border-b border-[hsl(var(--border))] bg-[hsl(var(--card))]">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-4">
-            <Link
-              to="/server-templates"
-              className="text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
-            >
-              ← Шаблоны
-            </Link>
-            <div>
-              <h1 className="text-xl font-semibold flex items-center gap-2">
-                <FileStack className="h-5 w-5" />
-                {template.name}
-              </h1>
-              {template.description && (
-                <p className="text-sm text-[hsl(var(--muted-foreground))] mt-0.5">{template.description}</p>
-              )}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => setEditMetaOpen(true)}>
-              <Pencil className="h-4 w-4 mr-1" />
-              Изменить
-            </Button>
-          </div>
-        </div>
-      </header>
+      <AdminHeader title={template.name} />
 
-      <main className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
+      <main className="container mx-auto px-4 py-6 max-w-4xl space-y-8">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            {template.description ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">{template.description}</p>
+            ) : null}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setEditMetaOpen(true)} className="shrink-0">
+            <Pencil className="h-4 w-4 mr-1" />
+            Изменить
+          </Button>
+        </div>
         {/* Блок Discord‑шаблона (основной сценарий развёртывания) */}
         <Card>
           <CardHeader>
