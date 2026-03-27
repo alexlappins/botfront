@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { AdminHeader } from "@/components/admin-header"
+import {
+  emptyEmbedForm,
+  parseEmbedJsonToForm,
+  serializeFormToEmbedJson,
+  type EmbedFormState,
+  TemplateEmbedBuilder,
+} from "@/components/template-embed-builder"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,29 +28,24 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuth } from "@/contexts/auth-context"
+import { cn } from "@/lib/utils"
 import {
   getServerTemplate,
   updateServerTemplate,
   getGuilds,
   getChannels,
   getGuildRoles,
-  createTemplateRole,
-  deleteTemplateRole,
-  createTemplateCategory,
-  deleteTemplateCategory,
-  createTemplateChannel,
-  deleteTemplateChannel,
   createTemplateMessage,
+  updateTemplateMessage,
   deleteTemplateMessage,
   createTemplateReactionRole,
   deleteTemplateReactionRole,
   createTemplateLogChannel,
   deleteTemplateLogChannel,
   type ServerTemplateDetail,
-  type TemplateRole,
-  type TemplateCategory,
   type TemplateChannel,
   type TemplateMessage,
+  type TemplateRole,
   type TemplateReactionRole,
   type TemplateLogChannel,
   type TemplateLogType,
@@ -52,17 +54,7 @@ import {
   type GuildRole,
   LOG_TYPES,
 } from "@/lib/api"
-import {
-  Shield,
-  Folder,
-  Hash,
-  MessageSquare,
-  Smile,
-  ScrollText,
-  Pencil,
-  Trash2,
-  Plus,
-} from "lucide-react"
+import { MessageSquare, Smile, ScrollText, Pencil, Trash2, Plus } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
   joinLeave: "Вход/выход",
@@ -109,7 +101,7 @@ function ChannelNameField({
   }
   const hint =
     liveChannels.length > 0
-      ? "Имена из выбранного сервера (кэш бота) и из блока «Каналы» шаблона. Можно ввести другое имя вручную."
+      ? "Имена из выбранного сервера (кэш бота). Можно ввести другое имя вручную — как в Discord после установки шаблона."
       : CHANNEL_NAME_HINT_MANUAL
   return (
     <div className="grid gap-2">
@@ -164,7 +156,7 @@ function RoleNameField({
   }
   const hint =
     liveRoles.length > 0
-      ? "Имена из выбранного сервера и из блока «Роли» шаблона. Можно ввести вручную."
+      ? "Имена ролей с выбранного сервера. Можно ввести вручную — как на сервере после установки Discord-шаблона."
       : "Имя роли как на сервере. Выберите сервер выше для подсказок из Discord или введите вручную."
   return (
     <div className="grid gap-2">
@@ -197,9 +189,6 @@ export function ServerTemplateEditorPage() {
   const [metaDescription, setMetaDescription] = useState("")
   const [metaDiscordUrl, setMetaDiscordUrl] = useState("")
   const [savingMeta, setSavingMeta] = useState(false)
-  const [addRoleOpen, setAddRoleOpen] = useState(false)
-  const [addCategoryOpen, setAddCategoryOpen] = useState(false)
-  const [addChannelOpen, setAddChannelOpen] = useState(false)
   const [addMessageOpen, setAddMessageOpen] = useState(false)
   const [addRROpen, setAddRROpen] = useState(false)
   const [addLogChannelOpen, setAddLogChannelOpen] = useState(false)
@@ -437,45 +426,9 @@ export function ServerTemplateEditorPage() {
           </CardContent>
         </Card>
 
-        {/* Расширенный режим: наши сущности поверх Discord‑шаблона */}
-        <SectionRoles
-          templateId={id}
-          roles={template.roles}
-          onUpdate={load}
-          addOpen={addRoleOpen}
-          setAddOpen={setAddRoleOpen}
-          formError={formError}
-          setFormError={setFormError}
-          submitting={submitting}
-          setSubmitting={setSubmitting}
-        />
-        <SectionCategories
-          templateId={id}
-          categories={template.categories}
-          onUpdate={load}
-          addOpen={addCategoryOpen}
-          setAddOpen={setAddCategoryOpen}
-          formError={formError}
-          setFormError={setFormError}
-          submitting={submitting}
-          setSubmitting={setSubmitting}
-        />
-        <SectionChannels
-          templateId={id}
-          channels={template.channels}
-          categories={template.categories}
-          onUpdate={load}
-          addOpen={addChannelOpen}
-          setAddOpen={setAddChannelOpen}
-          formError={formError}
-          setFormError={setFormError}
-          submitting={submitting}
-          setSubmitting={setSubmitting}
-        />
         <SectionMessages
           templateId={id}
           messages={template.messages}
-          channels={template.channels}
           liveChannels={liveChannels}
           onUpdate={load}
           addOpen={addMessageOpen}
@@ -488,8 +441,8 @@ export function ServerTemplateEditorPage() {
         <SectionReactionRoles
           templateId={id}
           reactionRoles={template.reactionRoles}
-          channels={template.channels}
-          roles={template.roles}
+          channels={[]}
+          roles={[]}
           liveChannels={liveChannels}
           liveRoles={liveRoles}
           onUpdate={load}
@@ -503,7 +456,7 @@ export function ServerTemplateEditorPage() {
         <SectionLogChannels
           templateId={id}
           logChannels={template.logChannels}
-          channels={template.channels}
+          channels={[]}
           liveChannels={liveChannels}
           onUpdate={load}
           addOpen={addLogChannelOpen}
@@ -552,356 +505,30 @@ export function ServerTemplateEditorPage() {
   )
 }
 
-function SectionRoles({
-  templateId,
-  roles,
-  onUpdate,
-  addOpen,
-  setAddOpen,
-  formError,
-  setFormError,
-  submitting,
-  setSubmitting,
-}: {
-  templateId: string
-  roles: TemplateRole[]
-  onUpdate: () => void
-  addOpen: boolean
-  setAddOpen: (v: boolean) => void
-  formError: string | null
-  setFormError: (v: string | null) => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-}) {
-  const [name, setName] = useState("")
+const msgTextareaClass =
+  "flex min-h-[120px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm ring-offset-[hsl(var(--background))] placeholder:text-[hsl(var(--muted-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2"
 
-  async function handleAdd() {
-    const n = name.trim()
-    if (!n) return
-    setFormError(null)
-    setSubmitting(true)
+function templateMessagePreviewLine(m: TemplateMessage): string {
+  const ch = m.channelName
+  if (m.embedJson?.trim()) {
     try {
-      await createTemplateRole(templateId, { name: n })
-      setName("")
-      setAddOpen(false)
-      onUpdate()
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка")
-    } finally {
-      setSubmitting(false)
+      const p = JSON.parse(m.embedJson) as { embeds?: { title?: string }[] } & { title?: string }
+      const e = p.embeds?.[0] ?? p
+      const t = e && typeof e === "object" && "title" in e ? (e as { title?: string }).title : undefined
+      if (typeof t === "string" && t.trim()) return `${ch} · ${t.trim()}`
+      return `${ch} · эмбед`
+    } catch {
+      return `${ch} · эмбед`
     }
   }
-
-  async function handleDelete(roleId: string) {
-    if (!confirm("Удалить роль из шаблона?")) return
-    try {
-      await deleteTemplateRole(templateId, roleId)
-      onUpdate()
-    } catch {}
-  }
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Роли
-          </CardTitle>
-          <CardDescription>Роли, создаваемые при установке шаблона</CardDescription>
-        </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Добавить
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {roles.length === 0 ? (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет ролей</p>
-        ) : (
-          <ul className="space-y-2">
-            {roles.map((r) => (
-              <li key={r.id} className="flex items-center justify-between rounded border border-[hsl(var(--border))] px-3 py-2 text-sm">
-                <span>{r.name}</span>
-                <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(r.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Добавить роль</DialogTitle>
-            <DialogDescription>Минимально — только название. Остальное можно задать в API или расширить форму.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Название *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Название роли" />
-            </div>
-            {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Отмена</Button>
-            <Button onClick={handleAdd} disabled={submitting || !name.trim()}>{submitting ? "Добавление…" : "Добавить"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  )
-}
-
-function SectionCategories({
-  templateId,
-  categories,
-  onUpdate,
-  addOpen,
-  setAddOpen,
-  formError,
-  setFormError,
-  submitting,
-  setSubmitting,
-}: {
-  templateId: string
-  categories: TemplateCategory[]
-  onUpdate: () => void
-  addOpen: boolean
-  setAddOpen: (v: boolean) => void
-  formError: string | null
-  setFormError: (v: string | null) => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-}) {
-  const [name, setName] = useState("")
-
-  async function handleAdd() {
-    const n = name.trim()
-    if (!n) return
-    setFormError(null)
-    setSubmitting(true)
-    try {
-      await createTemplateCategory(templateId, { name: n })
-      setName("")
-      setAddOpen(false)
-      onUpdate()
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleDelete(categoryId: string) {
-    if (!confirm("Удалить категорию?")) return
-    try {
-      await deleteTemplateCategory(templateId, categoryId)
-      onUpdate()
-    } catch {}
-  }
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <Folder className="h-5 w-5" />
-            Категории
-          </CardTitle>
-          <CardDescription>Категории каналов</CardDescription>
-        </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Добавить
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {categories.length === 0 ? (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет категорий</p>
-        ) : (
-          <ul className="space-y-2">
-            {categories.map((c) => (
-              <li key={c.id} className="flex items-center justify-between rounded border border-[hsl(var(--border))] px-3 py-2 text-sm">
-                <span>{c.name}</span>
-                <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(c.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Добавить категорию</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Название *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Название категории" />
-            </div>
-            {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Отмена</Button>
-            <Button onClick={handleAdd} disabled={submitting || !name.trim()}>{submitting ? "Добавление…" : "Добавить"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  )
-}
-
-function SectionChannels({
-  templateId,
-  channels,
-  categories,
-  onUpdate,
-  addOpen,
-  setAddOpen,
-  formError,
-  setFormError,
-  submitting,
-  setSubmitting,
-}: {
-  templateId: string
-  channels: TemplateChannel[]
-  categories: TemplateCategory[]
-  onUpdate: () => void
-  addOpen: boolean
-  setAddOpen: (v: boolean) => void
-  formError: string | null
-  setFormError: (v: string | null) => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-}) {
-  const [name, setName] = useState("")
-  const [categoryName, setCategoryName] = useState("")
-  const [type, setType] = useState<number>(0)
-
-  async function handleAdd() {
-    const n = name.trim()
-    if (!n) return
-    setFormError(null)
-    setSubmitting(true)
-    try {
-      await createTemplateChannel(templateId, {
-        name: n,
-        categoryName: categoryName.trim() || undefined,
-        type: type ?? 0,
-      })
-      setName("")
-      setCategoryName("")
-      setType(0)
-      setAddOpen(false)
-      onUpdate()
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleDelete(channelId: string) {
-    if (!confirm("Удалить канал из шаблона?")) return
-    try {
-      await deleteTemplateChannel(templateId, channelId)
-      onUpdate()
-    } catch {}
-  }
-
-  const typeLabel = (t: number) => (t === 0 ? "Текст" : t === 2 ? "Голос" : t === 5 ? "Анонсы" : String(t))
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <Hash className="h-5 w-5" />
-            Каналы
-          </CardTitle>
-          <CardDescription>Текстовые (0), голосовые (2), анонсы (5)</CardDescription>
-        </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Добавить
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {channels.length === 0 ? (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет каналов</p>
-        ) : (
-          <ul className="space-y-2">
-            {channels.map((ch) => (
-              <li key={ch.id} className="flex items-center justify-between rounded border border-[hsl(var(--border))] px-3 py-2 text-sm">
-                <span># {ch.name} {ch.categoryName && <span className="text-[hsl(var(--muted-foreground))]">({ch.categoryName})</span>} — {typeLabel(ch.type ?? 0)}</span>
-                <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(ch.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Добавить канал</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Название *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="general" />
-            </div>
-            <div className="grid gap-2">
-              <Label>Категория (имя)</Label>
-              <Select
-                value={categoryName || "__none__"}
-                onValueChange={(v) => setCategoryName(v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Без категории" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Без категории</SelectItem>
-                  {categories.map((c) => (
-                    <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label>Тип</Label>
-              <Select value={String(type)} onValueChange={(v) => setType(Number(v))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">Текст (0)</SelectItem>
-                  <SelectItem value="2">Голос (2)</SelectItem>
-                  <SelectItem value="5">Анонсы (5)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Отмена</Button>
-            <Button onClick={handleAdd} disabled={submitting || !name.trim()}>{submitting ? "Добавление…" : "Добавить"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  )
+  const c = m.content?.trim()
+  if (c) return `${ch} · ${c.length > 48 ? `${c.slice(0, 48)}…` : c}`
+  return ch
 }
 
 function SectionMessages({
   templateId,
   messages,
-  channels,
   liveChannels,
   onUpdate,
   addOpen,
@@ -913,7 +540,6 @@ function SectionMessages({
 }: {
   templateId: string
   messages: TemplateMessage[]
-  channels: TemplateChannel[]
   liveChannels: Channel[]
   onUpdate: () => void
   addOpen: boolean
@@ -923,22 +549,85 @@ function SectionMessages({
   submitting: boolean
   setSubmitting: (v: boolean) => void
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [channelName, setChannelName] = useState("")
   const [content, setContent] = useState("")
+  const [messageOrder, setMessageOrder] = useState("")
+  const [embedForm, setEmbedForm] = useState<EmbedFormState>(() => emptyEmbedForm())
+  const [msgUiTab, setMsgUiTab] = useState<"message" | "embed">("message")
 
-  async function handleAdd() {
+  function resetFormForCreate() {
+    setEditingId(null)
+    setChannelName("")
+    setContent("")
+    setMessageOrder("")
+    setEmbedForm(emptyEmbedForm())
+    setMsgUiTab("message")
+  }
+
+  function openCreate() {
+    resetFormForCreate()
+    setFormError(null)
+    setAddOpen(true)
+  }
+
+  function openEdit(m: TemplateMessage) {
+    setEditingId(m.id)
+    setChannelName(m.channelName)
+    setContent(m.content ?? "")
+    setMessageOrder(m.messageOrder != null ? String(m.messageOrder) : "")
+    setEmbedForm(parseEmbedJsonToForm(m.embedJson))
+    setMsgUiTab(m.embedJson?.trim() ? "embed" : "message")
+    setFormError(null)
+    setAddOpen(true)
+  }
+
+  function handleDialogOpenChange(open: boolean) {
+    setAddOpen(open)
+    if (!open) {
+      resetFormForCreate()
+      setFormError(null)
+    }
+  }
+
+  async function handleSubmit() {
     const ch = channelName.trim()
     if (!ch) return
+    const embedJsonStr = serializeFormToEmbedJson(embedForm)
+    const hasContent = Boolean(content.trim())
+    const hasEmbed = embedJsonStr != null
+    if (!hasContent && !hasEmbed) {
+      setFormError("Укажите текст сообщения (content) или заполните эмбед")
+      return
+    }
     setFormError(null)
     setSubmitting(true)
     try {
-      await createTemplateMessage(templateId, {
-        channelName: ch,
-        content: content.trim() || undefined,
-      })
-      setChannelName("")
-      setContent("")
-      setAddOpen(false)
+      const orderRaw = messageOrder.trim()
+      let order: number | undefined
+      if (orderRaw !== "") {
+        const n = Number(orderRaw)
+        if (Number.isFinite(n)) order = Math.floor(n)
+      }
+
+      const embedJsonOut = hasEmbed ? embedJsonStr : editingId ? "" : undefined
+
+      if (editingId) {
+        await updateTemplateMessage(templateId, editingId, {
+          channelName: ch,
+          messageOrder: order,
+          content: hasContent ? content.trim() : undefined,
+          embedJson: embedJsonOut,
+        })
+      } else {
+        await createTemplateMessage(templateId, {
+          channelName: ch,
+          messageOrder: order,
+          content: hasContent ? content.trim() : undefined,
+          embedJson: embedJsonOut,
+        })
+      }
+      handleDialogOpenChange(false)
       onUpdate()
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "Ошибка")
@@ -964,10 +653,10 @@ function SectionMessages({
             Сообщения
           </CardTitle>
           <CardDescription>
-            Сообщения по имени канала. В кнопках: rr/{"{{"}RoleName{"}}"}. Выберите сервер в блоке «Подсказки с живого сервера» — подставятся имена каналов из Discord.
+            Канал и порядок — всегда в диалоге; текст сообщения и эмбед разнесены по вкладкам (как в ProBot). Подсказки имён каналов — из «Сервер для подсказок».
           </CardDescription>
         </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        <Button size="sm" onClick={openCreate}>
           <Plus className="h-4 w-4 mr-1" />
           Добавить
         </Button>
@@ -978,41 +667,111 @@ function SectionMessages({
         ) : (
           <ul className="space-y-2">
             {messages.map((m) => (
-              <li key={m.id} className="flex items-center justify-between rounded border border-[hsl(var(--border))] px-3 py-2 text-sm">
-                <span>{m.channelName} {m.content && <span className="text-[hsl(var(--muted-foreground))] truncate">— {m.content.slice(0, 40)}…</span>}</span>
-                <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(m.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+              <li
+                key={m.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border border-[hsl(var(--border))] px-3 py-2 text-sm"
+              >
+                <span className="min-w-0 break-words">{templateMessagePreviewLine(m)}</span>
+                <div className="flex shrink-0 gap-1">
+                  <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(m.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
         )}
       </CardContent>
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
+      <Dialog open={addOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Добавить сообщение</DialogTitle>
+            <DialogTitle>{editingId ? "Редактировать сообщение" : "Добавить сообщение"}</DialogTitle>
+            <DialogDescription>
+              Вкладки «Сообщение» и «Эмбед». Эмбед в API — <code className="text-xs">{"{ \"embeds\": [ … ] }"}</code>. Отправитель — бот, блок author в JSON не задаётся.
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor={`msg-ch-${templateId}`}>Канал (имя) *</Label>
-              <ChannelNameField
-                id={`msg-ch-${templateId}`}
-                value={channelName}
-                onChange={setChannelName}
-                channels={channels}
-                liveChannels={liveChannels}
-              />
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid gap-2 sm:col-span-2">
+                <Label htmlFor={`msg-ch-${templateId}`}>Канал (имя) *</Label>
+                <ChannelNameField
+                  id={`msg-ch-${templateId}`}
+                  value={channelName}
+                  onChange={setChannelName}
+                  channels={[]}
+                  liveChannels={liveChannels}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={`msg-order-${templateId}`}>Порядок (messageOrder)</Label>
+                <Input
+                  id={`msg-order-${templateId}`}
+                  type="number"
+                  value={messageOrder}
+                  onChange={(e) => setMessageOrder(e.target.value)}
+                  placeholder="Напр. 0, 1, 2…"
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label>Текст (content)</Label>
-              <Input value={content} onChange={(e) => setContent(e.target.value)} placeholder="Текст сообщения" />
+
+            <div className="flex rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setMsgUiTab("message")}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  msgUiTab === "message"
+                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
+                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                )}
+              >
+                Сообщение
+              </button>
+              <button
+                type="button"
+                onClick={() => setMsgUiTab("embed")}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  msgUiTab === "embed"
+                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
+                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                )}
+              >
+                Эмбед
+              </button>
             </div>
+
+            {msgUiTab === "message" ? (
+              <div className="grid gap-2">
+                <Label htmlFor={`msg-content-${templateId}`}>Содержимое сообщения</Label>
+                <textarea
+                  id={`msg-content-${templateId}`}
+                  className={msgTextareaClass}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Обычный текст Discord — показывается над карточкой эмбеда, если эмбед задан на вкладке «Эмбед»."
+                  rows={6}
+                />
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Можно оставить только текст без эмбеда, или только эмбед без текста — или оба сразу.
+                </p>
+              </div>
+            ) : (
+              <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />
+            )}
+
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Отмена</Button>
-            <Button onClick={handleAdd} disabled={submitting || !channelName.trim()}>{submitting ? "Добавление…" : "Добавить"}</Button>
+            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>
+              Отмена
+            </Button>
+            <Button onClick={handleSubmit} disabled={submitting || !channelName.trim()}>
+              {submitting ? "Сохранение…" : editingId ? "Сохранить" : "Добавить"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
