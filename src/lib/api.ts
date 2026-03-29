@@ -72,6 +72,33 @@ export async function getChannels(guildId: string): Promise<Channel[]> {
   return res.json()
 }
 
+/** Multipart POST, поле `file`. Нужен публичный PUBLIC_BASE_URL на бэке, иначе url может быть localhost — Discord картинку не откроет. */
+export async function uploadFile(file: File): Promise<{ url: string }> {
+  const formData = new FormData()
+  formData.append("file", file)
+  const res = await fetch(`${API_BASE}/uploads`, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  })
+  if (!res.ok) await throwApiError(res, "Ошибка загрузки файла")
+  const data = (await res.json()) as { url?: string }
+  if (typeof data.url !== "string") throw new Error("Ответ загрузки без поля url")
+  return { url: data.url }
+}
+
+export async function previewTemplateMessage(
+  guildId: string,
+  body: { channelId: string; content?: string; embedJson?: string; componentsJson?: string }
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/preview-template-message`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Не удалось отправить превью в канал")
+}
+
 export async function sendMessage(
   guildId: string,
   body: { channelId: string; title?: string; description?: string; image?: string }

@@ -1,8 +1,12 @@
+import { useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ApiError, uploadFile } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { ImageIcon, Plus, Trash2 } from "lucide-react"
+import { ImageIcon, Plus, Trash2, Upload } from "lucide-react"
+
+const IMAGE_ACCEPT = "image/png,image/jpeg,image/gif,image/webp"
 
 /** Состояние формы — сериализуется в JSON для поля embedJson (формат Discord embed). Автор в embed не задаём: сообщение шлёт бот. */
 export type EmbedFormState = {
@@ -309,6 +313,11 @@ const dashedMediaBox =
   "flex min-h-[100px] items-center justify-center rounded-lg border-2 border-dashed border-[hsl(var(--border))] bg-[hsl(var(--background))]/40 text-[hsl(var(--muted-foreground))]"
 
 export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState; onChange: (next: EmbedFormState) => void }) {
+  const imageFileRef = useRef<HTMLInputElement>(null)
+  const thumbFileRef = useRef<HTMLInputElement>(null)
+  const [uploadingKind, setUploadingKind] = useState<null | "image" | "thumbnail">(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
   function patch(p: Partial<EmbedFormState>) {
     onChange({ ...form, ...p })
   }
@@ -318,11 +327,28 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
     onChange({ ...form, fields })
   }
 
+  async function handleUploadedFile(kind: "image" | "thumbnail", file: File | undefined) {
+    if (!file) return
+    setUploadError(null)
+    setUploadingKind(kind)
+    try {
+      const { url } = await uploadFile(file)
+      if (kind === "image") patch({ imageUrl: url })
+      else patch({ thumbnailUrl: url })
+    } catch (e) {
+      setUploadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Ошибка загрузки")
+    } finally {
+      setUploadingKind(null)
+    }
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] xl:items-start">
       <div className="space-y-5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.22)] p-4 sm:p-5">
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Автор в эмбед не настраивается — сообщение отправляет бот (как в ProBot).
+          Автор в эмбед не настраивается — сообщение отправляет бот (как в ProBot). Загрузка картинок — на бэке{" "}
+          <code className="text-[10px]">POST /api/uploads</code>; для Discord нужен публичный{" "}
+          <code className="text-[10px]">PUBLIC_BASE_URL</code> (https), иначе в эмбед попадёт localhost и картинка не откроется.
         </p>
 
         <div>
@@ -472,6 +498,28 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                 onChange={(e) => patch({ imageUrl: e.target.value })}
                 placeholder="URL изображения (image)"
               />
+              <input
+                ref={imageFileRef}
+                type="file"
+                accept={IMAGE_ACCEPT}
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  e.target.value = ""
+                  void handleUploadedFile("image", f)
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+                disabled={uploadingKind === "image"}
+                onClick={() => imageFileRef.current?.click()}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {uploadingKind === "image" ? "Загрузка…" : "Загрузить PNG / JPEG / GIF / WebP"}
+              </Button>
             </div>
           </div>
 
@@ -496,8 +544,36 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
               placeholder="URL миниатюры"
               className="text-sm"
             />
+            <input
+              ref={thumbFileRef}
+              type="file"
+              accept={IMAGE_ACCEPT}
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ""
+                void handleUploadedFile("thumbnail", f)
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              disabled={uploadingKind === "thumbnail"}
+              onClick={() => thumbFileRef.current?.click()}
+            >
+              <Upload className="mr-2 h-4 w-4 shrink-0" />
+              {uploadingKind === "thumbnail" ? "…" : "Загрузить"}
+            </Button>
           </div>
         </div>
+
+        {uploadError ? (
+          <p className="text-sm text-[hsl(var(--destructive))]" role="alert">
+            {uploadError}
+          </p>
+        ) : null}
 
         <div className="border-t border-[hsl(var(--border))] pt-4 space-y-3">
           <Label className="text-[11px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">

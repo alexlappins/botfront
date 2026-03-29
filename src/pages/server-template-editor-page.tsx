@@ -30,6 +30,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import {
+  ApiError,
   getServerTemplate,
   updateServerTemplate,
   getGuilds,
@@ -38,6 +39,7 @@ import {
   createTemplateMessage,
   updateTemplateMessage,
   deleteTemplateMessage,
+  previewTemplateMessage,
   createTemplateReactionRole,
   deleteTemplateReactionRole,
   createTemplateLogChannel,
@@ -430,6 +432,8 @@ export function ServerTemplateEditorPage() {
           templateId={id}
           messages={template.messages}
           liveChannels={liveChannels}
+          guilds={guilds}
+          previewDefaultGuildId={sourceGuildId}
           onUpdate={load}
           addOpen={addMessageOpen}
           setAddOpen={setAddMessageOpen}
@@ -530,6 +534,8 @@ function SectionMessages({
   templateId,
   messages,
   liveChannels,
+  guilds,
+  previewDefaultGuildId,
   onUpdate,
   addOpen,
   setAddOpen,
@@ -541,6 +547,9 @@ function SectionMessages({
   templateId: string
   messages: TemplateMessage[]
   liveChannels: Channel[]
+  guilds: Guild[]
+  /** Сервер из блока «Подсказки» — подставляется в превью по умолчанию */
+  previewDefaultGuildId: string
   onUpdate: () => void
   addOpen: boolean
   setAddOpen: (v: boolean) => void
@@ -555,6 +564,12 @@ function SectionMessages({
   const [messageOrder, setMessageOrder] = useState("")
   const [embedForm, setEmbedForm] = useState<EmbedFormState>(() => emptyEmbedForm())
   const [msgUiTab, setMsgUiTab] = useState<"message" | "embed">("message")
+  const [previewGuildId, setPreviewGuildId] = useState("")
+  const [previewChannelId, setPreviewChannelId] = useState("")
+  const [previewChannelsList, setPreviewChannelsList] = useState<Channel[]>([])
+  const [loadingPreviewChannels, setLoadingPreviewChannels] = useState(false)
+  const [previewPanelError, setPreviewPanelError] = useState<string | null>(null)
+  const [previewSending, setPreviewSending] = useState(false)
 
   function resetFormForCreate() {
     setEditingId(null)
@@ -563,11 +578,18 @@ function SectionMessages({
     setMessageOrder("")
     setEmbedForm(emptyEmbedForm())
     setMsgUiTab("message")
+    setPreviewGuildId("")
+    setPreviewChannelId("")
+    setPreviewChannelsList([])
+    setLoadingPreviewChannels(false)
+    setPreviewPanelError(null)
+    setPreviewSending(false)
   }
 
   function openCreate() {
     resetFormForCreate()
     setFormError(null)
+    if (previewDefaultGuildId) setPreviewGuildId(previewDefaultGuildId)
     setAddOpen(true)
   }
 
@@ -579,7 +601,65 @@ function SectionMessages({
     setEmbedForm(parseEmbedJsonToForm(m.embedJson))
     setMsgUiTab(m.embedJson?.trim() ? "embed" : "message")
     setFormError(null)
+    setPreviewGuildId(previewDefaultGuildId || "")
+    setPreviewChannelId("")
+    setPreviewChannelsList([])
+    setPreviewPanelError(null)
     setAddOpen(true)
+  }
+
+  useEffect(() => {
+    if (!addOpen || !previewGuildId.trim()) {
+      setPreviewChannelsList([])
+      return
+    }
+    let cancelled = false
+    setLoadingPreviewChannels(true)
+    setPreviewPanelError(null)
+    getChannels(previewGuildId.trim())
+      .then((ch) => {
+        if (cancelled) return
+        setPreviewChannelsList(ch.filter((c) => c.type === 0 || c.type === 5))
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setPreviewChannelsList([])
+          setPreviewPanelError(e instanceof Error ? e.message : "Не удалось загрузить каналы")
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingPreviewChannels(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [addOpen, previewGuildId])
+
+  async function handlePreviewInDiscord() {
+    const embedJsonStr = serializeFormToEmbedJson(embedForm)
+    const hasContent = Boolean(content.trim())
+    const hasEmbed = embedJsonStr != null
+    if (!hasContent && !hasEmbed) {
+      setPreviewPanelError("Нужен текст сообщения или заполненный эмбед")
+      return
+    }
+    if (!previewGuildId.trim() || !previewChannelId.trim()) {
+      setPreviewPanelError("Выберите сервер и канал")
+      return
+    }
+    setPreviewPanelError(null)
+    setPreviewSending(true)
+    try {
+      await previewTemplateMessage(previewGuildId.trim(), {
+        channelId: previewChannelId.trim(),
+        content: hasContent ? content.trim() : undefined,
+        embedJson: hasEmbed ? embedJsonStr : undefined,
+      })
+    } catch (e) {
+      setPreviewPanelError(e instanceof ApiError ? e.message : "Не удалось отправить превью")
+    } finally {
+      setPreviewSending(false)
+    }
   }
 
   function handleDialogOpenChange(open: boolean) {
@@ -762,6 +842,74 @@ function SectionMessages({
             ) : (
               <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />
             )}
+
+            <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-3">
+              <div>
+                <p className="text-sm font-medium">Превью в Discord</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                  Отправляет текущий черновик в канал (без сохранения шаблона). Нужны права бота на запись в канал.
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor={`preview-guild-${templateId}`}>Сервер</Label>
+                  <Select
+                    value={previewGuildId || "__none__"}
+                    onValueChange={(v) => {
+                      const id = v === "__none__" ? "" : v
+                      setPreviewGuildId(id)
+                      setPreviewChannelId("")
+                    }}
+                  >
+                    <SelectTrigger id={`preview-guild-${templateId}`}>
+                      <SelectValue placeholder="Выберите сервер" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      {guilds.map((g) => (
+                        <SelectItem key={g.id} value={g.id}>
+                          {g.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor={`preview-ch-${templateId}`}>Канал</Label>
+                  <Select
+                    value={previewChannelId || "__none__"}
+                    onValueChange={(v) => setPreviewChannelId(v === "__none__" ? "" : v)}
+                    disabled={!previewGuildId.trim() || loadingPreviewChannels}
+                  >
+                    <SelectTrigger id={`preview-ch-${templateId}`}>
+                      <SelectValue placeholder={loadingPreviewChannels ? "Загрузка…" : "Канал"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      {previewChannelsList.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          #{c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {loadingPreviewChannels && previewGuildId ? (
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Загрузка списка каналов…</p>
+              ) : null}
+              {previewPanelError ? (
+                <p className="text-sm text-[hsl(var(--destructive))]">{previewPanelError}</p>
+              ) : null}
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => void handlePreviewInDiscord()}
+                disabled={previewSending || !previewGuildId.trim() || !previewChannelId.trim()}
+              >
+                {previewSending ? "Отправка…" : "Отправить тест в канал"}
+              </Button>
+            </div>
 
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
