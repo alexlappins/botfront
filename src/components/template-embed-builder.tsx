@@ -161,16 +161,45 @@ export function parseEmbedJsonToForm(raw: string | null | undefined): EmbedFormS
   }
 }
 
-function embedHasVisibleContent(e: Record<string, unknown>): boolean {
+/**
+ * Есть ли в эмбеде то, что Discord/бэк считают телом сообщения.
+ * Только color (и/или timestamp) — нет: бэк превью отвечает 400 «немає що відправити».
+ */
+function embedRecordHasRenderableBody(e: Record<string, unknown>): boolean {
   if (typeof e.title === "string" && e.title.trim()) return true
   if (typeof e.description === "string" && e.description.trim()) return true
   if (typeof e.url === "string" && e.url.trim()) return true
-  if (e.timestamp != null) return true
-  if (e.color != null) return true
-  if (e.footer && typeof e.footer === "object") return true
-  if (e.thumbnail || e.image) return true
-  if (Array.isArray(e.fields) && e.fields.length > 0) return true
+
+  const fields = Array.isArray(e.fields) ? e.fields : []
+  if (
+    fields.some((f) => {
+      if (!f || typeof f !== "object") return false
+      const o = f as { name?: string; value?: string }
+      return Boolean(o.name?.trim() || o.value?.trim())
+    })
+  )
+    return true
+
+  if (pickUrl(e.thumbnail).trim() || pickUrl(e.image).trim()) return true
+
+  const footer = e.footer
+  if (footer && typeof footer === "object") {
+    const fo = footer as { text?: string; icon_url?: string; iconURL?: string }
+    if (fo.text?.trim()) return true
+    if ((fo.icon_url || fo.iconURL || "").toString().trim()) return true
+  }
+
+  const author = e.author
+  if (author && typeof author === "object") {
+    const n = (author as { name?: string }).name
+    if (typeof n === "string" && n.trim()) return true
+  }
+
   return false
+}
+
+function embedHasVisibleContent(e: Record<string, unknown>): boolean {
+  return embedRecordHasRenderableBody(e)
 }
 
 /** Возвращает JSON для API или undefined, если эмбед пустой (бэк не шлёт пустой embed). */

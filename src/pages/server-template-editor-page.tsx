@@ -3,11 +3,15 @@ import { Link, useParams } from "react-router-dom"
 import { AdminHeader } from "@/components/admin-header"
 import {
   emptyEmbedForm,
-  parseEmbedJsonToForm,
   serializeFormToEmbedJson,
   type EmbedFormState,
   TemplateEmbedBuilder,
 } from "@/components/template-embed-builder"
+import {
+  serializeSelfRoleComponents,
+  type SelfRoleButtonDraft,
+  TemplateSelfRoleButtonsEditor,
+} from "@/components/template-self-role-buttons"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -37,10 +41,7 @@ import {
   getChannels,
   getGuildRoles,
   createTemplateMessage,
-  updateTemplateMessage,
-  deleteTemplateMessage,
   previewTemplateMessage,
-  createTemplateReactionRole,
   deleteTemplateReactionRole,
   createTemplateLogChannel,
   deleteTemplateLogChannel,
@@ -56,7 +57,8 @@ import {
   type GuildRole,
   LOG_TYPES,
 } from "@/lib/api"
-import { MessageSquare, Smile, ScrollText, Pencil, Trash2, Plus } from "lucide-react"
+import { TemplateMessageSelfRoleCard } from "@/components/template-message-self-role-card"
+import { MessageSquare, ScrollText, Plus, Pencil, Trash2 } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
   joinLeave: "Вход/выход",
@@ -125,61 +127,6 @@ function ChannelNameField({
   )
 }
 
-function RoleNameField({
-  id,
-  value,
-  onChange,
-  roles,
-  liveRoles = [],
-  placeholder = "например Member",
-}: {
-  id: string
-  value: string
-  onChange: (v: string) => void
-  roles: TemplateRole[]
-  /** Роли с живого сервера: GET /api/guilds/:guildId/roles */
-  liveRoles?: GuildRole[]
-  placeholder?: string
-}) {
-  const listId = `${id}-role-datalist`
-  const seen = new Set<string>()
-  const options: { key: string; name: string }[] = []
-  for (const r of roles) {
-    if (!seen.has(r.name)) {
-      seen.add(r.name)
-      options.push({ key: `t-${r.id}`, name: r.name })
-    }
-  }
-  for (const r of liveRoles) {
-    if (!seen.has(r.name)) {
-      seen.add(r.name)
-      options.push({ key: `g-${r.id}`, name: r.name })
-    }
-  }
-  const hint =
-    liveRoles.length > 0
-      ? "Имена ролей с выбранного сервера. Можно ввести вручную — как на сервере после установки Discord-шаблона."
-      : "Имя роли как на сервере. Выберите сервер выше для подсказок из Discord или введите вручную."
-  return (
-    <div className="grid gap-2">
-      <Input
-        id={id}
-        list={listId}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        autoComplete="off"
-      />
-      <datalist id={listId}>
-        {options.map((o) => (
-          <option key={o.key} value={o.name} />
-        ))}
-      </datalist>
-      <p className="text-xs text-[hsl(var(--muted-foreground))]">{hint}</p>
-    </div>
-  )
-}
-
 export function ServerTemplateEditorPage() {
   const { id } = useParams<{ id: string }>()
   const { user, loading: authLoading } = useAuth()
@@ -192,7 +139,6 @@ export function ServerTemplateEditorPage() {
   const [metaDiscordUrl, setMetaDiscordUrl] = useState("")
   const [savingMeta, setSavingMeta] = useState(false)
   const [addMessageOpen, setAddMessageOpen] = useState(false)
-  const [addRROpen, setAddRROpen] = useState(false)
   const [addLogChannelOpen, setAddLogChannelOpen] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -430,28 +376,17 @@ export function ServerTemplateEditorPage() {
 
         <SectionMessages
           templateId={id}
+          channels={template.channels}
+          roles={template.roles}
           messages={template.messages}
+          reactionRoles={template.reactionRoles}
           liveChannels={liveChannels}
+          liveRoles={liveRoles}
           guilds={guilds}
           previewDefaultGuildId={sourceGuildId}
           onUpdate={load}
           addOpen={addMessageOpen}
           setAddOpen={setAddMessageOpen}
-          formError={formError}
-          setFormError={setFormError}
-          submitting={submitting}
-          setSubmitting={setSubmitting}
-        />
-        <SectionReactionRoles
-          templateId={id}
-          reactionRoles={template.reactionRoles}
-          channels={[]}
-          roles={[]}
-          liveChannels={liveChannels}
-          liveRoles={liveRoles}
-          onUpdate={load}
-          addOpen={addRROpen}
-          setAddOpen={setAddRROpen}
           formError={formError}
           setFormError={setFormError}
           submitting={submitting}
@@ -512,28 +447,33 @@ export function ServerTemplateEditorPage() {
 const msgTextareaClass =
   "flex min-h-[120px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm ring-offset-[hsl(var(--background))] placeholder:text-[hsl(var(--muted-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2"
 
-function templateMessagePreviewLine(m: TemplateMessage): string {
-  const ch = m.channelName
-  if (m.embedJson?.trim()) {
-    try {
-      const p = JSON.parse(m.embedJson) as { embeds?: { title?: string }[] } & { title?: string }
-      const e = p.embeds?.[0] ?? p
-      const t = e && typeof e === "object" && "title" in e ? (e as { title?: string }).title : undefined
-      if (typeof t === "string" && t.trim()) return `${ch} · ${t.trim()}`
-      return `${ch} · эмбед`
-    } catch {
-      return `${ch} · эмбед`
-    }
-  }
-  const c = m.content?.trim()
-  if (c) return `${ch} · ${c.length > 48 ? `${c.slice(0, 48)}…` : c}`
-  return ch
+function messageOrderNorm(m: TemplateMessage): number {
+  return m.messageOrder ?? 0
+}
+
+function reactionsForMessage(m: TemplateMessage, all: TemplateReactionRole[]): TemplateReactionRole[] {
+  return all.filter(
+    (rr) => rr.channelName === m.channelName && (rr.messageOrder ?? 0) === messageOrderNorm(m)
+  )
+}
+
+function orphanReactionRoles(messages: TemplateMessage[], all: TemplateReactionRole[]): TemplateReactionRole[] {
+  return all.filter(
+    (rr) =>
+      !messages.some(
+        (m) => rr.channelName === m.channelName && (rr.messageOrder ?? 0) === messageOrderNorm(m)
+      )
+  )
 }
 
 function SectionMessages({
   templateId,
+  channels,
+  roles,
   messages,
+  reactionRoles,
   liveChannels,
+  liveRoles,
   guilds,
   previewDefaultGuildId,
   onUpdate,
@@ -545,10 +485,13 @@ function SectionMessages({
   setSubmitting,
 }: {
   templateId: string
+  channels: TemplateChannel[]
+  roles: TemplateRole[]
   messages: TemplateMessage[]
+  reactionRoles: TemplateReactionRole[]
   liveChannels: Channel[]
+  liveRoles: GuildRole[]
   guilds: Guild[]
-  /** Сервер из блока «Подсказки» — подставляется в превью по умолчанию */
   previewDefaultGuildId: string
   onUpdate: () => void
   addOpen: boolean
@@ -558,12 +501,12 @@ function SectionMessages({
   submitting: boolean
   setSubmitting: (v: boolean) => void
 }) {
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [channelName, setChannelName] = useState("")
   const [content, setContent] = useState("")
   const [messageOrder, setMessageOrder] = useState("")
   const [embedForm, setEmbedForm] = useState<EmbedFormState>(() => emptyEmbedForm())
-  const [msgUiTab, setMsgUiTab] = useState<"message" | "embed">("message")
+  const [msgUiTab, setMsgUiTab] = useState<"message" | "embed" | "buttons">("message")
+  const [selfRoleButtons, setSelfRoleButtons] = useState<SelfRoleButtonDraft[]>([])
   const [previewGuildId, setPreviewGuildId] = useState("")
   const [previewChannelId, setPreviewChannelId] = useState("")
   const [previewChannelsList, setPreviewChannelsList] = useState<Channel[]>([])
@@ -571,13 +514,20 @@ function SectionMessages({
   const [previewPanelError, setPreviewPanelError] = useState<string | null>(null)
   const [previewSending, setPreviewSending] = useState(false)
 
+  const sortedMessages = [...messages].sort((a, b) => {
+    const ca = a.channelName.localeCompare(b.channelName, "ru")
+    if (ca !== 0) return ca
+    return messageOrderNorm(a) - messageOrderNorm(b)
+  })
+  const orphans = orphanReactionRoles(messages, reactionRoles)
+
   function resetFormForCreate() {
-    setEditingId(null)
     setChannelName("")
     setContent("")
     setMessageOrder("")
     setEmbedForm(emptyEmbedForm())
     setMsgUiTab("message")
+    setSelfRoleButtons([])
     setPreviewGuildId("")
     setPreviewChannelId("")
     setPreviewChannelsList([])
@@ -590,21 +540,6 @@ function SectionMessages({
     resetFormForCreate()
     setFormError(null)
     if (previewDefaultGuildId) setPreviewGuildId(previewDefaultGuildId)
-    setAddOpen(true)
-  }
-
-  function openEdit(m: TemplateMessage) {
-    setEditingId(m.id)
-    setChannelName(m.channelName)
-    setContent(m.content ?? "")
-    setMessageOrder(m.messageOrder != null ? String(m.messageOrder) : "")
-    setEmbedForm(parseEmbedJsonToForm(m.embedJson))
-    setMsgUiTab(m.embedJson?.trim() ? "embed" : "message")
-    setFormError(null)
-    setPreviewGuildId(previewDefaultGuildId || "")
-    setPreviewChannelId("")
-    setPreviewChannelsList([])
-    setPreviewPanelError(null)
     setAddOpen(true)
   }
 
@@ -637,10 +572,13 @@ function SectionMessages({
 
   async function handlePreviewInDiscord() {
     const embedJsonStr = serializeFormToEmbedJson(embedForm)
+    const componentsJsonStr = serializeSelfRoleComponents(selfRoleButtons)
     const hasContent = Boolean(content.trim())
-    const hasEmbed = embedJsonStr != null
-    if (!hasContent && !hasEmbed) {
-      setPreviewPanelError("Нужен текст сообщения или заполненный эмбед")
+
+    if (!hasContent && !embedJsonStr && !componentsJsonStr) {
+      setPreviewPanelError(
+        "Нужен текст, эмбед с содержимым или кнопки авторолей. Одного цвета полосы недостаточно — API превью вернёт 400."
+      )
       return
     }
     if (!previewGuildId.trim() || !previewChannelId.trim()) {
@@ -653,7 +591,8 @@ function SectionMessages({
       await previewTemplateMessage(previewGuildId.trim(), {
         channelId: previewChannelId.trim(),
         content: hasContent ? content.trim() : undefined,
-        embedJson: hasEmbed ? embedJsonStr : undefined,
+        embedJson: embedJsonStr ?? undefined,
+        componentsJson: componentsJsonStr ?? undefined,
       })
     } catch (e) {
       setPreviewPanelError(e instanceof ApiError ? e.message : "Не удалось отправить превью")
@@ -670,14 +609,26 @@ function SectionMessages({
     }
   }
 
-  async function handleSubmit() {
+  async function handleDeleteOrphanReaction(rrId: string) {
+    if (!confirm("Удалить эту привязку реакции из шаблона?")) return
+    try {
+      await deleteTemplateReactionRole(templateId, rrId)
+      onUpdate()
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function handleSubmitCreate() {
     const ch = channelName.trim()
     if (!ch) return
     const embedJsonStr = serializeFormToEmbedJson(embedForm)
+    const componentsJsonStr = serializeSelfRoleComponents(selfRoleButtons)
     const hasContent = Boolean(content.trim())
     const hasEmbed = embedJsonStr != null
-    if (!hasContent && !hasEmbed) {
-      setFormError("Укажите текст сообщения (content) или заполните эмбед")
+    const hasComponents = componentsJsonStr != null
+    if (!hasContent && !hasEmbed && !hasComponents) {
+      setFormError("Укажите текст, эмбед или кнопки авторолей")
       return
     }
     setFormError(null)
@@ -690,23 +641,16 @@ function SectionMessages({
         if (Number.isFinite(n)) order = Math.floor(n)
       }
 
-      const embedJsonOut = hasEmbed ? embedJsonStr : editingId ? "" : undefined
+      const embedJsonOut = hasEmbed ? embedJsonStr : undefined
+      const componentsJsonOut = hasComponents ? componentsJsonStr : undefined
 
-      if (editingId) {
-        await updateTemplateMessage(templateId, editingId, {
-          channelName: ch,
-          messageOrder: order,
-          content: hasContent ? content.trim() : undefined,
-          embedJson: embedJsonOut,
-        })
-      } else {
-        await createTemplateMessage(templateId, {
-          channelName: ch,
-          messageOrder: order,
-          content: hasContent ? content.trim() : undefined,
-          embedJson: embedJsonOut,
-        })
-      }
+      await createTemplateMessage(templateId, {
+        channelName: ch,
+        messageOrder: order,
+        content: hasContent ? content.trim() : undefined,
+        embedJson: embedJsonOut,
+        componentsJson: componentsJsonOut,
+      })
       handleDialogOpenChange(false)
       onUpdate()
     } catch (e) {
@@ -716,61 +660,87 @@ function SectionMessages({
     }
   }
 
-  async function handleDelete(messageId: string) {
-    if (!confirm("Удалить сообщение из шаблона?")) return
-    try {
-      await deleteTemplateMessage(templateId, messageId)
-      onUpdate()
-    } catch {}
-  }
-
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-row items-center justify-between gap-3">
         <div>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Сообщения
+            Автороли
           </CardTitle>
           <CardDescription>
-            Канал и порядок — всегда в диалоге; текст сообщения и эмбед разнесены по вкладкам (как в ProBot). Подсказки имён каналов — из «Сервер для подсказок».
+            Одна карточка = одно сообщение после установки: канал, порядок в канале, текст/эмбед, кнопки (
+            <code className="text-xs">componentsJson</code>) и реакции → роли для этого же сообщения. Бот сопоставит{" "}
+            <code className="text-xs">channelName</code> + <code className="text-xs">messageOrder</code> с реальным
+            сообщением.
           </CardDescription>
         </div>
-        <Button size="sm" onClick={openCreate}>
+        <Button size="sm" onClick={openCreate} className="shrink-0">
           <Plus className="h-4 w-4 mr-1" />
-          Добавить
+          Добавить сообщение
         </Button>
       </CardHeader>
-      <CardContent>
-        {messages.length === 0 ? (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет сообщений</p>
+      <CardContent className="space-y-6">
+        {sortedMessages.length === 0 ? (
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Нет сообщений. Нажмите «Добавить сообщение» — затем настройте контент, кнопки или реакции в карточке.
+          </p>
         ) : (
-          <ul className="space-y-2">
-            {messages.map((m) => (
-              <li
+          <div className="space-y-6">
+            {sortedMessages.map((m) => (
+              <TemplateMessageSelfRoleCard
                 key={m.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded border border-[hsl(var(--border))] px-3 py-2 text-sm"
-              >
-                <span className="min-w-0 break-words">{templateMessagePreviewLine(m)}</span>
-                <div className="flex shrink-0 gap-1">
-                  <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(m.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </li>
+                templateId={templateId}
+                message={m}
+                templateChannels={channels}
+                templateRoles={roles}
+                liveChannels={liveChannels}
+                liveRoles={liveRoles}
+                guilds={guilds}
+                previewDefaultGuildId={previewDefaultGuildId}
+                reactionRoles={reactionsForMessage(m, reactionRoles)}
+                onUpdate={onUpdate}
+              />
             ))}
-          </ul>
+          </div>
         )}
+
+        {orphans.length > 0 ? (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
+            <p className="font-medium text-amber-200">Привязки реакций без сообщения в шаблоне</p>
+            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+              Для канала и порядка нет записи в списке выше. Добавьте сообщение с тем же каналом и messageOrder или удалите
+              лишние привязки через API.
+            </p>
+            <ul className="mt-2 space-y-1 text-xs text-amber-100/90">
+              {orphans.map((o) => (
+                <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 font-mono">
+                  <span>
+                    {o.channelName} · order {o.messageOrder ?? 0} · {o.emojiKey} → {o.roleName}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-amber-200 hover:text-[hsl(var(--destructive))]"
+                    onClick={() => void handleDeleteOrphanReaction(o.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </CardContent>
       <Dialog open={addOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Редактировать сообщение" : "Добавить сообщение"}</DialogTitle>
+            <DialogTitle>Добавить сообщение</DialogTitle>
             <DialogDescription>
-              Вкладки «Сообщение» и «Эмбед». Эмбед в API — <code className="text-xs">{"{ \"embeds\": [ … ] }"}</code>. Отправитель — бот, блок author в JSON не задаётся.
+              Текст, эмбед и кнопки авторолей — одно сообщение шаблона. Эмбед: <code className="text-xs">{"{ \"embeds\": [ … ] }"}</code>
+              . Кнопки: <code className="text-xs">components</code> Discord (Action Row + кнопки с{" "}
+              <code className="text-xs">rr/give/{"{{"}роль{"}}"})</code> и т.д.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
@@ -781,7 +751,7 @@ function SectionMessages({
                   id={`msg-ch-${templateId}`}
                   value={channelName}
                   onChange={setChannelName}
-                  channels={[]}
+                  channels={channels}
                   liveChannels={liveChannels}
                 />
               </div>
@@ -797,12 +767,12 @@ function SectionMessages({
               </div>
             </div>
 
-            <div className="flex rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-1 gap-1">
+            <div className="flex flex-wrap rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-1 gap-1">
               <button
                 type="button"
                 onClick={() => setMsgUiTab("message")}
                 className={cn(
-                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex-1 min-w-[100px] rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   msgUiTab === "message"
                     ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
                     : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
@@ -814,13 +784,25 @@ function SectionMessages({
                 type="button"
                 onClick={() => setMsgUiTab("embed")}
                 className={cn(
-                  "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "flex-1 min-w-[100px] rounded-md px-3 py-2 text-sm font-medium transition-colors",
                   msgUiTab === "embed"
                     ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
                     : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                 )}
               >
                 Эмбед
+              </button>
+              <button
+                type="button"
+                onClick={() => setMsgUiTab("buttons")}
+                className={cn(
+                  "flex-1 min-w-[100px] rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  msgUiTab === "buttons"
+                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
+                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+                )}
+              >
+                Кнопки
               </button>
             </div>
 
@@ -839,15 +821,17 @@ function SectionMessages({
                   Можно оставить только текст без эмбеда, или только эмбед без текста — или оба сразу.
                 </p>
               </div>
-            ) : (
+            ) : msgUiTab === "embed" ? (
               <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />
+            ) : (
+              <TemplateSelfRoleButtonsEditor buttons={selfRoleButtons} onChange={setSelfRoleButtons} />
             )}
 
             <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-3">
               <div>
                 <p className="text-sm font-medium">Превью в Discord</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Отправляет текущий черновик в канал (без сохранения шаблона). Нужны права бота на запись в канал.
+                  Отправляет текущий черновик в канал (без сохранения шаблона). Нужны права бота на запись в канал. В эмбеде должно быть видимое содержимое (не только цвет полосы) — иначе API вернёт 400.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -917,146 +901,9 @@ function SectionMessages({
             <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>
               Отмена
             </Button>
-            <Button onClick={handleSubmit} disabled={submitting || !channelName.trim()}>
-              {submitting ? "Сохранение…" : editingId ? "Сохранить" : "Добавить"}
+            <Button onClick={() => void handleSubmitCreate()} disabled={submitting || !channelName.trim()}>
+              {submitting ? "Добавление…" : "Добавить"}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  )
-}
-
-function SectionReactionRoles({
-  templateId,
-  reactionRoles,
-  channels,
-  roles,
-  liveChannels,
-  liveRoles,
-  onUpdate,
-  addOpen,
-  setAddOpen,
-  formError,
-  setFormError,
-  submitting,
-  setSubmitting,
-}: {
-  templateId: string
-  reactionRoles: TemplateReactionRole[]
-  channels: TemplateChannel[]
-  roles: TemplateRole[]
-  liveChannels: Channel[]
-  liveRoles: GuildRole[]
-  onUpdate: () => void
-  addOpen: boolean
-  setAddOpen: (v: boolean) => void
-  formError: string | null
-  setFormError: (v: string | null) => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-}) {
-  const [channelName, setChannelName] = useState("")
-  const [emojiKey, setEmojiKey] = useState("")
-  const [roleName, setRoleName] = useState("")
-
-  async function handleAdd() {
-    const ch = channelName.trim()
-    const em = emojiKey.trim()
-    const r = roleName.trim()
-    if (!ch || !em || !r) return
-    setFormError(null)
-    setSubmitting(true)
-    try {
-      await createTemplateReactionRole(templateId, { channelName: ch, emojiKey: em, roleName: r })
-      setChannelName("")
-      setEmojiKey("")
-      setRoleName("")
-      setAddOpen(false)
-      onUpdate()
-    } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleDelete(rrId: string) {
-    if (!confirm("Удалить привязку?")) return
-    try {
-      await deleteTemplateReactionRole(templateId, rrId)
-      onUpdate()
-    } catch {}
-  }
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            <Smile className="h-5 w-5" />
-            Автороли
-          </CardTitle>
-          <CardDescription>
-            Реакция → роль. Имена канала и роли можно взять из блока «Подсказки с живого сервера» или ввести вручную.
-          </CardDescription>
-        </div>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
-          <Plus className="h-4 w-4 mr-1" />
-          Добавить
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {reactionRoles.length === 0 ? (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет привязок</p>
-        ) : (
-          <ul className="space-y-2">
-            {reactionRoles.map((rr) => (
-              <li key={rr.id} className="flex items-center justify-between rounded border border-[hsl(var(--border))] px-3 py-2 text-sm">
-                <span>{rr.channelName} · {rr.emojiKey} → {rr.roleName}</span>
-                <Button size="sm" variant="ghost" className="text-[hsl(var(--destructive))]" onClick={() => handleDelete(rr.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardContent>
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Добавить автороль</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor={`rr-ch-${templateId}`}>Канал (имя) *</Label>
-              <ChannelNameField
-                id={`rr-ch-${templateId}`}
-                value={channelName}
-                onChange={setChannelName}
-                channels={channels}
-                liveChannels={liveChannels}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label>Эмодзи (emojiKey) *</Label>
-              <Input value={emojiKey} onChange={(e) => setEmojiKey(e.target.value)} placeholder="✅ или name:id" />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor={`rr-role-${templateId}`}>Роль (имя) *</Label>
-              <RoleNameField
-                id={`rr-role-${templateId}`}
-                value={roleName}
-                onChange={setRoleName}
-                roles={roles}
-                liveRoles={liveRoles}
-              />
-            </div>
-            {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Отмена</Button>
-            <Button onClick={handleAdd} disabled={submitting || !channelName.trim() || !emojiKey.trim() || !roleName.trim()}>{submitting ? "Добавление…" : "Добавить"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1114,7 +961,9 @@ function SectionLogChannels({
     try {
       await deleteTemplateLogChannel(templateId, lcId)
       onUpdate()
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
 
   return (
