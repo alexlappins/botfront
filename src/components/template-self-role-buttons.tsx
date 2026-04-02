@@ -40,11 +40,11 @@ export function emptySelfRoleButton(): SelfRoleButtonDraft {
   }
 }
 
-const STYLE_OPTIONS: { value: 1 | 2 | 3 | 4; label: string }[] = [
-  { value: 1, label: "Основная (синяя)" },
-  { value: 2, label: "Вторичная (серая)" },
-  { value: 3, label: "Успех (зелёная)" },
-  { value: 4, label: "Опасность (красная)" },
+const STYLE_COLORS: { value: 1 | 2 | 3 | 4; color: string; label: string }[] = [
+  { value: 1, color: "#5865F2", label: "Синяя (Primary)" },
+  { value: 2, color: "#4E5058", label: "Серая (Secondary)" },
+  { value: 3, color: "#248046", label: "Зелёная (Success)" },
+  { value: 4, color: "#DA373C", label: "Красная (Danger)" },
 ]
 
 export function buildSelfRoleCustomId(mode: SelfRoleButtonMode, roleName: string): string {
@@ -181,9 +181,12 @@ export function parseSelfRoleComponents(raw: string | null | undefined): SelfRol
 export function TemplateSelfRoleButtonsEditor({
   buttons,
   onChange,
+  roleOptions,
 }: {
   buttons: SelfRoleButtonDraft[]
   onChange: (next: SelfRoleButtonDraft[]) => void
+  /** Если передан — показывает Select вместо Input для поля роли */
+  roleOptions?: { value: string; label: string }[]
 }) {
   function patchAt(i: number, p: Partial<SelfRoleButtonDraft>) {
     onChange(buttons.map((b, j) => (j === i ? { ...b, ...p } : b)))
@@ -255,12 +258,29 @@ export function TemplateSelfRoleButtonsEditor({
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs">Имя роли (в шаблоне)</Label>
-                <Input
-                  value={b.roleName}
-                  onChange={(e) => patchAt(i, { roleName: e.target.value })}
-                  placeholder="Например Member"
-                />
+                <Label className="text-xs">Роль</Label>
+                {roleOptions && roleOptions.length > 0 ? (
+                  <Select
+                    value={b.roleName || "__none__"}
+                    onValueChange={(v) => patchAt(i, { roleName: v === "__none__" ? "" : v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите роль" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      {roleOptions.map((r) => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={b.roleName}
+                    onChange={(e) => patchAt(i, { roleName: e.target.value })}
+                    placeholder="Например Member"
+                  />
+                )}
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs">Текст на кнопке</Label>
@@ -274,22 +294,24 @@ export function TemplateSelfRoleButtonsEditor({
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs">Цвет (style)</Label>
-                <Select
-                  value={String(b.style)}
-                  onValueChange={(v) => patchAt(i, { style: Number(v) as 1 | 2 | 3 | 4 })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STYLE_OPTIONS.map((o) => (
-                      <SelectItem key={o.value} value={String(o.value)}>
-                        {o.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-xs">Цвет кнопки</Label>
+                <div className="flex gap-2 items-center h-9">
+                  {STYLE_COLORS.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      title={s.label}
+                      onClick={() => patchAt(i, { style: s.value })}
+                      className="w-7 h-7 rounded-full border-2 transition-all"
+                      style={{
+                        backgroundColor: s.color,
+                        borderColor: b.style === s.value ? "white" : "transparent",
+                        transform: b.style === s.value ? "scale(1.15)" : "scale(1)",
+                        opacity: b.style === s.value ? 1 : 0.6,
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
               <div className="grid gap-1.5">
                 <Label className="text-xs">Эмодзи (опционально)</Label>

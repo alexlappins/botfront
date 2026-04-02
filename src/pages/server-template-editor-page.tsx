@@ -8,6 +8,7 @@ import {
   TemplateEmbedBuilder,
 } from "@/components/template-embed-builder"
 import {
+  parseSelfRoleComponents,
   serializeSelfRoleComponents,
   type SelfRoleButtonDraft,
   TemplateSelfRoleButtonsEditor,
@@ -41,6 +42,8 @@ import {
   getChannels,
   getGuildRoles,
   createTemplateMessage,
+  createTemplateReactionRole,
+  updateTemplateMessage,
   previewTemplateMessage,
   deleteTemplateReactionRole,
   createTemplateLogChannel,
@@ -174,10 +177,11 @@ export function ServerTemplateEditorPage() {
 
   useEffect(() => {
     getGuilds()
-      .then(setGuilds)
-      .catch(() => {
-        /* список гильдий опционален */
+      .then((g) => {
+        setGuilds(g)
+        if (g.length > 0) setSourceGuildId((prev) => prev || g[0].id)
       })
+      .catch(() => { /* список гильдий опционален */ })
   }, [])
 
   useEffect(() => {
@@ -377,11 +381,8 @@ export function ServerTemplateEditorPage() {
         <SectionMessages
           templateId={id}
           channels={template.channels}
-          roles={template.roles}
           messages={template.messages}
-          reactionRoles={template.reactionRoles}
           liveChannels={liveChannels}
-          liveRoles={liveRoles}
           guilds={guilds}
           previewDefaultGuildId={sourceGuildId}
           onUpdate={load}
@@ -391,6 +392,14 @@ export function ServerTemplateEditorPage() {
           setFormError={setFormError}
           submitting={submitting}
           setSubmitting={setSubmitting}
+        />
+        <SectionAutoRoles
+          templateId={id}
+          messages={template.messages}
+          roles={template.roles}
+          reactionRoles={template.reactionRoles}
+          liveRoles={liveRoles}
+          onUpdate={load}
         />
         <SectionLogChannels
           templateId={id}
@@ -451,12 +460,6 @@ function messageOrderNorm(m: TemplateMessage): number {
   return m.messageOrder ?? 0
 }
 
-function reactionsForMessage(m: TemplateMessage, all: TemplateReactionRole[]): TemplateReactionRole[] {
-  return all.filter(
-    (rr) => rr.channelName === m.channelName && (rr.messageOrder ?? 0) === messageOrderNorm(m)
-  )
-}
-
 function orphanReactionRoles(messages: TemplateMessage[], all: TemplateReactionRole[]): TemplateReactionRole[] {
   return all.filter(
     (rr) =>
@@ -469,11 +472,8 @@ function orphanReactionRoles(messages: TemplateMessage[], all: TemplateReactionR
 function SectionMessages({
   templateId,
   channels,
-  roles,
   messages,
-  reactionRoles,
   liveChannels,
-  liveRoles,
   guilds,
   previewDefaultGuildId,
   onUpdate,
@@ -486,11 +486,8 @@ function SectionMessages({
 }: {
   templateId: string
   channels: TemplateChannel[]
-  roles: TemplateRole[]
   messages: TemplateMessage[]
-  reactionRoles: TemplateReactionRole[]
   liveChannels: Channel[]
-  liveRoles: GuildRole[]
   guilds: Guild[]
   previewDefaultGuildId: string
   onUpdate: () => void
@@ -505,8 +502,7 @@ function SectionMessages({
   const [content, setContent] = useState("")
   const [messageOrder, setMessageOrder] = useState("")
   const [embedForm, setEmbedForm] = useState<EmbedFormState>(() => emptyEmbedForm())
-  const [msgUiTab, setMsgUiTab] = useState<"message" | "embed" | "buttons">("message")
-  const [selfRoleButtons, setSelfRoleButtons] = useState<SelfRoleButtonDraft[]>([])
+  const [msgUiTab, setMsgUiTab] = useState<"message" | "embed">("message")
   const [previewGuildId, setPreviewGuildId] = useState("")
   const [previewChannelId, setPreviewChannelId] = useState("")
   const [previewChannelsList, setPreviewChannelsList] = useState<Channel[]>([])
@@ -519,7 +515,6 @@ function SectionMessages({
     if (ca !== 0) return ca
     return messageOrderNorm(a) - messageOrderNorm(b)
   })
-  const orphans = orphanReactionRoles(messages, reactionRoles)
 
   function resetFormForCreate() {
     setChannelName("")
@@ -527,7 +522,6 @@ function SectionMessages({
     setMessageOrder("")
     setEmbedForm(emptyEmbedForm())
     setMsgUiTab("message")
-    setSelfRoleButtons([])
     setPreviewGuildId("")
     setPreviewChannelId("")
     setPreviewChannelsList([])
@@ -572,13 +566,9 @@ function SectionMessages({
 
   async function handlePreviewInDiscord() {
     const embedJsonStr = serializeFormToEmbedJson(embedForm)
-    const componentsJsonStr = serializeSelfRoleComponents(selfRoleButtons)
     const hasContent = Boolean(content.trim())
-
-    if (!hasContent && !embedJsonStr && !componentsJsonStr) {
-      setPreviewPanelError(
-        "Нужен текст, эмбед с содержимым или кнопки авторолей. Одного цвета полосы недостаточно — API превью вернёт 400."
-      )
+    if (!hasContent && !embedJsonStr) {
+      setPreviewPanelError("Нужен текст или эмбед. Одного цвета полосы недостаточно — API вернёт 400.")
       return
     }
     if (!previewGuildId.trim() || !previewChannelId.trim()) {
@@ -592,7 +582,6 @@ function SectionMessages({
         channelId: previewChannelId.trim(),
         content: hasContent ? content.trim() : undefined,
         embedJson: embedJsonStr ?? undefined,
-        componentsJson: componentsJsonStr ?? undefined,
       })
     } catch (e) {
       setPreviewPanelError(e instanceof ApiError ? e.message : "Не удалось отправить превью")
@@ -609,26 +598,14 @@ function SectionMessages({
     }
   }
 
-  async function handleDeleteOrphanReaction(rrId: string) {
-    if (!confirm("Удалить эту привязку реакции из шаблона?")) return
-    try {
-      await deleteTemplateReactionRole(templateId, rrId)
-      onUpdate()
-    } catch {
-      /* ignore */
-    }
-  }
-
   async function handleSubmitCreate() {
     const ch = channelName.trim()
-    if (!ch) return
+    if (!ch) { setFormError("Выберите канал"); return }
     const embedJsonStr = serializeFormToEmbedJson(embedForm)
-    const componentsJsonStr = serializeSelfRoleComponents(selfRoleButtons)
     const hasContent = Boolean(content.trim())
     const hasEmbed = embedJsonStr != null
-    const hasComponents = componentsJsonStr != null
-    if (!hasContent && !hasEmbed && !hasComponents) {
-      setFormError("Укажите текст, эмбед или кнопки авторолей")
+    if (!hasContent && !hasEmbed) {
+      setFormError("Укажите текст или эмбед")
       return
     }
     setFormError(null)
@@ -640,16 +617,11 @@ function SectionMessages({
         const n = Number(orderRaw)
         if (Number.isFinite(n)) order = Math.floor(n)
       }
-
-      const embedJsonOut = hasEmbed ? embedJsonStr : undefined
-      const componentsJsonOut = hasComponents ? componentsJsonStr : undefined
-
       await createTemplateMessage(templateId, {
         channelName: ch,
         messageOrder: order,
         content: hasContent ? content.trim() : undefined,
-        embedJson: embedJsonOut,
-        componentsJson: componentsJsonOut,
+        embedJson: hasEmbed ? embedJsonStr : undefined,
       })
       handleDialogOpenChange(false)
       onUpdate()
@@ -666,13 +638,10 @@ function SectionMessages({
         <div>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Автороли
+            Шаблоны сообщений
           </CardTitle>
           <CardDescription>
-            Одна карточка = одно сообщение после установки: канал, порядок в канале, текст/эмбед, кнопки (
-            <code className="text-xs">componentsJson</code>) и реакции → роли для этого же сообщения. Бот сопоставит{" "}
-            <code className="text-xs">channelName</code> + <code className="text-xs">messageOrder</code> с реальным
-            сообщением.
+            Сообщения, которые бот отправит в каналы после установки шаблона. Каждая карточка — одно сообщение: канал, порядок, текст/эмбед и кнопки авторолей.
           </CardDescription>
         </div>
         <Button size="sm" onClick={openCreate} className="shrink-0">
@@ -693,45 +662,14 @@ function SectionMessages({
                 templateId={templateId}
                 message={m}
                 templateChannels={channels}
-                templateRoles={roles}
                 liveChannels={liveChannels}
-                liveRoles={liveRoles}
                 guilds={guilds}
                 previewDefaultGuildId={previewDefaultGuildId}
-                reactionRoles={reactionsForMessage(m, reactionRoles)}
                 onUpdate={onUpdate}
               />
             ))}
           </div>
         )}
-
-        {orphans.length > 0 ? (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm">
-            <p className="font-medium text-amber-200">Привязки реакций без сообщения в шаблоне</p>
-            <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-              Для канала и порядка нет записи в списке выше. Добавьте сообщение с тем же каналом и messageOrder или удалите
-              лишние привязки через API.
-            </p>
-            <ul className="mt-2 space-y-1 text-xs text-amber-100/90">
-              {orphans.map((o) => (
-                <li key={o.id} className="flex flex-wrap items-center justify-between gap-2 font-mono">
-                  <span>
-                    {o.channelName} · order {o.messageOrder ?? 0} · {o.emojiKey} → {o.roleName}
-                  </span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-amber-200 hover:text-[hsl(var(--destructive))]"
-                    onClick={() => void handleDeleteOrphanReaction(o.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
       </CardContent>
       <Dialog open={addOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
@@ -746,14 +684,33 @@ function SectionMessages({
           <div className="grid gap-4 py-2">
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2 sm:col-span-2">
-                <Label htmlFor={`msg-ch-${templateId}`}>Канал (имя) *</Label>
-                <ChannelNameField
-                  id={`msg-ch-${templateId}`}
-                  value={channelName}
-                  onChange={setChannelName}
-                  channels={channels}
-                  liveChannels={liveChannels}
-                />
+                <Label>Канал *</Label>
+                {liveChannels.length > 0 ? (
+                  <Select
+                    value={channelName || "__none__"}
+                    onValueChange={(v) => setChannelName(v === "__none__" ? "" : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Выберите канал" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Выберите канал</SelectItem>
+                      {liveChannels
+                        .filter((c) => c.type === 0 || c.type === 5)
+                        .map((c) => (
+                          <SelectItem key={c.id} value={c.name}>#{c.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <ChannelNameField
+                    id={`msg-ch-${templateId}`}
+                    value={channelName}
+                    onChange={setChannelName}
+                    channels={channels}
+                    liveChannels={[]}
+                  />
+                )}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor={`msg-order-${templateId}`}>Порядок (messageOrder)</Label>
@@ -792,18 +749,6 @@ function SectionMessages({
               >
                 Эмбед
               </button>
-              <button
-                type="button"
-                onClick={() => setMsgUiTab("buttons")}
-                className={cn(
-                  "flex-1 min-w-[100px] rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  msgUiTab === "buttons"
-                    ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
-                    : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
-                )}
-              >
-                Кнопки
-              </button>
             </div>
 
             {msgUiTab === "message" ? (
@@ -817,14 +762,9 @@ function SectionMessages({
                   placeholder="Обычный текст Discord — показывается над карточкой эмбеда, если эмбед задан на вкладке «Эмбед»."
                   rows={6}
                 />
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Можно оставить только текст без эмбеда, или только эмбед без текста — или оба сразу.
-                </p>
               </div>
-            ) : msgUiTab === "embed" ? (
-              <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />
             ) : (
-              <TemplateSelfRoleButtonsEditor buttons={selfRoleButtons} onChange={setSelfRoleButtons} />
+              <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />
             )}
 
             <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-3">
@@ -1036,6 +976,264 @@ function SectionLogChannels({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </Card>
+  )
+}
+
+function buildMsgOptions(messages: TemplateMessage[]) {
+  return messages.map((m) => {
+    const order = m.messageOrder ?? 0
+    const key = `${m.channelName}:${order}`
+    let title = ""
+    if (m.embedJson) {
+      try {
+        const p = JSON.parse(m.embedJson) as { embeds?: { title?: string }[] }
+        const t = p.embeds?.[0]?.title
+        if (typeof t === "string" && t.trim()) title = t.trim()
+      } catch { /* ignore */ }
+    }
+    if (!title && m.content?.trim()) {
+      const c = m.content.trim()
+      title = c.length > 30 ? `${c.slice(0, 30)}…` : c
+    }
+    const label = title
+      ? `#${m.channelName} · ${order} · ${title}`
+      : `#${m.channelName} · порядок ${order}`
+    return { key, label, message: m }
+  })
+}
+
+function SectionAutoRoles({
+  templateId,
+  messages,
+  roles,
+  reactionRoles,
+  liveRoles,
+  onUpdate,
+}: {
+  templateId: string
+  messages: TemplateMessage[]
+  roles: TemplateRole[]
+  reactionRoles: TemplateReactionRole[]
+  liveRoles: GuildRole[]
+  onUpdate: () => void
+}) {
+  const [activeTab, setActiveTab] = useState<"reactions" | "buttons">("reactions")
+
+  // --- Реакции ---
+  const [msgKey, setMsgKey] = useState("")
+  const [emojiKey, setEmojiKey] = useState("")
+  const [roleName, setRoleName] = useState("")
+  const [adding, setAdding] = useState(false)
+  const [rrError, setRrError] = useState<string | null>(null)
+
+  // --- Кнопки ---
+  const [btnMsgId, setBtnMsgId] = useState("")
+  const [buttons, setButtons] = useState<SelfRoleButtonDraft[]>([])
+  const [savingButtons, setSavingButtons] = useState(false)
+  const [btnError, setBtnError] = useState<string | null>(null)
+
+  const msgOptions = buildMsgOptions(messages)
+
+  const roleOptions = [
+    ...liveRoles.map((r) => ({ value: r.name, label: r.name })),
+    ...roles
+      .filter((r) => !liveRoles.some((lr) => lr.name === r.name))
+      .map((r) => ({ value: r.name, label: r.name })),
+  ]
+
+  const orphans = orphanReactionRoles(messages, reactionRoles)
+
+  // Загружаем кнопки при смене выбранного сообщения
+  useEffect(() => {
+    if (!btnMsgId) { setButtons([]); return }
+    const msg = messages.find((m) => m.id === btnMsgId)
+    setButtons(msg ? parseSelfRoleComponents(msg.componentsJson) : [])
+  }, [btnMsgId, messages])
+
+  async function handleAddReaction() {
+    const em = emojiKey.trim()
+    const r = roleName.trim()
+    if (!msgKey || !em || !r) { setRrError("Заполните все поля"); return }
+    const colonIdx = msgKey.indexOf(":")
+    const channelName = msgKey.slice(0, colonIdx)
+    const messageOrder = Number(msgKey.slice(colonIdx + 1)) || 0
+    setAdding(true)
+    setRrError(null)
+    try {
+      await createTemplateReactionRole(templateId, { channelName, messageOrder, emojiKey: em, roleName: r })
+      setEmojiKey("")
+      setRoleName("")
+      onUpdate()
+    } catch (e) {
+      setRrError(e instanceof Error ? e.message : "Ошибка")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function handleDeleteRR(rrId: string) {
+    if (!confirm("Удалить эту привязку?")) return
+    try {
+      await deleteTemplateReactionRole(templateId, rrId)
+      onUpdate()
+    } catch { /* ignore */ }
+  }
+
+  async function handleSaveButtons() {
+    if (!btnMsgId) return
+    setBtnError(null)
+    setSavingButtons(true)
+    try {
+      const componentsJson = serializeSelfRoleComponents(buttons) ?? ""
+      await updateTemplateMessage(templateId, btnMsgId, { componentsJson })
+      onUpdate()
+    } catch (e) {
+      setBtnError(e instanceof Error ? e.message : "Ошибка сохранения")
+    } finally {
+      setSavingButtons(false)
+    }
+  }
+
+  const tabClass = (active: boolean) =>
+    cn(
+      "flex-1 min-w-[100px] rounded-md px-3 py-2 text-sm font-medium transition-colors",
+      active
+        ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow-sm"
+        : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
+    )
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ScrollText className="h-5 w-5" />
+          Автороли
+        </CardTitle>
+        <CardDescription>
+          Управляй реакциями и кнопками, которые выдают роли после установки шаблона.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Переключатель вкладок */}
+        <div className="flex flex-wrap rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-1 gap-1">
+          <button type="button" onClick={() => setActiveTab("reactions")} className={tabClass(activeTab === "reactions")}>
+            Реакции
+          </button>
+          <button type="button" onClick={() => setActiveTab("buttons")} className={tabClass(activeTab === "buttons")}>
+            Кнопки
+          </button>
+        </div>
+
+        {activeTab === "reactions" ? (
+          <>
+            {/* Список реакций */}
+            {reactionRoles.length === 0 ? (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет привязок реакций.</p>
+            ) : (
+              <ul className="space-y-2">
+                {reactionRoles.map((rr) => {
+                  const isOrphan = orphans.some((o) => o.id === rr.id)
+                  return (
+                    <li
+                      key={rr.id}
+                      className={cn(
+                        "flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm font-mono",
+                        isOrphan
+                          ? "border-amber-500/40 bg-amber-500/10"
+                          : "border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)]"
+                      )}
+                    >
+                      <span>
+                        #{rr.channelName} · {rr.messageOrder ?? 0} · {rr.emojiKey} → {rr.roleName}
+                        {isOrphan && <span className="ml-2 font-sans text-xs text-amber-300">нет сообщения</span>}
+                      </span>
+                      <Button type="button" size="sm" variant="ghost" className="text-[hsl(var(--destructive))] shrink-0" onClick={() => void handleDeleteRR(rr.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+
+            {/* Форма добавления реакции */}
+            <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-4">
+              <h4 className="text-sm font-medium flex items-center gap-2"><Plus className="h-4 w-4" />Добавить реакцию</h4>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2 sm:col-span-2">
+                  <Label>Сообщение</Label>
+                  {messages.length === 0 ? (
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">Сначала добавьте сообщения выше.</p>
+                  ) : (
+                    <Select value={msgKey || "__none__"} onValueChange={(v) => setMsgKey(v === "__none__" ? "" : v)}>
+                      <SelectTrigger><SelectValue placeholder="Выберите сообщение" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Не выбрано</SelectItem>
+                        {msgOptions.map((o) => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+                <div className="grid gap-2">
+                  <Label>Эмодзи</Label>
+                  <Input value={emojiKey} onChange={(e) => setEmojiKey(e.target.value)} placeholder="✅ или name:id" />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Роль</Label>
+                  <Select value={roleName || "__none__"} onValueChange={(v) => setRoleName(v === "__none__" ? "" : v)} disabled={roleOptions.length === 0}>
+                    <SelectTrigger><SelectValue placeholder={roleOptions.length === 0 ? "Нет ролей" : "Выберите роль"} /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      {roleOptions.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              {rrError && <p className="text-sm text-[hsl(var(--destructive))]">{rrError}</p>}
+              <Button onClick={() => void handleAddReaction()} disabled={adding || !msgKey || !emojiKey.trim() || !roleName.trim() || messages.length === 0}>
+                {adding ? "Добавление…" : "Добавить реакцию"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Выбор сообщения для кнопок */}
+            <div className="grid gap-2">
+              <Label>Сообщение</Label>
+              {messages.length === 0 ? (
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">Сначала добавьте сообщения выше.</p>
+              ) : (
+                <Select value={btnMsgId || "__none__"} onValueChange={(v) => setBtnMsgId(v === "__none__" ? "" : v)}>
+                  <SelectTrigger><SelectValue placeholder="Выберите сообщение для кнопок" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Не выбрано</SelectItem>
+                    {msgOptions.map((o) => <SelectItem key={o.message.id} value={o.message.id}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            {btnMsgId ? (
+              <>
+                <TemplateSelfRoleButtonsEditor
+                  buttons={buttons}
+                  onChange={setButtons}
+                  roleOptions={roleOptions.length > 0 ? roleOptions : undefined}
+                />
+                {btnError && <p className="text-sm text-[hsl(var(--destructive))]">{btnError}</p>}
+                <Button onClick={() => void handleSaveButtons()} disabled={savingButtons}>
+                  {savingButtons ? "Сохранение…" : "Сохранить кнопки"}
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                Выберите сообщение выше, чтобы редактировать кнопки авторолей.
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
     </Card>
   )
 }
