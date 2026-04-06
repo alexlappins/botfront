@@ -633,6 +633,9 @@ export type InstallCheckResult = {
 }
 
 export type InstallApplyResult = {
+  ok?: boolean
+  error?: string
+  errors?: string[]
   summary?: Record<string, number>
   skipped?: Record<string, string[]>
   warnings?: string[]
