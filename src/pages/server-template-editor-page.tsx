@@ -48,7 +48,14 @@ import {
   deleteTemplateReactionRole,
   createTemplateLogChannel,
   deleteTemplateLogChannel,
+  createTemplateEmoji,
+  deleteTemplateEmoji,
+  createTemplateSticker,
+  deleteTemplateSticker,
+  uploadFile,
   type ServerTemplateDetail,
+  type TemplateEmoji,
+  type TemplateSticker,
   type TemplateChannel,
   type TemplateMessage,
   type TemplateRole,
@@ -61,7 +68,7 @@ import {
   LOG_TYPES,
 } from "@/lib/api"
 import { TemplateMessageSelfRoleCard } from "@/components/template-message-self-role-card"
-import { MessageSquare, ScrollText, Plus, Pencil, Trash2 } from "lucide-react"
+import { MessageSquare, ScrollText, Plus, Pencil, Trash2, Smile, Sticker, Upload } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
   joinLeave: "Вход/выход",
@@ -399,6 +406,12 @@ export function ServerTemplateEditorPage() {
           roles={template.roles}
           reactionRoles={template.reactionRoles}
           liveRoles={liveRoles}
+          onUpdate={load}
+        />
+        <SectionEmojisStickers
+          templateId={id}
+          emojis={template.emojis ?? []}
+          stickers={template.stickers ?? []}
           onUpdate={load}
         />
         <SectionLogChannels
@@ -1232,6 +1245,267 @@ function SectionAutoRoles({
               </p>
             )}
           </>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Секция «Эмодзи и стикеры»
+// ════════════════════════════════════════════════════════════════════════════
+
+function SectionEmojisStickers({
+  templateId,
+  emojis,
+  stickers,
+  onUpdate,
+}: {
+  templateId: string
+  emojis: TemplateEmoji[]
+  stickers: TemplateSticker[]
+  onUpdate: () => void
+}) {
+  const [tab, setTab] = useState<"emojis" | "stickers">("emojis")
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // ——— Emoji upload ———
+  async function handleEmojiFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const name = file.name
+      .replace(/\.[^.]+$/, "")
+      .replace(/[^a-zA-Z0-9_]/g, "_")
+      .slice(0, 32)
+    if (!name) return
+    setError(null)
+    setUploading(true)
+    try {
+      const { url } = await uploadFile(file)
+      await createTemplateEmoji(templateId, { name, imageUrl: url })
+      onUpdate()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка загрузки эмодзи")
+    } finally {
+      setUploading(false)
+      e.target.value = ""
+    }
+  }
+
+  async function handleDeleteEmoji(emojiId: string) {
+    try {
+      await deleteTemplateEmoji(templateId, emojiId)
+      onUpdate()
+    } catch {
+      // silent
+    }
+  }
+
+  // ——— Sticker upload ———
+  const [stickerName, setStickerName] = useState("")
+  const [stickerTags, setStickerTags] = useState("😀")
+  const [stickerDesc, setStickerDesc] = useState("")
+
+  async function handleStickerFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const name = stickerName.trim() || file.name.replace(/\.[^.]+$/, "").slice(0, 30)
+    const tags = stickerTags.trim() || "😀"
+    if (!name) return
+    setError(null)
+    setUploading(true)
+    try {
+      const { url } = await uploadFile(file)
+      await createTemplateSticker(templateId, {
+        name,
+        tags,
+        imageUrl: url,
+        description: stickerDesc.trim() || null,
+      })
+      onUpdate()
+      setStickerName("")
+      setStickerDesc("")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ошибка загрузки стикера")
+    } finally {
+      setUploading(false)
+      e.target.value = ""
+    }
+  }
+
+  async function handleDeleteSticker(stickerId: string) {
+    try {
+      await deleteTemplateSticker(templateId, stickerId)
+      onUpdate()
+    } catch {
+      // silent
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Smile className="h-5 w-5" />
+          <CardTitle>Эмодзи и стикеры</CardTitle>
+        </div>
+        <CardDescription>
+          Загрузите изображения — при установке шаблона бот автоматически добавит их на сервер.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={tab === "emojis" ? "default" : "outline"}
+            onClick={() => setTab("emojis")}
+          >
+            <Smile className="h-4 w-4 mr-1" />
+            Эмодзи ({emojis.length})
+          </Button>
+          <Button
+            size="sm"
+            variant={tab === "stickers" ? "default" : "outline"}
+            onClick={() => setTab("stickers")}
+          >
+            <Sticker className="h-4 w-4 mr-1" />
+            Стикеры ({stickers.length})
+          </Button>
+        </div>
+
+        {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
+
+        {tab === "emojis" && (
+          <div className="space-y-3">
+            {emojis.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {emojis.map((em) => (
+                  <div
+                    key={em.id}
+                    className="group relative flex flex-col items-center gap-1 p-2 rounded-lg border bg-[hsl(var(--muted)/0.3)]"
+                  >
+                    <img
+                      src={em.imageUrl}
+                      alt={em.name}
+                      className="w-10 h-10 object-contain"
+                    />
+                    <span className="text-xs text-[hsl(var(--muted-foreground))] max-w-[80px] truncate">
+                      :{em.name}:
+                    </span>
+                    <button
+                      onClick={() => handleDeleteEmoji(em.id)}
+                      className="absolute -top-1 -right-1 hidden group-hover:flex w-5 h-5 items-center justify-center rounded-full bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div>
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <Button size="sm" variant="outline" asChild disabled={uploading}>
+                  <span>
+                    <Upload className="h-4 w-4 mr-1" />
+                    {uploading ? "Загрузка…" : "Загрузить эмодзи"}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/png,image/gif,image/webp,image/jpeg"
+                  className="hidden"
+                  onChange={handleEmojiFileSelect}
+                  disabled={uploading}
+                />
+              </label>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                PNG, GIF или WebP. Макс. 256 КБ, рекомендуется 128×128 px. Имя берётся из названия файла.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {tab === "stickers" && (
+          <div className="space-y-3">
+            {stickers.length > 0 && (
+              <div className="flex flex-wrap gap-3">
+                {stickers.map((st) => (
+                  <div
+                    key={st.id}
+                    className="group relative flex flex-col items-center gap-1 p-2 rounded-lg border bg-[hsl(var(--muted)/0.3)]"
+                  >
+                    <img
+                      src={st.imageUrl}
+                      alt={st.name}
+                      className="w-16 h-16 object-contain"
+                    />
+                    <span className="text-xs text-[hsl(var(--muted-foreground))] max-w-[100px] truncate">
+                      {st.name}
+                    </span>
+                    <button
+                      onClick={() => handleDeleteSticker(st.id)}
+                      className="absolute -top-1 -right-1 hidden group-hover:flex w-5 h-5 items-center justify-center rounded-full bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] text-xs"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="grid gap-2 max-w-sm">
+              <div className="grid gap-1">
+                <Label className="text-xs">Имя стикера</Label>
+                <Input
+                  value={stickerName}
+                  onChange={(e) => setStickerName(e.target.value)}
+                  placeholder="Имя стикера (2-30 символов)"
+                  maxLength={30}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label className="text-xs">Тег-эмодзи</Label>
+                <Input
+                  value={stickerTags}
+                  onChange={(e) => setStickerTags(e.target.value)}
+                  placeholder="😀"
+                  maxLength={32}
+                />
+              </div>
+              <div className="grid gap-1">
+                <Label className="text-xs">Описание (необязательно)</Label>
+                <Input
+                  value={stickerDesc}
+                  onChange={(e) => setStickerDesc(e.target.value)}
+                  placeholder="Описание стикера"
+                  maxLength={100}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="inline-flex items-center gap-2 cursor-pointer">
+                <Button size="sm" variant="outline" asChild disabled={uploading || !stickerName.trim()}>
+                  <span>
+                    <Upload className="h-4 w-4 mr-1" />
+                    {uploading ? "Загрузка…" : "Загрузить стикер"}
+                  </span>
+                </Button>
+                <input
+                  type="file"
+                  accept="image/png,image/apng"
+                  className="hidden"
+                  onChange={handleStickerFileSelect}
+                  disabled={uploading || !stickerName.trim()}
+                />
+              </label>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                PNG или APNG. Макс. 512 КБ, 320×320 px. Укажите имя и тег перед загрузкой.
+              </p>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>

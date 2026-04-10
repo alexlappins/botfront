@@ -337,6 +337,20 @@ export type TemplateLogChannel = {
   channelName: string
 }
 
+export type TemplateEmoji = {
+  id: string
+  name: string
+  imageUrl: string
+}
+
+export type TemplateSticker = {
+  id: string
+  name: string
+  tags: string
+  imageUrl: string
+  description?: string | null
+}
+
 export type ServerTemplateDetail = ServerTemplate & {
   roles: TemplateRole[]
   categories: TemplateCategory[]
@@ -344,6 +358,8 @@ export type ServerTemplateDetail = ServerTemplate & {
   messages: TemplateMessage[]
   reactionRoles: TemplateReactionRole[]
   logChannels: TemplateLogChannel[]
+  emojis: TemplateEmoji[]
+  stickers: TemplateSticker[]
 }
 
 const ST = `${API_BASE}/server-templates`
@@ -579,6 +595,36 @@ export async function updateTemplateLogChannel(
 export async function deleteTemplateLogChannel(templateId: string, lcId: string): Promise<void> {
   const res = await fetch(`${st(templateId)}/log-channels/${lcId}`, { ...fetchOptions, method: "DELETE" })
   if (!res.ok) throw new Error("Failed to delete log channel")
+}
+
+// ——— Emojis ———
+export async function createTemplateEmoji(
+  templateId: string,
+  body: { name: string; imageUrl: string }
+): Promise<TemplateEmoji> {
+  const res = await fetch(`${st(templateId)}/emojis`, { ...fetchOptions, method: "POST", body: JSON.stringify(body) })
+  if (!res.ok) throw new Error("Failed to create emoji")
+  return res.json()
+}
+
+export async function deleteTemplateEmoji(templateId: string, emojiId: string): Promise<void> {
+  const res = await fetch(`${st(templateId)}/emojis/${emojiId}`, { ...fetchOptions, method: "DELETE" })
+  if (!res.ok) throw new Error("Failed to delete emoji")
+}
+
+// ——— Stickers ———
+export async function createTemplateSticker(
+  templateId: string,
+  body: { name: string; tags: string; imageUrl: string; description?: string | null }
+): Promise<TemplateSticker> {
+  const res = await fetch(`${st(templateId)}/stickers`, { ...fetchOptions, method: "POST", body: JSON.stringify(body) })
+  if (!res.ok) throw new Error("Failed to create sticker")
+  return res.json()
+}
+
+export async function deleteTemplateSticker(templateId: string, stickerId: string): Promise<void> {
+  const res = await fetch(`${st(templateId)}/stickers/${stickerId}`, { ...fetchOptions, method: "DELETE" })
+  if (!res.ok) throw new Error("Failed to delete sticker")
 }
 
 export async function installServerTemplate(
