@@ -1274,11 +1274,14 @@ function SectionEmojisStickers({
   async function handleEmojiFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    const name = file.name
+    let name = file.name
       .replace(/\.[^.]+$/, "")
       .replace(/[^a-zA-Z0-9_]/g, "_")
+      .replace(/^_+|_+$/g, "")
       .slice(0, 32)
-    if (!name) return
+    // Discord требует минимум 2 символа в имени эмодзи
+    if (name.length < 2) name = `emoji_${name || Date.now().toString(36).slice(-4)}`
+    name = name.slice(0, 32)
     setError(null)
     setUploading(true)
     try {

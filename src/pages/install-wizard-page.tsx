@@ -37,6 +37,12 @@ export function InstallWizardPage() {
   const [installResult, setInstallResult] = useState<InstallApplyResult | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
 
+  const [waitSeconds, setWaitSeconds] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+  // ID серверов, которые были в списке на момент входа на Шаг 3.
+  // Всё, что появилось потом, — это "новые" серверы (пометим бейджем).
+  const [baselineGuildIds, setBaselineGuildIds] = useState<Set<string> | null>(null)
+
   useEffect(() => {
     Promise.all([getMyServerTemplates(), getGuilds()])
       .then(([templates, g]) => {
@@ -52,15 +58,67 @@ export function InstallWizardPage() {
       .finally(() => setLoading(false))
   }, [navigate, templateId])
 
-  async function refreshGuilds() {
+  async function refreshGuilds(opts?: { force?: boolean }) {
+    setRefreshing(true)
     try {
-      const g = await getGuilds()
+      const g = await getGuilds({ forceRefresh: opts?.force })
       setGuilds(g)
-      if (g.length === 1) setGuildId(g[0].id)
+      if (!guildId) {
+        // Если есть новые серверы (появились после входа на Шаг 3) — автовыбор первого нового
+        const newOnes = baselineGuildIds
+          ? g.filter((x) => !baselineGuildIds.has(x.id))
+          : []
+        if (newOnes.length === 1) setGuildId(newOnes[0].id)
+        else if (g.length === 1) setGuildId(g[0].id)
+      }
     } catch {
       // not critical
+    } finally {
+      setRefreshing(false)
     }
   }
+
+  // Фиксируем baseline серверов при входе на Шаг 3
+  useEffect(() => {
+    if (currentStep === 3 && baselineGuildIds === null) {
+      setBaselineGuildIds(new Set(guilds.map((g) => g.id)))
+    }
+  }, [currentStep, guilds, baselineGuildIds])
+
+  // Автообновление списка серверов на шаге 3.
+  // Пока не появилось новых серверов (относительно baseline) — force-refresh каждые 5 сек (обходит 60-сек кэш).
+  // Когда новый сервер появился — мягко обновляем каждые 10 сек.
+  useEffect(() => {
+    if (currentStep !== 3) return
+    if (installing || installResult) return
+
+    const hasNew = baselineGuildIds
+      ? guilds.some((g) => !baselineGuildIds.has(g.id))
+      : false
+    const intervalMs = hasNew ? 10000 : 5000
+    const interval = setInterval(() => {
+      refreshGuilds({ force: !hasNew })
+    }, intervalMs)
+    return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep, installing, installResult, guilds, baselineGuildIds])
+
+  // Счётчик ожидания — тикает пока не появились новые серверы (после baseline)
+  useEffect(() => {
+    if (currentStep !== 3 || installResult) {
+      setWaitSeconds(0)
+      return
+    }
+    const hasNew = baselineGuildIds
+      ? guilds.some((g) => !baselineGuildIds.has(g.id))
+      : false
+    if (hasNew) {
+      setWaitSeconds(0)
+      return
+    }
+    const tick = setInterval(() => setWaitSeconds((s) => s + 1), 1000)
+    return () => clearInterval(tick)
+  }, [currentStep, guilds, installResult, baselineGuildIds])
 
   async function handleInstall() {
     if (!guildId || !templateId) return
@@ -290,22 +348,84 @@ export function InstallWizardPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Не выбрано</SelectItem>
-                  {guilds.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.name}
-                    </SelectItem>
-                  ))}
+                  {[...guilds].sort((a, b) => {
+                    const aNew = baselineGuildIds && !baselineGuildIds.has(a.id)
+                    const bNew = baselineGuildIds && !baselineGuildIds.has(b.id)
+                    if (aNew && !bNew) return -1
+                    if (!aNew && bNew) return 1
+                    return a.name.localeCompare(b.name)
+                  }).map((g) => {
+                    const isNew = baselineGuildIds && !baselineGuildIds.has(g.id)
+                    return (
+                      <SelectItem key={g.id} value={g.id}>
+                        <span className="flex items-center gap-2">
+                          {g.name}
+                          {isNew && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold">
+                              НОВЫЙ
+                            </span>
+                          )}
+                        </span>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
-              {guilds.length === 0 && (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Серверов не найдено. Убедитесь, что бот добавлен на сервер, и{" "}
-                  <button onClick={refreshGuilds} className="underline hover:no-underline">
-                    обновите список
-                  </button>
-                  .
-                </p>
-              )}
+              {(() => {
+                const newCount = baselineGuildIds
+                  ? guilds.filter((g) => !baselineGuildIds.has(g.id)).length
+                  : 0
+                const hasNew = newCount > 0
+                const isEmpty = guilds.length === 0
+                if (installResult) return null
+
+                return (
+                  <div className="rounded-lg border border-dashed p-3 space-y-2 bg-[hsl(var(--muted)/0.3)]">
+                    {isEmpty ? (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--primary))]" />
+                        <span>Ждём появления сервера… ({waitSeconds} сек)</span>
+                      </div>
+                    ) : hasNew ? (
+                      <div className="flex items-center gap-2 text-sm text-[hsl(var(--primary))]">
+                        <span className="font-medium">✓ Новый сервер появился в списке</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--primary))]" />
+                        <span>Ждём появления нового сервера… ({waitSeconds} сек)</span>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                      После добавления бота серверу нужно время попасть в Discord API — обычно <b>до 2-3 минут</b>.
+                      Не закрывайте страницу, список обновится автоматически.
+                      {guilds.length > 1 && " Новые серверы помечены бейджем «НОВЫЙ» и подняты в начало списка."}
+                    </p>
+
+                    {waitSeconds > 30 && !hasNew && (
+                      <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                        Долго нет сервера? Убедитесь что:
+                        {" "}(1) бот действительно добавлен на нужный сервер;
+                        {" "}(2) у вас есть права администратора на этом сервере.
+                      </p>
+                    )}
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => refreshGuilds({ force: true })}
+                      disabled={refreshing}
+                    >
+                      {refreshing ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Обновление…</>
+                      ) : (
+                        "Обновить сейчас"
+                      )}
+                    </Button>
+                  </div>
+                )
+              })()}
             </div>
 
             <Button

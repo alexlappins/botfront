@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/dialog"
 import { AdminHeader } from "@/components/admin-header"
 import { useAuth } from "@/contexts/auth-context"
-import { getServerTemplates, createServerTemplate, type ServerTemplate } from "@/lib/api"
-import { Plus } from "lucide-react"
+import { getServerTemplates, createServerTemplate, deleteServerTemplate, type ServerTemplate } from "@/lib/api"
+import { Plus, Trash2 } from "lucide-react"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("ru-RU", {
@@ -37,6 +37,9 @@ export function ServerTemplatesListPage() {
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState<string | null>(null)
   const [createDiscordUrl, setCreateDiscordUrl] = useState("")
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ServerTemplate | null>(null)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -71,6 +74,21 @@ export function ServerTemplatesListPage() {
       setCreateError(e instanceof Error ? e.message : "Ошибка создания")
     } finally {
       setCreating(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeletingId(deleteTarget.id)
+    setDeleteError(null)
+    try {
+      await deleteServerTemplate(deleteTarget.id)
+      setTemplates((prev) => prev.filter((x) => x.id !== deleteTarget.id))
+      setDeleteTarget(null)
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Ошибка удаления")
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -148,6 +166,18 @@ export function ServerTemplatesListPage() {
                       >
                         Открыть редактор
                       </Link>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setDeleteError(null)
+                          setDeleteTarget(t)
+                        }}
+                        className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Удалить
+                      </Button>
                     </div>
                   </CardHeader>
                 </Card>
@@ -199,6 +229,33 @@ export function ServerTemplatesListPage() {
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Отмена</Button>
             <Button onClick={handleCreate} disabled={creating || !createName.trim()}>
               {creating ? "Создание…" : "Создать"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Удалить шаблон?</DialogTitle>
+            <DialogDescription>
+              Шаблон «{deleteTarget?.name}» будет удалён навсегда вместе со всеми сообщениями, авторолями и настройками.
+              Это действие необратимо.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <p className="text-sm text-[hsl(var(--destructive))]">{deleteError}</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={!!deletingId}>
+              Отмена
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={!!deletingId}
+            >
+              {deletingId ? "Удаление…" : "Удалить"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -60,8 +60,9 @@ export async function getMe(): Promise<User | null> {
   return res.json()
 }
 
-export async function getGuilds(): Promise<Guild[]> {
-  const res = await fetch(`${API_BASE}/guilds`, { ...fetchOptions, method: "GET" })
+export async function getGuilds(options?: { forceRefresh?: boolean }): Promise<Guild[]> {
+  const qs = options?.forceRefresh ? "?refresh=1" : ""
+  const res = await fetch(`${API_BASE}/guilds${qs}`, { ...fetchOptions, method: "GET" })
   if (!res.ok) await throwApiError(res, "Failed to fetch guilds")
   return res.json()
 }
