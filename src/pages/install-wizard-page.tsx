@@ -10,6 +10,7 @@ import {
   getGuilds,
   getMyServerTemplates,
   installServerTemplateWithResult,
+  liftBotRole,
   type Guild,
   type InstallApplyResult,
   type ServerTemplate,
@@ -36,6 +37,7 @@ export function InstallWizardPage() {
   const [installing, setInstalling] = useState(false)
   const [installResult, setInstallResult] = useState<InstallApplyResult | null>(null)
   const [installError, setInstallError] = useState<string | null>(null)
+  const [botRoleLifted, setBotRoleLifted] = useState<null | { ok: boolean; needsManual?: boolean }>(null)
 
   const [waitSeconds, setWaitSeconds] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
@@ -124,9 +126,18 @@ export function InstallWizardPage() {
     if (!guildId || !templateId) return
     setInstalling(true)
     setInstallError(null)
+    setBotRoleLifted(null)
     try {
       const result = await installServerTemplateWithResult(guildId, templateId)
       setInstallResult(result)
+      // Сразу пытаемся поднять роль бота через OAuth-токен пользователя.
+      // Если Discord не примет — покажем инструкцию сделать вручную.
+      try {
+        const lift = await liftBotRole(guildId)
+        setBotRoleLifted({ ok: lift.ok, needsManual: lift.needsManual })
+      } catch {
+        setBotRoleLifted({ ok: false, needsManual: true })
+      }
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
       setInstallError(e instanceof Error ? e.message : "Ошибка установки")
@@ -217,6 +228,38 @@ export function InstallWizardPage() {
               <ul className="list-disc pl-5 space-y-1 text-[hsl(var(--muted-foreground))]">
                 {installResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
               </ul>
+            </div>
+          )}
+
+          {/* Статус поднятия роли бота */}
+          {botRoleLifted?.ok && (
+            <div className="w-full text-left p-4 rounded-lg bg-[hsl(var(--primary)/0.1)] border border-[hsl(var(--primary)/0.3)] text-sm">
+              <p className="font-medium text-[hsl(var(--primary))]">
+                ✓ Роль бота автоматически поднята на сервере
+              </p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
+                Кнопки авторолей должны работать без дополнительных действий.
+              </p>
+            </div>
+          )}
+          {botRoleLifted?.needsManual && (
+            <div className="w-full text-left p-4 rounded-lg bg-[hsl(var(--muted))] border text-sm space-y-2">
+              <p className="font-medium">
+                ⚠ Нужно один раз поднять роль бота вручную
+              </p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                Discord не позволил обновить иерархию автоматически. Чтобы кнопки авторолей работали,
+                откройте в Discord:
+              </p>
+              <ol className="text-xs text-[hsl(var(--muted-foreground))] list-decimal pl-5 space-y-0.5">
+                <li><b>Настройки сервера</b> → <b>Роли</b></li>
+                <li>Найдите роль бота (обычно это имя бота, например «Level UP»)</li>
+                <li>Перетащите её <b>наверх</b>, выше ролей, которые должны выдаваться кнопками</li>
+                <li>Нажмите <b>Сохранить изменения</b></li>
+              </ol>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                Это делается один раз. После этого все кнопки авторолей будут работать.
+              </p>
             </div>
           )}
 

@@ -794,6 +794,24 @@ export async function installServerTemplateWithResult(
   return data
 }
 
+/**
+ * Пытается поднять роль бота на сервере автоматически через OAuth пользователя.
+ * Если Discord отклоняет — вернёт { ok: false, needsManual: true }.
+ */
+export async function liftBotRole(
+  guildId: string
+): Promise<{ ok: boolean; needsManual?: boolean; message?: string }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/lift-bot-role`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok && res.status !== 200) {
+    return { ok: false, needsManual: true, message: (data as { message?: string })?.message ?? "Ошибка" }
+  }
+  return data
+}
+
 export async function adminUpsertStoreTemplate(body: {
   templateId: string
   price: number
