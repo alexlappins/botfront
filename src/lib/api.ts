@@ -286,6 +286,10 @@ export type ServerTemplate = {
    * Ссылка на Discord‑шаблон сервера (если используется развёртывание через нативные шаблоны Discord)
    */
   discordTemplateUrl: string | null
+  /** URL иконки сервера (бот установит её при развёртывании) */
+  iconUrl: string | null
+  /** Включить статистику сервера (4 канала-счётчика) при установке */
+  enableServerStats?: boolean
   createdAt: string
 }
 
@@ -382,6 +386,7 @@ export async function createServerTemplate(body: {
   name: string
   description?: string | null
   discordTemplateUrl?: string | null
+  iconUrl?: string | null
 }): Promise<ServerTemplate> {
   const res = await fetch(ST, { ...fetchOptions, method: "POST", body: JSON.stringify(body) })
   if (!res.ok) throw new Error("Failed to create template")
@@ -390,7 +395,7 @@ export async function createServerTemplate(body: {
 
 export async function updateServerTemplate(
   id: string,
-  body: { name?: string; description?: string | null; discordTemplateUrl?: string | null }
+  body: { name?: string; description?: string | null; discordTemplateUrl?: string | null; iconUrl?: string | null; enableServerStats?: boolean }
 ): Promise<ServerTemplate> {
   const res = await fetch(st(id), { ...fetchOptions, method: "PATCH", body: JSON.stringify(body) })
   if (!res.ok) throw new Error("Failed to update template")

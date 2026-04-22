@@ -147,6 +147,9 @@ export function ServerTemplateEditorPage() {
   const [metaName, setMetaName] = useState("")
   const [metaDescription, setMetaDescription] = useState("")
   const [metaDiscordUrl, setMetaDiscordUrl] = useState("")
+  const [metaIconUrl, setMetaIconUrl] = useState<string | null>(null)
+  const [metaEnableServerStats, setMetaEnableServerStats] = useState(false)
+  const [uploadingIcon, setUploadingIcon] = useState(false)
   const [savingMeta, setSavingMeta] = useState(false)
   const [addMessageOpen, setAddMessageOpen] = useState(false)
   const [addLogChannelOpen, setAddLogChannelOpen] = useState(false)
@@ -171,6 +174,8 @@ export function ServerTemplateEditorPage() {
       setMetaName(data.name)
       setMetaDescription(data.description ?? "")
       setMetaDiscordUrl(data.discordTemplateUrl ?? "")
+      setMetaIconUrl(data.iconUrl ?? null)
+      setMetaEnableServerStats(Boolean(data.enableServerStats))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки")
     } finally {
@@ -218,6 +223,8 @@ export function ServerTemplateEditorPage() {
       setMetaName(template.name)
       setMetaDescription(template.description ?? "")
       setMetaDiscordUrl(template.discordTemplateUrl ?? "")
+      setMetaIconUrl(template.iconUrl ?? null)
+      setMetaEnableServerStats(Boolean(template.enableServerStats))
     }
   }, [template])
 
@@ -268,6 +275,48 @@ export function ServerTemplateEditorPage() {
 
   if (!template) return null
 
+  async function handleUploadIcon(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFormError(null)
+    setUploadingIcon(true)
+    try {
+      const { url } = await uploadFile(file)
+      const updated = await updateServerTemplate(id!, { iconUrl: url })
+      setMetaIconUrl(url)
+      setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Ошибка загрузки иконки")
+    } finally {
+      setUploadingIcon(false)
+      e.target.value = ""
+    }
+  }
+
+  async function handleToggleServerStats(next: boolean) {
+    setFormError(null)
+    setMetaEnableServerStats(next)
+    try {
+      const updated = await updateServerTemplate(id!, { enableServerStats: next })
+      setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
+    } catch (err) {
+      // откатываем на бэкапное значение
+      setMetaEnableServerStats(!next)
+      setFormError(err instanceof Error ? err.message : "Ошибка сохранения")
+    }
+  }
+
+  async function handleRemoveIcon() {
+    setFormError(null)
+    try {
+      const updated = await updateServerTemplate(id!, { iconUrl: null })
+      setMetaIconUrl(null)
+      setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Ошибка удаления иконки")
+    }
+  }
+
   async function handleSaveMeta() {
     setFormError(null)
     setSavingMeta(true)
@@ -276,6 +325,7 @@ export function ServerTemplateEditorPage() {
         name: metaName.trim(),
         description: metaDescription.trim() || null,
         discordTemplateUrl: metaDiscordUrl.trim() || null,
+        iconUrl: metaIconUrl,
       })
       setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
       setEditMetaOpen(false)
@@ -338,6 +388,83 @@ export function ServerTemplateEditorPage() {
               )}
             </div>
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
+          </CardContent>
+        </Card>
+
+        {/* Блок иконки сервера — бот установит её при развёртывании */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Иконка сервера</CardTitle>
+            <CardDescription>
+              Бот автоматически установит эту иконку при развёртывании шаблона на Discord-сервер.
+              PNG/JPG/GIF, рекомендуется 512×512 px, до 256 КБ.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-[hsl(var(--muted))] border flex items-center justify-center shrink-0">
+                {metaIconUrl ? (
+                  <img src={metaIconUrl} alt="Иконка" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xs text-[hsl(var(--muted-foreground))]">нет</span>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <Button size="sm" variant="outline" asChild disabled={uploadingIcon}>
+                    <span>{uploadingIcon ? "Загрузка…" : metaIconUrl ? "Заменить" : "Загрузить"}</span>
+                  </Button>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif,image/webp"
+                    className="hidden"
+                    onChange={handleUploadIcon}
+                    disabled={uploadingIcon}
+                  />
+                </label>
+                {metaIconUrl && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleRemoveIcon}
+                    className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Удалить
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Статистика сервера (клон ServerStats) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Статистика сервера</CardTitle>
+            <CardDescription>
+              При установке шаблона бот создаст в самом верху категорию «📊 Статистика сервера» с 4 голосовыми
+              каналами-счётчиками: <b>Всего / Люди / Боты / В сети</b>. Числа обновляются раз в 10 минут
+              (лимит Discord на переименование каналов).
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={metaEnableServerStats}
+                onChange={(e) => handleToggleServerStats(e.target.checked)}
+                className="mt-0.5 h-4 w-4 accent-[hsl(var(--primary))]"
+              />
+              <div className="space-y-0.5">
+                <span className="text-sm font-medium">
+                  Включить каналы статистики при установке шаблона
+                </span>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Пользователь сможет отключить их позже командой <code>/serverstats-disable</code>.
+                </p>
+              </div>
+            </label>
           </CardContent>
         </Card>
 

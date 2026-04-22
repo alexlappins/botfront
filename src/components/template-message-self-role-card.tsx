@@ -334,6 +334,11 @@ export function TemplateMessageSelfRoleCard({
                 placeholder="Текст над эмбедом или без эмбеда"
                 rows={5}
               />
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                Плейсхолдеры: <code>{"{{#имя-канала}}"}</code> — ссылка на канал (кликабельная),
+                {" "}<code>{"{{ИмяРоли}}"}</code> — ID роли (для упоминания пишите{" "}
+                <code>{"<@&{{ИмяРоли}}>"}</code>). Подставляются при установке шаблона на сервер.
+              </p>
             </div>
           ) : (
             <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />
