@@ -149,6 +149,13 @@ export function ServerTemplateEditorPage() {
   const [metaDiscordUrl, setMetaDiscordUrl] = useState("")
   const [metaIconUrl, setMetaIconUrl] = useState<string | null>(null)
   const [metaEnableServerStats, setMetaEnableServerStats] = useState(false)
+  const [statsCategoryName, setStatsCategoryName] = useState("")
+  const [statsTotalName, setStatsTotalName] = useState("")
+  const [statsHumansName, setStatsHumansName] = useState("")
+  const [statsBotsName, setStatsBotsName] = useState("")
+  const [statsOnlineName, setStatsOnlineName] = useState("")
+  const [savingStats, setSavingStats] = useState(false)
+  const [statsSavedMsg, setStatsSavedMsg] = useState<string | null>(null)
   const [uploadingIcon, setUploadingIcon] = useState(false)
   const [savingMeta, setSavingMeta] = useState(false)
   const [addMessageOpen, setAddMessageOpen] = useState(false)
@@ -176,6 +183,11 @@ export function ServerTemplateEditorPage() {
       setMetaDiscordUrl(data.discordTemplateUrl ?? "")
       setMetaIconUrl(data.iconUrl ?? null)
       setMetaEnableServerStats(Boolean(data.enableServerStats))
+      setStatsCategoryName(data.statsCategoryName ?? "")
+      setStatsTotalName(data.statsTotalName ?? "")
+      setStatsHumansName(data.statsHumansName ?? "")
+      setStatsBotsName(data.statsBotsName ?? "")
+      setStatsOnlineName(data.statsOnlineName ?? "")
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ошибка загрузки")
     } finally {
@@ -225,6 +237,11 @@ export function ServerTemplateEditorPage() {
       setMetaDiscordUrl(template.discordTemplateUrl ?? "")
       setMetaIconUrl(template.iconUrl ?? null)
       setMetaEnableServerStats(Boolean(template.enableServerStats))
+      setStatsCategoryName(template.statsCategoryName ?? "")
+      setStatsTotalName(template.statsTotalName ?? "")
+      setStatsHumansName(template.statsHumansName ?? "")
+      setStatsBotsName(template.statsBotsName ?? "")
+      setStatsOnlineName(template.statsOnlineName ?? "")
     }
   }, [template])
 
@@ -290,6 +307,27 @@ export function ServerTemplateEditorPage() {
     } finally {
       setUploadingIcon(false)
       e.target.value = ""
+    }
+  }
+
+  async function handleSaveStatsNames() {
+    setStatsSavedMsg(null)
+    setSavingStats(true)
+    try {
+      const updated = await updateServerTemplate(id!, {
+        statsCategoryName: statsCategoryName.trim() || null,
+        statsTotalName: statsTotalName.trim() || null,
+        statsHumansName: statsHumansName.trim() || null,
+        statsBotsName: statsBotsName.trim() || null,
+        statsOnlineName: statsOnlineName.trim() || null,
+      })
+      setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
+      setStatsSavedMsg("Сохранено")
+      setTimeout(() => setStatsSavedMsg(null), 2000)
+    } catch (err) {
+      setStatsSavedMsg(err instanceof Error ? err.message : "Ошибка сохранения")
+    } finally {
+      setSavingStats(false)
     }
   }
 
@@ -443,12 +481,11 @@ export function ServerTemplateEditorPage() {
           <CardHeader>
             <CardTitle>Статистика сервера</CardTitle>
             <CardDescription>
-              При установке шаблона бот создаст в самом верху категорию «📊 Статистика сервера» с 4 голосовыми
-              каналами-счётчиками: <b>Всего / Люди / Боты / В сети</b>. Числа обновляются раз в 10 минут
-              (лимит Discord на переименование каналов).
+              При установке шаблона бот создаст в самом верху категорию с 4 голосовыми каналами-счётчиками.
+              Числа обновляются раз в 10 минут (лимит Discord на переименование каналов).
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
@@ -465,6 +502,75 @@ export function ServerTemplateEditorPage() {
                 </p>
               </div>
             </label>
+
+            {metaEnableServerStats && (
+              <div className="space-y-3 border-t pt-4">
+                <div>
+                  <p className="text-sm font-medium mb-1">Названия</p>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))] mb-3">
+                    Используйте <code>{"{count}"}</code> для подстановки числа. Пусто = дефолтное значение.
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-1 md:col-span-2">
+                    <Label className="text-xs">Название категории</Label>
+                    <Input
+                      value={statsCategoryName}
+                      onChange={(e) => setStatsCategoryName(e.target.value)}
+                      placeholder="📊 Статистика сервера"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label className="text-xs">Канал «Всего»</Label>
+                    <Input
+                      value={statsTotalName}
+                      onChange={(e) => setStatsTotalName(e.target.value)}
+                      placeholder="👥 Всего: {count}"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label className="text-xs">Канал «Люди»</Label>
+                    <Input
+                      value={statsHumansName}
+                      onChange={(e) => setStatsHumansName(e.target.value)}
+                      placeholder="👤 Люди: {count}"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label className="text-xs">Канал «Боты»</Label>
+                    <Input
+                      value={statsBotsName}
+                      onChange={(e) => setStatsBotsName(e.target.value)}
+                      placeholder="🤖 Боты: {count}"
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="grid gap-1">
+                    <Label className="text-xs">Канал «В сети»</Label>
+                    <Input
+                      value={statsOnlineName}
+                      onChange={(e) => setStatsOnlineName(e.target.value)}
+                      placeholder="🟢 В сети: {count}"
+                      maxLength={100}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button size="sm" onClick={handleSaveStatsNames} disabled={savingStats}>
+                    {savingStats ? "Сохранение…" : "Сохранить названия"}
+                  </Button>
+                  {statsSavedMsg && (
+                    <span className="text-xs text-[hsl(var(--muted-foreground))]">{statsSavedMsg}</span>
+                  )}
+                </div>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  Пример: «Adventurers: {"{count}"}» станет «Adventurers: 5» после установки.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

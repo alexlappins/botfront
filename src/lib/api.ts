@@ -290,6 +290,12 @@ export type ServerTemplate = {
   iconUrl: string | null
   /** Включить статистику сервера (4 канала-счётчика) при установке */
   enableServerStats?: boolean
+  /** Шаблоны имён для ServerStats — `{count}` заменяется на число */
+  statsCategoryName?: string | null
+  statsTotalName?: string | null
+  statsHumansName?: string | null
+  statsBotsName?: string | null
+  statsOnlineName?: string | null
   createdAt: string
 }
 
@@ -395,7 +401,18 @@ export async function createServerTemplate(body: {
 
 export async function updateServerTemplate(
   id: string,
-  body: { name?: string; description?: string | null; discordTemplateUrl?: string | null; iconUrl?: string | null; enableServerStats?: boolean }
+  body: {
+    name?: string
+    description?: string | null
+    discordTemplateUrl?: string | null
+    iconUrl?: string | null
+    enableServerStats?: boolean
+    statsCategoryName?: string | null
+    statsTotalName?: string | null
+    statsHumansName?: string | null
+    statsBotsName?: string | null
+    statsOnlineName?: string | null
+  }
 ): Promise<ServerTemplate> {
   const res = await fetch(st(id), { ...fetchOptions, method: "PATCH", body: JSON.stringify(body) })
   if (!res.ok) throw new Error("Failed to update template")
