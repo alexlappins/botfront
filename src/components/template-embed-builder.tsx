@@ -112,11 +112,24 @@ function extractEmbed(parsed: unknown): Record<string, unknown> | null {
   return null
 }
 
-export function parseEmbedJsonToForm(raw: string | null | undefined): EmbedFormState {
+export function parseEmbedJsonToForm(raw: unknown): EmbedFormState {
   const empty = emptyEmbedForm()
-  if (!raw?.trim()) return empty
+  if (raw == null) return empty
+  let parsed: unknown
+  // Бэк может отдавать либо строку (legacy), либо уже распарсенный объект (JSONB)
+  if (typeof raw === "string") {
+    if (!raw.trim()) return empty
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return empty
+    }
+  } else if (typeof raw === "object") {
+    parsed = raw
+  } else {
+    return empty
+  }
   try {
-    const parsed = JSON.parse(raw) as unknown
     const embed = extractEmbed(parsed)
     if (!embed) return empty
 

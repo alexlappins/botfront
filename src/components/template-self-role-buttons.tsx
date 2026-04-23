@@ -121,10 +121,23 @@ export function serializeSelfRoleComponents(buttons: SelfRoleButtonDraft[]): str
   return JSON.stringify(rows)
 }
 
-export function parseSelfRoleComponents(raw: string | null | undefined): SelfRoleButtonDraft[] {
-  if (!raw?.trim()) return []
+export function parseSelfRoleComponents(raw: unknown): SelfRoleButtonDraft[] {
+  if (raw == null) return []
+  let parsed: unknown
+  // Бэк может отдавать строку (legacy) или массив (JSONB) — нормализуем
+  if (typeof raw === "string") {
+    if (!raw.trim()) return []
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return []
+    }
+  } else if (Array.isArray(raw)) {
+    parsed = raw
+  } else {
+    return []
+  }
   try {
-    const parsed = JSON.parse(raw) as unknown
     if (!Array.isArray(parsed)) return []
     const out: SelfRoleButtonDraft[] = []
     for (const row of parsed) {

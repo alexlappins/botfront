@@ -32,31 +32,47 @@ import { Loader2, Save, Trash2 } from "lucide-react"
 const msgTextareaClass =
   "flex min-h-[100px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm ring-offset-[hsl(var(--background))] placeholder:text-[hsl(var(--muted-foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))] focus-visible:ring-offset-2"
 
-export function messageCardTitle(m: TemplateMessage): string {
-  if (m.embedJson?.trim()) {
+/**
+ * Нормализует embedJson — бэк может отдавать либо строку (JSON), либо уже распарсенный объект
+ * (после последних правок сервер хранит в JSONB как объект). Возвращаем всегда объект или null.
+ */
+function toEmbedObject(val: unknown): Record<string, unknown> | null {
+  if (val == null) return null
+  if (typeof val === "object" && !Array.isArray(val)) return val as Record<string, unknown>
+  if (typeof val === "string") {
+    const s = val.trim()
+    if (!s) return null
     try {
-      const p = JSON.parse(m.embedJson) as { embeds?: { title?: string }[] } & { title?: string }
-      const e = p.embeds?.[0] ?? p
-      const t = e && typeof e === "object" && "title" in e ? (e as { title?: string }).title : undefined
-      if (typeof t === "string" && t.trim()) return t.trim()
+      const parsed = JSON.parse(s) as unknown
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>
+      }
     } catch {
       /* ignore */
     }
+  }
+  return null
+}
+
+export function messageCardTitle(m: TemplateMessage): string {
+  const p = toEmbedObject(m.embedJson as unknown) as
+    | ({ embeds?: { title?: string }[] } & { title?: string })
+    | null
+  if (p) {
+    const e = p.embeds?.[0] ?? p
+    const t = e && typeof e === "object" && "title" in e ? (e as { title?: string }).title : undefined
+    if (typeof t === "string" && t.trim()) return t.trim()
   }
   const c = m.content?.trim()
   if (c) return c.length > 40 ? `${c.slice(0, 40)}…` : c
   return `Сообщение · ${m.channelName}`
 }
 
-function embedTitleHint(embedJson: string | null | undefined): string | null {
-  if (!embedJson?.trim()) return null
-  try {
-    const p = JSON.parse(embedJson) as { embeds?: { title?: string }[] }
-    const t = p.embeds?.[0]?.title
-    if (typeof t === "string" && t.trim()) return t.trim()
-  } catch {
-    return "эмбед"
-  }
+function embedTitleHint(embedJson: unknown): string | null {
+  const p = toEmbedObject(embedJson) as ({ embeds?: { title?: string }[] } & { title?: string }) | null
+  if (!p) return null
+  const t = p.embeds?.[0]?.title ?? p.title
+  if (typeof t === "string" && t.trim()) return t.trim()
   return "эмбед"
 }
 
