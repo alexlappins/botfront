@@ -1273,11 +1273,13 @@ function SectionAutoRoles({
   const [adding, setAdding] = useState(false)
   const [rrError, setRrError] = useState<string | null>(null)
 
-  // --- Кнопки ---
-  const [btnMsgId, setBtnMsgId] = useState("")
-  const [buttons, setButtons] = useState<SelfRoleButtonDraft[]>([])
-  const [savingButtons, setSavingButtons] = useState(false)
-  const [btnError, setBtnError] = useState<string | null>(null)
+  // --- Кнопки --- (теперь per-message: для каждого сообщения свой редактор)
+  // Локальное состояние кнопок по messageId — позволяет редактировать и сохранять
+  // каждое сообщение независимо, без потери изменений при переключении.
+  const [buttonsByMsg, setButtonsByMsg] = useState<Record<string, SelfRoleButtonDraft[]>>({})
+  const [savingMsgId, setSavingMsgId] = useState<string | null>(null)
+  const [btnErrorByMsg, setBtnErrorByMsg] = useState<Record<string, string | null>>({})
+  const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set())
 
   const msgOptions = buildMsgOptions(messages)
 
@@ -1290,12 +1292,22 @@ function SectionAutoRoles({
 
   const orphans = orphanReactionRoles(messages, reactionRoles)
 
-  // Загружаем кнопки при смене выбранного сообщения
+  // Синхронизируем buttonsByMsg с сообщениями из шаблона — добавляем новые, убираем удалённые.
+  // Не перезатираем локальные несохранённые правки существующих сообщений.
   useEffect(() => {
-    if (!btnMsgId) { setButtons([]); return }
-    const msg = messages.find((m) => m.id === btnMsgId)
-    setButtons(msg ? parseSelfRoleComponents(msg.componentsJson) : [])
-  }, [btnMsgId, messages])
+    setButtonsByMsg((prev) => {
+      const next: Record<string, SelfRoleButtonDraft[]> = {}
+      for (const m of messages) {
+        if (prev[m.id]) {
+          // сохраняем локальные изменения
+          next[m.id] = prev[m.id]
+        } else {
+          next[m.id] = parseSelfRoleComponents(m.componentsJson)
+        }
+      }
+      return next
+    })
+  }, [messages])
 
   async function handleAddReaction() {
     const em = emojiKey.trim()
@@ -1326,19 +1338,36 @@ function SectionAutoRoles({
     } catch { /* ignore */ }
   }
 
-  async function handleSaveButtons() {
-    if (!btnMsgId) return
-    setBtnError(null)
-    setSavingButtons(true)
+  async function handleSaveButtonsFor(msgId: string) {
+    const btns = buttonsByMsg[msgId] ?? []
+    setBtnErrorByMsg((prev) => ({ ...prev, [msgId]: null }))
+    setSavingMsgId(msgId)
     try {
-      const componentsJson = serializeSelfRoleComponents(buttons) ?? ""
-      await updateTemplateMessage(templateId, btnMsgId, { componentsJson })
+      const componentsJson = serializeSelfRoleComponents(btns) ?? ""
+      await updateTemplateMessage(templateId, msgId, { componentsJson })
       onUpdate()
     } catch (e) {
-      setBtnError(e instanceof Error ? e.message : "Ошибка сохранения")
+      setBtnErrorByMsg((prev) => ({
+        ...prev,
+        [msgId]: e instanceof Error ? e.message : "Ошибка сохранения",
+      }))
     } finally {
-      setSavingButtons(false)
+      setSavingMsgId(null)
     }
+  }
+
+  function toggleExpanded(msgId: string) {
+    setExpandedMsgs((prev) => {
+      const next = new Set(prev)
+      if (next.has(msgId)) next.delete(msgId)
+      else next.add(msgId)
+      return next
+    })
+  }
+
+  function getMsgLabel(msgId: string): string {
+    const opt = msgOptions.find((o) => o.message.id === msgId)
+    return opt?.label ?? msgId
   }
 
   const tabClass = (active: boolean) =>
@@ -1444,38 +1473,66 @@ function SectionAutoRoles({
           </>
         ) : (
           <>
-            {/* Выбор сообщения для кнопок */}
-            <div className="grid gap-2">
-              <Label>Сообщение</Label>
-              {messages.length === 0 ? (
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">Сначала добавьте сообщения выше.</p>
-              ) : (
-                <Select value={btnMsgId || "__none__"} onValueChange={(v) => setBtnMsgId(v === "__none__" ? "" : v)}>
-                  <SelectTrigger><SelectValue placeholder="Выберите сообщение для кнопок" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">Не выбрано</SelectItem>
-                    {msgOptions.map((o) => <SelectItem key={o.message.id} value={o.message.id}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            {btnMsgId ? (
-              <>
-                <TemplateSelfRoleButtonsEditor
-                  buttons={buttons}
-                  onChange={setButtons}
-                  roleOptions={roleOptions.length > 0 ? roleOptions : undefined}
-                />
-                {btnError && <p className="text-sm text-[hsl(var(--destructive))]">{btnError}</p>}
-                <Button onClick={() => void handleSaveButtons()} disabled={savingButtons}>
-                  {savingButtons ? "Сохранение…" : "Сохранить кнопки"}
-                </Button>
-              </>
-            ) : (
+            {messages.length === 0 ? (
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Выберите сообщение выше, чтобы редактировать кнопки авторолей.
+                Сначала добавьте сообщения выше.
               </p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                  К каждому сообщению можно независимо добавить свои кнопки авторолей.
+                  Нажмите на сообщение, чтобы развернуть редактор.
+                </p>
+                {messages.map((m) => {
+                  const btns = buttonsByMsg[m.id] ?? []
+                  const isExpanded = expandedMsgs.has(m.id)
+                  const isSaving = savingMsgId === m.id
+                  const err = btnErrorByMsg[m.id]
+                  return (
+                    <div
+                      key={m.id}
+                      className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)]"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleExpanded(m.id)}
+                        className="w-full flex items-center justify-between gap-3 px-3 py-2 text-left hover:bg-[hsl(var(--muted)/0.4)] rounded-lg"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-medium truncate">{getMsgLabel(m.id)}</span>
+                          {btns.length > 0 && (
+                            <span className="text-xs px-1.5 py-0.5 rounded bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
+                              {btns.length} {btns.length === 1 ? "кнопка" : "кнопок"}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-[hsl(var(--muted-foreground))] shrink-0">
+                          {isExpanded ? "▲ скрыть" : "▼ редактировать"}
+                        </span>
+                      </button>
+                      {isExpanded && (
+                        <div className="border-t p-3 space-y-3">
+                          <TemplateSelfRoleButtonsEditor
+                            buttons={btns}
+                            onChange={(next) =>
+                              setButtonsByMsg((prev) => ({ ...prev, [m.id]: next }))
+                            }
+                            roleOptions={roleOptions.length > 0 ? roleOptions : undefined}
+                          />
+                          {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
+                          <Button
+                            size="sm"
+                            onClick={() => void handleSaveButtonsFor(m.id)}
+                            disabled={isSaving}
+                          >
+                            {isSaving ? "Сохранение…" : "Сохранить кнопки этого сообщения"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </>
         )}
