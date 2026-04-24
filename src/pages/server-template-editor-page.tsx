@@ -52,6 +52,8 @@ import {
   deleteTemplateEmoji,
   createTemplateSticker,
   deleteTemplateSticker,
+  createTemplateRole,
+  deleteTemplateRole,
   uploadFile,
   type ServerTemplateDetail,
   type TemplateEmoji,
@@ -617,6 +619,12 @@ export function ServerTemplateEditorPage() {
             )}
           </CardContent>
         </Card>
+
+        <SectionRoles
+          templateId={id}
+          roles={template.roles}
+          onUpdate={load}
+        />
 
         <SectionMessages
           templateId={id}
@@ -1799,6 +1807,205 @@ function SectionEmojisStickers({
               </p>
             </div>
           </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Секция «Роли шаблона» — роли которые бот создаст на сервере при установке.
+// Все эти роли автоматически окажутся НИЖЕ роли бота в иерархии → бот сможет
+// выдавать их через кнопки авторолей без ошибок.
+// ════════════════════════════════════════════════════════════════════════════
+
+const ROLE_COLOR_PRESETS: { hex: string; label: string }[] = [
+  { hex: "#99AAB5", label: "Серый (дефолт)" },
+  { hex: "#F04747", label: "Красный" },
+  { hex: "#E67E22", label: "Оранжевый" },
+  { hex: "#F1C40F", label: "Жёлтый" },
+  { hex: "#2ECC71", label: "Зелёный" },
+  { hex: "#3498DB", label: "Синий" },
+  { hex: "#9B59B6", label: "Фиолетовый" },
+  { hex: "#E91E63", label: "Розовый" },
+]
+
+function hexToInt(hex: string): number {
+  return parseInt(hex.replace(/^#/, ""), 16) || 0
+}
+function intToHex(n: number | null | undefined): string {
+  if (!n) return "#99AAB5"
+  return "#" + n.toString(16).padStart(6, "0").toUpperCase()
+}
+
+function SectionRoles({
+  templateId,
+  roles,
+  onUpdate,
+}: {
+  templateId: string
+  roles: TemplateRole[]
+  onUpdate: () => void
+}) {
+  const [newName, setNewName] = useState("")
+  const [newColor, setNewColor] = useState("#99AAB5")
+  const [newHoist, setNewHoist] = useState(false)
+  const [newMentionable, setNewMentionable] = useState(false)
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function handleAdd() {
+    const name = newName.trim()
+    if (!name) return
+    setAdding(true)
+    setError(null)
+    try {
+      await createTemplateRole(templateId, {
+        name,
+        color: hexToInt(newColor),
+        hoist: newHoist,
+        mentionable: newMentionable,
+        position: roles.length,
+      })
+      setNewName("")
+      setNewColor("#99AAB5")
+      setNewHoist(false)
+      setNewMentionable(false)
+      onUpdate()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка добавления роли")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function handleDelete(roleId: string) {
+    if (!confirm("Удалить роль из шаблона?")) return
+    setDeletingId(roleId)
+    try {
+      await deleteTemplateRole(templateId, roleId)
+      onUpdate()
+    } catch {
+      // silent
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Роли шаблона</CardTitle>
+        <CardDescription>
+          Роли, которые бот создаст при установке шаблона на сервер. Все эти роли окажутся <b>ниже роли бота</b>,
+          поэтому кнопки авторолей смогут их выдавать. Именно эти роли появятся в выпадающем списке при
+          настройке кнопок в разделе «Автороли» ниже.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {roles.length > 0 && (
+          <div className="space-y-2">
+            {roles.map((r) => {
+              const hex = intToHex(r.color)
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-[hsl(var(--muted)/0.2)]"
+                >
+                  <span
+                    className="inline-block w-4 h-4 rounded-full shrink-0 border"
+                    style={{ backgroundColor: hex }}
+                  />
+                  <span className="text-sm font-medium flex-1 truncate">{r.name}</span>
+                  <span className="text-xs text-[hsl(var(--muted-foreground))] shrink-0">
+                    {r.hoist ? "• отдельно" : ""} {r.mentionable ? "• упоминаемая" : ""}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void handleDelete(r.id)}
+                    disabled={deletingId === r.id}
+                    className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <div className="rounded-lg border border-dashed p-3 space-y-3">
+          <p className="text-sm font-medium">Добавить роль</p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="grid gap-1">
+              <Label className="text-xs">Имя роли</Label>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Например: Adventurer"
+                maxLength={100}
+              />
+            </div>
+            <div className="grid gap-1">
+              <Label className="text-xs">Цвет</Label>
+              <div className="flex items-center gap-2 flex-wrap">
+                {ROLE_COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    onClick={() => setNewColor(c.hex)}
+                    title={c.label}
+                    className={cn(
+                      "w-7 h-7 rounded-full border-2 transition-transform",
+                      newColor === c.hex
+                        ? "border-[hsl(var(--foreground))] scale-110"
+                        : "border-transparent hover:border-[hsl(var(--border))]",
+                    )}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                ))}
+                <input
+                  type="color"
+                  value={newColor}
+                  onChange={(e) => setNewColor(e.target.value)}
+                  className="w-7 h-7 rounded cursor-pointer border"
+                  title="Свой цвет"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={newHoist}
+                onChange={(e) => setNewHoist(e.target.checked)}
+                className="h-4 w-4 accent-[hsl(var(--primary))]"
+              />
+              Отображать отдельно в списке
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input
+                type="checkbox"
+                checked={newMentionable}
+                onChange={(e) => setNewMentionable(e.target.checked)}
+                className="h-4 w-4 accent-[hsl(var(--primary))]"
+              />
+              Можно упоминать (@роль)
+            </label>
+          </div>
+          {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
+          <Button size="sm" onClick={() => void handleAdd()} disabled={adding || !newName.trim()}>
+            {adding ? "Добавление…" : "Добавить роль"}
+          </Button>
+        </div>
+
+        {roles.length === 0 && (
+          <p className="text-xs text-[hsl(var(--muted-foreground))]">
+            Пока нет ни одной роли. Добавьте роли выше — они появятся в списке ролей для кнопок авторолей.
+          </p>
         )}
       </CardContent>
     </Card>
