@@ -362,6 +362,11 @@ export type TemplateSticker = {
   description?: string | null
 }
 
+export type TemplateCategoryGrant = {
+  id: string
+  categoryName: string
+}
+
 export type ServerTemplateDetail = ServerTemplate & {
   roles: TemplateRole[]
   categories: TemplateCategory[]
@@ -371,6 +376,7 @@ export type ServerTemplateDetail = ServerTemplate & {
   logChannels: TemplateLogChannel[]
   emojis: TemplateEmoji[]
   stickers: TemplateSticker[]
+  categoryGrants?: TemplateCategoryGrant[]
 }
 
 const ST = `${API_BASE}/server-templates`
@@ -648,6 +654,21 @@ export async function createTemplateSticker(
 export async function deleteTemplateSticker(templateId: string, stickerId: string): Promise<void> {
   const res = await fetch(`${st(templateId)}/stickers/${stickerId}`, { ...fetchOptions, method: "DELETE" })
   if (!res.ok) throw new Error("Failed to delete sticker")
+}
+
+// ——— Category grants (привязка категорий к роли верификации) ———
+export async function createTemplateCategoryGrant(
+  templateId: string,
+  body: { categoryName: string }
+): Promise<TemplateCategoryGrant> {
+  const res = await fetch(`${st(templateId)}/category-grants`, { ...fetchOptions, method: "POST", body: JSON.stringify(body) })
+  if (!res.ok) throw new Error("Failed to add category grant")
+  return res.json()
+}
+
+export async function deleteTemplateCategoryGrant(templateId: string, grantId: string): Promise<void> {
+  const res = await fetch(`${st(templateId)}/category-grants/${grantId}`, { ...fetchOptions, method: "DELETE" })
+  if (!res.ok) throw new Error("Failed to delete category grant")
 }
 
 export async function installServerTemplate(

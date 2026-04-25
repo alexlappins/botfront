@@ -54,10 +54,14 @@ import {
   deleteTemplateSticker,
   createTemplateRole,
   deleteTemplateRole,
+  createTemplateCategoryGrant,
+  deleteTemplateCategoryGrant,
   uploadFile,
   type ServerTemplateDetail,
   type TemplateEmoji,
   type TemplateSticker,
+  type TemplateCategoryGrant,
+  type TemplateCategory,
   type TemplateChannel,
   type TemplateMessage,
   type TemplateRole,
@@ -623,6 +627,13 @@ export function ServerTemplateEditorPage() {
         <SectionRoles
           templateId={id}
           roles={template.roles}
+          onUpdate={load}
+        />
+
+        <SectionCategoryGrants
+          templateId={id}
+          categories={template.categories}
+          grants={template.categoryGrants ?? []}
           onUpdate={load}
         />
 
@@ -2007,6 +2018,146 @@ function SectionRoles({
             Пока нет ни одной роли. Добавьте роли выше — они появятся в списке ролей для кнопок авторолей.
           </p>
         )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// Секция «Настройки прав» — какие категории открыть для верификационной роли.
+// Используется первая роль из секции «Роли шаблона». Для выбранных категорий
+// бот при установке выставит: @everyone — запрет ViewChannel, верификационная
+// роль — разрешение View + Send + ReadHistory. Остальные категории не трогает.
+// ════════════════════════════════════════════════════════════════════════════
+
+function SectionCategoryGrants({
+  templateId,
+  categories,
+  grants,
+  onUpdate,
+}: {
+  templateId: string
+  categories: TemplateCategory[]
+  grants: TemplateCategoryGrant[]
+  onUpdate: () => void
+}) {
+  const [selected, setSelected] = useState("")
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Доступны для добавления — те категории, которые ещё не в grants
+  const grantedNames = new Set(grants.map((g) => g.categoryName))
+  const available = categories.filter((c) => !grantedNames.has(c.name))
+
+  async function handleAdd() {
+    const name = selected.trim()
+    if (!name) return
+    setAdding(true)
+    setError(null)
+    try {
+      await createTemplateCategoryGrant(templateId, { categoryName: name })
+      setSelected("")
+      onUpdate()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка добавления")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function handleDelete(grantId: string) {
+    if (!confirm("Убрать категорию из списка?")) return
+    setDeletingId(grantId)
+    try {
+      await deleteTemplateCategoryGrant(templateId, grantId)
+      onUpdate()
+    } catch {
+      // silent
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Настройки прав</CardTitle>
+        <CardDescription>
+          Выберите категории шаблона, которые должны открываться для <b>верификационной роли</b>
+          (это первая роль из секции «Роли шаблона»). При установке бот:
+          <br />• для @everyone в этих категориях запретит видеть каналы
+          <br />• для верификационной роли — разрешит View / Send / Read History
+          <br />Категории, которых нет в этом списке, бот не трогает. Привязка хранится по{" "}
+          <b>имени категории</b>, не по Discord ID — поэтому работает на любом новом сервере.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {grants.length > 0 && (
+          <div className="space-y-2">
+            {grants.map((g) => {
+              const exists = categories.some((c) => c.name === g.categoryName)
+              return (
+                <div
+                  key={g.id}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-[hsl(var(--muted)/0.2)]"
+                >
+                  <span className="text-sm font-medium flex-1 truncate">{g.categoryName}</span>
+                  {!exists && (
+                    <span className="text-xs px-2 py-0.5 rounded bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
+                      нет такой категории в шаблоне
+                    </span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => void handleDelete(g.id)}
+                    disabled={deletingId === g.id}
+                    className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <div className="rounded-lg border border-dashed p-3 space-y-3">
+          <p className="text-sm font-medium">Добавить категорию</p>
+          {categories.length === 0 ? (
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              Сначала добавьте категории в шаблон (через секцию каналов/категорий).
+            </p>
+          ) : available.length === 0 ? (
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              Все категории шаблона уже добавлены.
+            </p>
+          ) : (
+            <div className="flex items-end gap-2">
+              <div className="flex-1 grid gap-1">
+                <Label className="text-xs">Категория</Label>
+                <Select value={selected || "__none__"} onValueChange={(v) => setSelected(v === "__none__" ? "" : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Выберите категорию" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Не выбрано</SelectItem>
+                    {available.map((c) => (
+                      <SelectItem key={c.id} value={c.name}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button size="sm" onClick={() => void handleAdd()} disabled={adding || !selected}>
+                {adding ? "Добавление…" : "Добавить"}
+              </Button>
+            </div>
+          )}
+          {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
+        </div>
       </CardContent>
     </Card>
   )
