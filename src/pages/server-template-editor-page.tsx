@@ -54,6 +54,8 @@ import {
   deleteTemplateSticker,
   createTemplateRole,
   deleteTemplateRole,
+  createTemplateCategory,
+  deleteTemplateCategory,
   createTemplateCategoryGrant,
   deleteTemplateCategoryGrant,
   uploadFile,
@@ -627,6 +629,12 @@ export function ServerTemplateEditorPage() {
         <SectionRoles
           templateId={id}
           roles={template.roles}
+          onUpdate={load}
+        />
+
+        <SectionCategories
+          templateId={id}
+          categories={template.categories}
           onUpdate={load}
         />
 
@@ -2156,6 +2164,110 @@ function SectionCategoryGrants({
               </Button>
             </div>
           )}
+          {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// Секция «Категории шаблона» — категории, которые бот создаст при установке
+// (используются для группировки каналов и для настройки прав верификации).
+// ════════════════════════════════════════════════════════════════════════════
+
+function SectionCategories({
+  templateId,
+  categories,
+  onUpdate,
+}: {
+  templateId: string
+  categories: TemplateCategory[]
+  onUpdate: () => void
+}) {
+  const [newName, setNewName] = useState("")
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function handleAdd() {
+    const name = newName.trim()
+    if (!name) return
+    setAdding(true)
+    setError(null)
+    try {
+      await createTemplateCategory(templateId, { name, position: categories.length })
+      setNewName("")
+      onUpdate()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Ошибка добавления")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  async function handleDelete(catId: string) {
+    if (!confirm("Удалить категорию из шаблона?")) return
+    setDeletingId(catId)
+    try {
+      await deleteTemplateCategory(templateId, catId)
+      onUpdate()
+    } catch {
+      // silent
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Категории шаблона</CardTitle>
+        <CardDescription>
+          Категории, которые бот создаст при установке шаблона. Имена должны совпадать с именами категорий
+          из Discord-шаблона (если используешь его) — иначе при настройке прав ниже не будет совпадений.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {categories.length > 0 && (
+          <div className="space-y-2">
+            {categories.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg border bg-[hsl(var(--muted)/0.2)]"
+              >
+                <span className="text-sm font-medium flex-1 truncate">{c.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => void handleDelete(c.id)}
+                  disabled={deletingId === c.id}
+                  className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-lg border border-dashed p-3 space-y-3">
+          <p className="text-sm font-medium">Добавить категорию</p>
+          <div className="flex items-end gap-2">
+            <div className="flex-1 grid gap-1">
+              <Label className="text-xs">Имя категории</Label>
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Например: Verification"
+                maxLength={100}
+              />
+            </div>
+            <Button size="sm" onClick={() => void handleAdd()} disabled={adding || !newName.trim()}>
+              {adding ? "Добавление…" : "Добавить"}
+            </Button>
+          </div>
           {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
         </div>
       </CardContent>
