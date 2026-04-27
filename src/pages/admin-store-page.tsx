@@ -23,7 +23,7 @@ export function AdminStorePage() {
       .then(setTemplates)
       .catch((e) => {
         if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-        if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
+        if (e instanceof ApiError && e.status === 403) return setError("No access")
       })
   }, [navigate])
 
@@ -37,32 +37,32 @@ export function AdminStorePage() {
         currency,
         isActive: isActive === "true",
       })
-      setSuccess("Сохранено.")
+      setSuccess("Saved.")
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
-      setError(e instanceof Error ? e.message : "Ошибка")
+      if (e instanceof ApiError && e.status === 403) return setError("No access")
+      setError(e instanceof Error ? e.message : "Error")
     }
   }
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <AdminHeader title="Магазин" />
+      <AdminHeader title="Store" />
       <main className="container mx-auto max-w-3xl px-4 py-8">
         <Card>
-          <CardHeader><CardTitle>Upsert карточки магазина</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Upsert store card</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
-              <Label>Шаблон из списка</Label>
+              <Label>Template from list</Label>
               <Select
                 value={templateId || "__none__"}
                 onValueChange={(v) => setTemplateId(v === "__none__" ? "" : v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Выберите шаблон" />
+                  <SelectValue placeholder="Select a template" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Не выбрано</SelectItem>
+                  <SelectItem value="__none__">Not selected</SelectItem>
                   {templates.map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}
@@ -73,9 +73,9 @@ export function AdminStorePage() {
             </div>
             <div className="grid gap-2">
               <Label>Template ID</Label>
-              <Input value={templateId} onChange={(e) => setTemplateId(e.target.value)} placeholder="UUID шаблона" />
+              <Input value={templateId} onChange={(e) => setTemplateId(e.target.value)} placeholder="Template UUID" />
               <div className="text-xs text-[hsl(var(--muted-foreground))] break-all">
-                Можно выбрать из списка выше или вставить UUID вручную.
+                You can pick from the list above or paste a UUID manually.
               </div>
             </div>
             <div className="grid sm:grid-cols-3 gap-3">
@@ -85,7 +85,7 @@ export function AdminStorePage() {
             </div>
             {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
             {success && <p className="text-sm text-[hsl(var(--primary))]">{success}</p>}
-            <Button onClick={submit} disabled={!templateId.trim()}>Сохранить</Button>
+            <Button onClick={submit} disabled={!templateId.trim()}>Save</Button>
           </CardContent>
         </Card>
       </main>

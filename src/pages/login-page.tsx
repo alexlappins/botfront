@@ -10,17 +10,17 @@ export function LoginPage() {
           <div className="mx-auto w-16 h-16 rounded-2xl bg-[hsl(var(--primary))] flex items-center justify-center text-3xl">
             💬
           </div>
-          <CardTitle className="text-2xl">Дашборд бота</CardTitle>
+          <CardTitle className="text-2xl">Bot dashboard</CardTitle>
           <CardDescription>
-            Войдите через Discord, чтобы управлять серверами и отправлять сообщения от имени бота.
+            Sign in with Discord to manage servers and send messages on behalf of the bot.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <Button asChild size="lg" className="w-full bg-[#5865F2] hover:bg-[#4752C4]">
-            <a href={LOGIN_URL}>Войти через Discord</a>
+            <a href={LOGIN_URL}>Sign in with Discord</a>
           </Button>
           <p className="text-xs text-center text-[hsl(var(--muted-foreground))]">
-            Будет запрошен доступ к профилю и списку серверов.
+            Profile and guilds list access will be requested.
           </p>
         </CardContent>
       </Card>

@@ -65,7 +65,7 @@ export function messageCardTitle(m: TemplateMessage): string {
   }
   const c = m.content?.trim()
   if (c) return c.length > 40 ? `${c.slice(0, 40)}…` : c
-  return `Сообщение · ${m.channelName}`
+  return `Message · ${m.channelName}`
 }
 
 function embedTitleHint(embedJson: unknown): string | null {
@@ -73,7 +73,7 @@ function embedTitleHint(embedJson: unknown): string | null {
   if (!p) return null
   const t = p.embeds?.[0]?.title ?? p.title
   if (typeof t === "string" && t.trim()) return t.trim()
-  return "эмбед"
+  return "embed"
 }
 
 type ContentTab = "message" | "embed"
@@ -138,7 +138,7 @@ export function TemplateMessageSelfRoleCard({
       .catch((e) => {
         if (!cancelled) {
           setPreviewChannelsList([])
-          setPreviewPanelError(e instanceof Error ? e.message : "Не удалось загрузить каналы")
+          setPreviewPanelError(e instanceof Error ? e.message : "Failed to load channels")
         }
       })
       .finally(() => { if (!cancelled) setLoadingPreviewChannels(false) })
@@ -152,11 +152,11 @@ export function TemplateMessageSelfRoleCard({
   async function handleSave() {
     const ch = channelName.trim()
     if (!ch) {
-      setLocalError("Выберите канал")
+      setLocalError("Pick a channel")
       return
     }
     if (!hasContent && !hasEmbed) {
-      setLocalError("Нужны текст или эмбед")
+      setLocalError("Text or embed is required")
       return
     }
     setLocalError(null)
@@ -176,19 +176,19 @@ export function TemplateMessageSelfRoleCard({
       })
       onUpdate()
     } catch (e) {
-      setLocalError(e instanceof Error ? e.message : "Ошибка сохранения")
+      setLocalError(e instanceof Error ? e.message : "Failed to save")
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Удалить это сообщение из шаблона?")) return
+    if (!confirm("Delete this message from the template?")) return
     try {
       await deleteTemplateMessage(templateId, message.id)
       onUpdate()
     } catch (e) {
-      setLocalError(e instanceof Error ? e.message : "Ошибка удаления")
+      setLocalError(e instanceof Error ? e.message : "Failed to delete")
     }
   }
 
@@ -198,11 +198,11 @@ export function TemplateMessageSelfRoleCard({
     const hasComponents = Boolean(componentsJson)
 
     if (!hasContent && !hasEmbed && !hasComponents) {
-      setPreviewPanelError("Нужен текст, эмбед или кнопки авторолей")
+      setPreviewPanelError("Text, embed or auto-role buttons are required")
       return
     }
     if (!previewGuildId.trim() || !previewChannelId.trim()) {
-      setPreviewPanelError("Выберите сервер и канал")
+      setPreviewPanelError("Pick a server and a channel")
       return
     }
     setPreviewPanelError(null)
@@ -215,7 +215,7 @@ export function TemplateMessageSelfRoleCard({
         componentsJson,
       })
     } catch (e) {
-      setPreviewPanelError(e instanceof ApiError ? e.message : "Не удалось отправить превью")
+      setPreviewPanelError(e instanceof ApiError ? e.message : "Failed to send preview")
     } finally {
       setPreviewSending(false)
     }
@@ -242,11 +242,11 @@ export function TemplateMessageSelfRoleCard({
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
             <span className="font-mono">#{channelName.trim() || "…"}</span>
             <span className="mx-1">·</span>
-            порядок <span className="font-mono">{orderDisplay}</span>
+            order <span className="font-mono">{orderDisplay}</span>
             {embedHint ? (
               <>
                 <span className="mx-1">·</span>
-                эмбед: {embedHint}
+                embed: {embedHint}
               </>
             ) : null}
           </p>
@@ -254,7 +254,7 @@ export function TemplateMessageSelfRoleCard({
         <div className="flex shrink-0 gap-2">
           <Button type="button" size="sm" onClick={() => void handleSave()} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            <span className="ml-1.5 hidden sm:inline">Сохранить</span>
+            <span className="ml-1.5 hidden sm:inline">Save</span>
           </Button>
           <Button type="button" size="sm" variant="destructive" onClick={() => void handleDelete()}>
             <Trash2 className="h-4 w-4" />
@@ -267,7 +267,7 @@ export function TemplateMessageSelfRoleCard({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2 sm:col-span-2">
             <Label className="text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-              Канал
+              Channel
             </Label>
             {channelOptions.length > 0 ? (
               <Select
@@ -275,10 +275,10 @@ export function TemplateMessageSelfRoleCard({
                 onValueChange={(v) => setChannelName(v === "__none__" ? "" : v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Выберите канал" />
+                  <SelectValue placeholder="Pick a channel" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Выберите канал</SelectItem>
+                  <SelectItem value="__none__">Pick a channel</SelectItem>
                   {channelOptions.map((c) => (
                     <SelectItem key={c.name} value={c.name}>
                       #{c.name}
@@ -290,7 +290,7 @@ export function TemplateMessageSelfRoleCard({
               <Input
                 value={channelName}
                 onChange={(e) => setChannelName(e.target.value)}
-                placeholder="например verification"
+                placeholder="e.g. verification"
               />
             )}
           </div>
@@ -299,7 +299,7 @@ export function TemplateMessageSelfRoleCard({
               htmlFor={`card-order-${message.id}`}
               className="text-xs uppercase tracking-wide text-[hsl(var(--muted-foreground))]"
             >
-              Порядок (messageOrder)
+              Order (messageOrder)
             </Label>
             <Input
               id={`card-order-${message.id}`}
@@ -324,7 +324,7 @@ export function TemplateMessageSelfRoleCard({
                   : "text-[hsl(var(--muted-foreground))]"
               )}
             >
-              Текст
+              Text
             </button>
             <button
               type="button"
@@ -336,24 +336,24 @@ export function TemplateMessageSelfRoleCard({
                   : "text-[hsl(var(--muted-foreground))]"
               )}
             >
-              Эмбед
+              Embed
             </button>
           </div>
           {contentTab === "message" ? (
             <div className="grid gap-2">
-              <Label htmlFor={`card-txt-${message.id}`}>Текст сообщения</Label>
+              <Label htmlFor={`card-txt-${message.id}`}>Message content</Label>
               <textarea
                 id={`card-txt-${message.id}`}
                 className={msgTextareaClass}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Текст над эмбедом или без эмбеда"
+                placeholder="Text above the embed, or without an embed"
                 rows={5}
               />
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Плейсхолдеры: <code>{"{{#имя-канала}}"}</code> — ссылка на канал (кликабельная),
-                {" "}<code>{"{{ИмяРоли}}"}</code> — ID роли (для упоминания пишите{" "}
-                <code>{"<@&{{ИмяРоли}}>"}</code>). Подставляются при установке шаблона на сервер.
+                Placeholders: <code>{"{{#channel-name}}"}</code> — clickable channel link,
+                {" "}<code>{"{{RoleName}}"}</code> — role ID (for a mention write{" "}
+                <code>{"<@&{{RoleName}}>"}</code>). They are substituted when the template is installed.
               </p>
             </div>
           ) : (
@@ -364,13 +364,13 @@ export function TemplateMessageSelfRoleCard({
         {/* Превью */}
         <details className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.1)] px-3 py-2">
           <summary className="text-sm font-medium cursor-pointer list-none flex items-center justify-between">
-            Превью в Discord
-            <span className="text-xs font-normal text-[hsl(var(--muted-foreground))]">тестовая отправка</span>
+            Preview in Discord
+            <span className="text-xs font-normal text-[hsl(var(--muted-foreground))]">test send</span>
           </summary>
           <div className="mt-3 space-y-3 pt-1 border-t border-[hsl(var(--border))]">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-2">
-                <Label className="text-xs">Сервер</Label>
+                <Label className="text-xs">Server</Label>
                 <Select
                   value={previewGuildId || "__none__"}
                   onValueChange={(v) => {
@@ -379,10 +379,10 @@ export function TemplateMessageSelfRoleCard({
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите сервер" />
+                    <SelectValue placeholder="Pick a server" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Не выбрано</SelectItem>
+                    <SelectItem value="__none__">Not selected</SelectItem>
                     {guilds.map((g) => (
                       <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
                     ))}
@@ -390,17 +390,17 @@ export function TemplateMessageSelfRoleCard({
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label className="text-xs">Канал</Label>
+                <Label className="text-xs">Channel</Label>
                 <Select
                   value={previewChannelId || "__none__"}
                   onValueChange={(v) => setPreviewChannelId(v === "__none__" ? "" : v)}
                   disabled={!previewGuildId || loadingPreviewChannels}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder={loadingPreviewChannels ? "Загрузка…" : "Канал"} />
+                    <SelectValue placeholder={loadingPreviewChannels ? "Loading…" : "Channel"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Не выбрано</SelectItem>
+                    <SelectItem value="__none__">Not selected</SelectItem>
                     {previewChannelsList.map((c) => (
                       <SelectItem key={c.id} value={c.id}>#{c.name}</SelectItem>
                     ))}
@@ -418,7 +418,7 @@ export function TemplateMessageSelfRoleCard({
               onClick={() => void handlePreviewInDiscord()}
               disabled={previewSending || !previewGuildId || !previewChannelId}
             >
-              {previewSending ? "Отправка…" : "Отправить тест в канал"}
+              {previewSending ? "Sending…" : "Send test to channel"}
             </Button>
           </div>
         </details>

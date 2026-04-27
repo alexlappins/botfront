@@ -19,11 +19,11 @@ export function AdminTemplateAccessPage() {
     setSuccess(null)
     try {
       await adminGrantTemplateAccess({ userId, templateId })
-      setSuccess("Доступ выдан.")
+      setSuccess("Access granted.")
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
-      setError(e instanceof Error ? e.message : "Ошибка")
+      if (e instanceof ApiError && e.status === 403) return setError("No access")
+      setError(e instanceof Error ? e.message : "Error")
     }
   }
 
@@ -32,17 +32,17 @@ export function AdminTemplateAccessPage() {
     setSuccess(null)
     try {
       await adminRevokeTemplateAccess(userId, templateId)
-      setSuccess("Доступ отозван.")
+      setSuccess("Access revoked.")
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
-      setError(e instanceof Error ? e.message : "Ошибка")
+      if (e instanceof ApiError && e.status === 403) return setError("No access")
+      setError(e instanceof Error ? e.message : "Error")
     }
   }
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <AdminHeader title="Доступы к шаблонам" />
+      <AdminHeader title="Template Access" />
       <main className="container mx-auto max-w-2xl px-4 py-8">
         <Card>
           <CardHeader><CardTitle>Grant / Revoke</CardTitle></CardHeader>
@@ -58,8 +58,8 @@ export function AdminTemplateAccessPage() {
             {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
             {success && <p className="text-sm text-[hsl(var(--primary))]">{success}</p>}
             <div className="flex gap-2">
-              <Button onClick={grant} disabled={!userId || !templateId}>Выдать</Button>
-              <Button variant="outline" onClick={revoke} disabled={!userId || !templateId}>Отозвать</Button>
+              <Button onClick={grant} disabled={!userId || !templateId}>Grant</Button>
+              <Button variant="outline" onClick={revoke} disabled={!userId || !templateId}>Revoke</Button>
             </div>
           </CardContent>
         </Card>

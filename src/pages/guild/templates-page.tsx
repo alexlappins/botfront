@@ -22,7 +22,7 @@ export function GuildTemplatesPage() {
   if (!guildId) return null
 
   async function handleDelete(t: Template) {
-    if (!confirm(`Удалить шаблон «${t.name}»?`)) return
+    if (!confirm(`Delete template "${t.name}"?`)) return
     try {
       await deleteTemplate(guildId!, t.id)
       load()
@@ -36,19 +36,19 @@ export function GuildTemplatesPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Шаблоны сообщений</CardTitle>
+            <CardTitle>Message Templates</CardTitle>
             <CardDescription>
-              Создайте шаблон и отправляйте его в любой канал одной кнопкой.
+              Create a template and send it to any channel with one click.
             </CardDescription>
           </div>
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Создать шаблон
+            Create template
           </Button>
         </CardHeader>
         <CardContent>
           {templates.length === 0 ? (
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет шаблонов. Создайте первый.</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">No templates. Create your first one.</p>
           ) : (
             <ul className="space-y-3">
               {templates.map((t) => (
@@ -63,7 +63,7 @@ export function GuildTemplatesPage() {
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => setSendTemplate(t)}>
                       <Send className="h-4 w-4 mr-1" />
-                      Отправить
+                      Send
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setEditTemplate(t)}>
                       <Pencil className="h-4 w-4" />

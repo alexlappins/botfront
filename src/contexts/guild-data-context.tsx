@@ -73,7 +73,7 @@ export function GuildDataProvider({
       setLogs(logsRes)
       setReactionRoles(rrRes.bindings ?? [])
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки")
+      setError(e instanceof Error ? e.message : "Loading error")
     } finally {
       setLoading(false)
     }

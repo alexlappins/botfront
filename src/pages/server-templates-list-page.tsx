@@ -71,7 +71,7 @@ export function ServerTemplatesListPage() {
       setCreateDiscordUrl("")
       navigate(`/server-templates/${created.id}`)
     } catch (e) {
-      setCreateError(e instanceof Error ? e.message : "Ошибка создания")
+      setCreateError(e instanceof Error ? e.message : "Failed to create")
     } finally {
       setCreating(false)
     }
@@ -86,7 +86,7 @@ export function ServerTemplatesListPage() {
       setTemplates((prev) => prev.filter((x) => x.id !== deleteTarget.id))
       setDeleteTarget(null)
     } catch (e) {
-      setDeleteError(e instanceof Error ? e.message : "Ошибка удаления")
+      setDeleteError(e instanceof Error ? e.message : "Failed to delete")
     } finally {
       setDeletingId(null)
     }
@@ -95,14 +95,14 @@ export function ServerTemplatesListPage() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Загрузка...</div>
+        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Loading...</div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <AdminHeader title="Редактор шаблонов сервера" />
+      <AdminHeader title="Server template editor" />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {error && (
@@ -113,19 +113,19 @@ export function ServerTemplatesListPage() {
         <div className="flex justify-end mb-6">
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Создать шаблон
+            Create template
           </Button>
         </div>
         {loading ? (
-          <p className="text-[hsl(var(--muted-foreground))]">Загрузка…</p>
+          <p className="text-[hsl(var(--muted-foreground))]">Loading…</p>
         ) : templates.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-[hsl(var(--muted-foreground))]">
-              <p>Нет шаблонов.</p>
-              <p className="text-sm mt-2">Создайте шаблон и настройте роли, каналы, сообщения и автороли для развёртывания на серверах.</p>
+              <p>No templates.</p>
+              <p className="text-sm mt-2">Create a template and configure roles, channels, messages and auto-roles to deploy on servers.</p>
               <Button className="mt-4" onClick={() => setCreateOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
-                Создать шаблон
+                Create template
               </Button>
             </CardContent>
           </Card>
@@ -144,7 +144,7 @@ export function ServerTemplatesListPage() {
                       )}
                       {t.discordTemplateUrl && (
                         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 break-all">
-                          Discord‑шаблон:{" "}
+                          Discord template:{" "}
                           <a
                             href={t.discordTemplateUrl}
                             target="_blank"
@@ -164,7 +164,7 @@ export function ServerTemplatesListPage() {
                         to={`/server-templates/${t.id}`}
                         className="text-sm text-[hsl(var(--primary))] hover:underline"
                       >
-                        Открыть редактор
+                        Open editor
                       </Link>
                       <Button
                         size="sm"
@@ -176,7 +176,7 @@ export function ServerTemplatesListPage() {
                         className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))] hover:bg-[hsl(var(--destructive)/0.1)]"
                       >
                         <Trash2 className="h-4 w-4 mr-1" />
-                        Удалить
+                        Delete
                       </Button>
                     </div>
                   </CardHeader>
@@ -190,30 +190,30 @@ export function ServerTemplatesListPage() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Новый шаблон</DialogTitle>
-            <DialogDescription>Название обязательно. Описание можно добавить позже в редакторе.</DialogDescription>
+            <DialogTitle>New template</DialogTitle>
+            <DialogDescription>Name is required. You can add the description later in the editor.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="st-name">Название *</Label>
+              <Label htmlFor="st-name">Name *</Label>
               <Input
                 id="st-name"
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
-                placeholder="Например: Lineage 2 Community"
+                placeholder="e.g. Lineage 2 Community"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="st-desc">Описание</Label>
+              <Label htmlFor="st-desc">Description</Label>
               <Input
                 id="st-desc"
                 value={createDescription}
                 onChange={(e) => setCreateDescription(e.target.value)}
-                placeholder="Краткое описание шаблона"
+                placeholder="Short template description"
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="st-discord-url">Ссылка Discord‑шаблона</Label>
+              <Label htmlFor="st-discord-url">Discord template URL</Label>
               <Input
                 id="st-discord-url"
                 value={createDiscordUrl}
@@ -226,9 +226,9 @@ export function ServerTemplatesListPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateOpen(false)}>Отмена</Button>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
             <Button onClick={handleCreate} disabled={creating || !createName.trim()}>
-              {creating ? "Создание…" : "Создать"}
+              {creating ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -237,10 +237,10 @@ export function ServerTemplatesListPage() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Удалить шаблон?</DialogTitle>
+            <DialogTitle>Delete template?</DialogTitle>
             <DialogDescription>
-              Шаблон «{deleteTarget?.name}» будет удалён навсегда вместе со всеми сообщениями, авторолями и настройками.
-              Это действие необратимо.
+              Template "{deleteTarget?.name}" will be permanently deleted along with all messages,
+              auto-roles and settings. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           {deleteError && (
@@ -248,14 +248,14 @@ export function ServerTemplatesListPage() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={!!deletingId}>
-              Отмена
+              Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={handleDelete}
               disabled={!!deletingId}
             >
-              {deletingId ? "Удаление…" : "Удалить"}
+              {deletingId ? "Deleting…" : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

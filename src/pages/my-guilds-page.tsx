@@ -34,18 +34,18 @@ export function MyGuildsPage() {
       .then(setGuilds)
       .catch((e) => {
         if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-        if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
-        setError(e instanceof Error ? e.message : "Ошибка загрузки")
+        if (e instanceof ApiError && e.status === 403) return setError("No access")
+        setError(e instanceof Error ? e.message : "Loading error")
       })
       .finally(() => setLoading(false))
   }, [navigate])
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <CustomerHeader title="Мои серверы" />
+      <CustomerHeader title="My Servers" />
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6">
-          Здесь серверы, где бот установлен и у вас есть права. Настройте логи, автороли и сообщения на своём сервере.
+          These are servers where the bot is installed and you have permissions. Configure logs, auto-roles and messages on your server.
         </p>
         {error && (
           <div className="mb-4 p-4 rounded-lg bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
@@ -53,13 +53,13 @@ export function MyGuildsPage() {
           </div>
         )}
         {loading ? (
-          <div className="text-[hsl(var(--muted-foreground))]">Загрузка серверов...</div>
+          <div className="text-[hsl(var(--muted-foreground))]">Loading servers...</div>
         ) : guilds.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-[hsl(var(--muted-foreground))]">
               <Server className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Нет доступных серверов.</p>
-              <p className="text-sm mt-2">Добавьте бота на сервер, где у вас есть права.</p>
+              <p>No available servers.</p>
+              <p className="text-sm mt-2">Add the bot to a server where you have permissions.</p>
             </CardContent>
           </Card>
         ) : (
@@ -73,7 +73,7 @@ export function MyGuildsPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                      Сообщения, шаблоны, логи, роли по реакции
+                      Messages, templates, logs, reaction roles
                     </p>
                   </CardContent>
                 </Card>

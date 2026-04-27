@@ -34,7 +34,7 @@ export function GuildReactionRolesPage() {
     const em = emoji.trim()
     const r = roleId.trim()
     if (!ch || !msg || !em || !r) {
-      setAddError("Заполните все поля")
+      setAddError("Fill in all fields")
       return
     }
     setSubmitting(true)
@@ -52,7 +52,7 @@ export function GuildReactionRolesPage() {
       setEmoji("")
       setRoleId("")
     } catch (e) {
-      setAddError(e instanceof Error ? e.message : "Не удалось добавить привязку")
+      setAddError(e instanceof Error ? e.message : "Failed to add binding")
     } finally {
       setSubmitting(false)
     }
@@ -74,24 +74,24 @@ export function GuildReactionRolesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Роли по реакции
+            Reaction Roles
           </CardTitle>
           <CardDescription>
-            Добавляйте привязки здесь или командой /reaction-role-emoji в Discord. Эмодзи — один символ (например ✅) или кастомный в формате имя:id.
+            Add bindings here or via the /reaction-role-emoji command in Discord. The emoji is a single character (e.g. ✅) or a custom one in name:id format.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-4">
             <h4 className="text-sm font-medium flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Добавить привязку
+              Add binding
             </h4>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>Канал</Label>
+                <Label>Channel</Label>
                 <Select value={channelId} onValueChange={setChannelId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите канал" />
+                    <SelectValue placeholder="Select a channel" />
                   </SelectTrigger>
                   <SelectContent>
                     {channels.map((ch) => (
@@ -103,28 +103,28 @@ export function GuildReactionRolesPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rr-message-id">ID сообщения</Label>
+                <Label htmlFor="rr-message-id">Message ID</Label>
                 <Input
                   id="rr-message-id"
                   value={messageId}
                   onChange={(e) => setMessageId(e.target.value)}
-                  placeholder="Из ссылки (ПКМ по сообщению → Копировать ссылку)"
+                  placeholder="From the link (right-click message → Copy link)"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rr-emoji">Эмодзи</Label>
+                <Label htmlFor="rr-emoji">Emoji</Label>
                 <Input
                   id="rr-emoji"
                   value={emoji}
                   onChange={(e) => setEmoji(e.target.value)}
-                  placeholder="✅ или имя:id для кастомного"
+                  placeholder="✅ or name:id for custom"
                 />
               </div>
               <div className="space-y-2">
-                <Label>Роль</Label>
+                <Label>Role</Label>
                 <Select value={roleId} onValueChange={setRoleId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите роль" />
+                    <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
                     {roles.map((r) => (
@@ -140,14 +140,14 @@ export function GuildReactionRolesPage() {
               <p className="text-sm text-[hsl(var(--destructive))]">{addError}</p>
             )}
             <Button onClick={handleAdd} disabled={submitting || channels.length === 0 || roles.length === 0}>
-              {submitting ? "Добавление…" : "Добавить привязку"}
+              {submitting ? "Adding…" : "Add binding"}
             </Button>
           </div>
 
           <div>
-            <h4 className="text-sm font-medium mb-3">Текущие привязки</h4>
+            <h4 className="text-sm font-medium mb-3">Current bindings</h4>
             {reactionRoles.length === 0 ? (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет привязок.</p>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">No bindings.</p>
             ) : (
               <ul className="space-y-4">
                 {reactionRoles.map((b) => (
@@ -160,17 +160,17 @@ export function GuildReactionRolesPage() {
                           rel="noopener noreferrer"
                           className="text-sm text-[hsl(var(--primary))] hover:underline"
                         >
-                          Сообщение {b.messageId.slice(-8)}
+                          Message {b.messageId.slice(-8)}
                         </a>
                       ) : (
-                        <span className="text-sm text-[hsl(var(--muted-foreground))]">Сообщение {b.messageId.slice(-8)}</span>
+                        <span className="text-sm text-[hsl(var(--muted-foreground))]">Message {b.messageId.slice(-8)}</span>
                       )}
                     </div>
                     <ul className="space-y-2">
                       {b.roles.map((r) => (
                         <li key={`${b.messageId}-${r.emojiKey}`} className="flex items-center justify-between gap-2 text-sm">
                           <span>
-                            <span className="font-mono">{r.emojiKey}</span> → роль{" "}
+                            <span className="font-mono">{r.emojiKey}</span> → role{" "}
                             <span className="font-mono text-[hsl(var(--muted-foreground))]">{r.roleId.slice(-8)}</span>
                           </span>
                           <Button
@@ -179,7 +179,7 @@ export function GuildReactionRolesPage() {
                             className="text-[hsl(var(--destructive))] shrink-0"
                             onClick={() => handleRemove(b.messageId, r.emojiKey)}
                           >
-                            Удалить
+                            Delete
                           </Button>
                         </li>
                       ))}

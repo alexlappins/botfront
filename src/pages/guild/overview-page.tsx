@@ -17,15 +17,15 @@ export function GuildOverviewPage() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Отправить сообщение</CardTitle>
+          <CardTitle>Send Message</CardTitle>
           <CardDescription>
-            Отправьте эмбед от имени бота в выбранный канал. Заполните заголовок, описание и при необходимости укажите картинку.
+            Send an embed from the bot to a selected channel. Fill in the title, description and optionally specify an image.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={() => setSendOpen(true)}>
             <Send className="h-4 w-4 mr-2" />
-            Отправить сообщение
+            Send message
           </Button>
         </CardContent>
       </Card>

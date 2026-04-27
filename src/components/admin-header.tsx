@@ -4,9 +4,9 @@ import { LOGOUT_URL } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 const links = [
-  { to: "/server-templates", label: "Шаблоны" },
-  { to: "/admin/store", label: "Магазин" },
-  { to: "/admin/template-access", label: "Доступы" },
+  { to: "/server-templates", label: "Templates" },
+  { to: "/admin/store", label: "Store" },
+  { to: "/admin/template-access", label: "Access" },
 ] as const
 
 function linkActive(pathname: string, to: string) {
@@ -26,7 +26,7 @@ export function AdminHeader({ title }: { title: string }) {
           <h1 className="text-lg sm:text-xl font-semibold">{title}</h1>
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <Button variant="outline" size="sm" asChild>
-              <a href={LOGOUT_URL}>Выйти</a>
+              <a href={LOGOUT_URL}>Sign out</a>
             </Button>
           </div>
         </div>

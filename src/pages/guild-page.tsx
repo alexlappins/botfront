@@ -8,7 +8,7 @@ export function GuildPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Загрузка...</div>
+        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Loading...</div>
       </div>
     )
   }
@@ -16,7 +16,7 @@ export function GuildPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link to="/login">Войти</Link>
+        <Link to="/login">Sign in</Link>
       </div>
     )
   }
@@ -24,7 +24,7 @@ export function GuildPage() {
   if (!guildId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[hsl(var(--muted-foreground))]">Сервер не выбран</p>
+        <p className="text-[hsl(var(--muted-foreground))]">No server selected</p>
       </div>
     )
   }

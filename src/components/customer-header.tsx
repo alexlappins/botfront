@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils"
 export function CustomerHeader({ title }: { title: string }) {
   const location = useLocation()
   const links = [
-    { to: "/store", label: "Магазин" },
-    { to: "/my-templates", label: "Мои шаблоны" },
-    { to: "/my-purchases", label: "Покупки" },
-    { to: "/my-servers", label: "Мои серверы" },
+    { to: "/store", label: "Store" },
+    { to: "/my-templates", label: "My templates" },
+    { to: "/my-purchases", label: "Purchases" },
+    { to: "/my-servers", label: "My servers" },
   ] as const
 
   return (
@@ -19,7 +19,7 @@ export function CustomerHeader({ title }: { title: string }) {
           <h1 className="text-lg sm:text-xl font-semibold">{title}</h1>
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <Button variant="outline" size="sm" asChild>
-              <a href={LOGOUT_URL}>Выйти</a>
+              <a href={LOGOUT_URL}>Sign out</a>
             </Button>
           </div>
         </div>

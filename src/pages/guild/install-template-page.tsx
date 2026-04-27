@@ -12,7 +12,7 @@ import {
 import { ServerCog } from "lucide-react"
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ru-RU", {
+  return new Date(iso).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -40,10 +40,10 @@ export function GuildInstallTemplatePage() {
         return
       }
       if (e instanceof ApiError && e.status === 403) {
-        setError("Нет доступа к списку шаблонов (купите шаблон или получите доступ).")
+        setError("No access to templates list (buy a template or request access).")
         return
       }
-      setError(e instanceof Error ? e.message : "Ошибка загрузки шаблонов")
+      setError(e instanceof Error ? e.message : "Error loading templates")
     } finally {
       setLoading(false)
     }
@@ -66,7 +66,7 @@ export function GuildInstallTemplatePage() {
         navigate("/login", { replace: true })
         return
       }
-      setInstallError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Ошибка установки")
+      setInstallError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Installation error")
     } finally {
       setInstallingId(null)
     }
@@ -80,24 +80,24 @@ export function GuildInstallTemplatePage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ServerCog className="h-5 w-5" />
-            Установить шаблон сервера
+            Install Server Template
           </CardTitle>
           <CardDescription>
-            Список — только шаблоны, к которым у вас есть доступ (покупка / выдача). Установка целиком делает бот по{" "}
-            <code className="text-xs">POST /api/guilds/…/install-template</code> (сообщения, автороли, логи и т.д. — на
-            стороне сервера). Если что-то пропущено, смотрите блок «Результат установки» ниже (skipped / warnings).
+            The list shows only templates you have access to (purchased / granted). Full installation is performed by the bot via{" "}
+            <code className="text-xs">POST /api/guilds/…/install-template</code> (messages, auto-roles, logs, etc. — on the
+            server side). If something is missing, check the "Installation result" block below (skipped / warnings).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           {installResult && (
             <Card className="border-[hsl(var(--primary)/0.35)] bg-[hsl(var(--muted)/0.2)]">
               <CardHeader className="py-3">
-                <CardTitle className="text-base">Результат установки</CardTitle>
+                <CardTitle className="text-base">Installation result</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm pt-0">
                 {installResult.summary && Object.keys(installResult.summary).length > 0 && (
                   <div>
-                    <p className="font-medium">Сводка</p>
+                    <p className="font-medium">Summary</p>
                     <ul className="list-disc pl-5">
                       {Object.entries(installResult.summary).map(([k, v]) => (
                         <li key={k}>
@@ -109,7 +109,7 @@ export function GuildInstallTemplatePage() {
                 )}
                 {installResult.warnings && installResult.warnings.length > 0 && (
                   <div>
-                    <p className="font-medium">Предупреждения</p>
+                    <p className="font-medium">Warnings</p>
                     <ul className="list-disc pl-5">
                       {installResult.warnings.map((w, i) => (
                         <li key={i}>{w}</li>
@@ -119,7 +119,7 @@ export function GuildInstallTemplatePage() {
                 )}
                 {installResult.skipped && Object.keys(installResult.skipped).length > 0 && (
                   <div>
-                    <p className="font-medium">Пропущено</p>
+                    <p className="font-medium">Skipped</p>
                     {Object.entries(installResult.skipped).map(([k, arr]) => (
                       <div key={k}>
                         <p className="text-xs text-[hsl(var(--muted-foreground))]">{k}</p>
@@ -130,10 +130,10 @@ export function GuildInstallTemplatePage() {
                 )}
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button size="sm" asChild>
-                    <Link to={`/guild/${guildId}`}>Настройки сервера</Link>
+                    <Link to={`/guild/${guildId}`}>Server settings</Link>
                   </Button>
                   <Button size="sm" variant="outline" asChild>
-                    <Link to="/my-servers">Мои серверы</Link>
+                    <Link to="/my-servers">My Servers</Link>
                   </Button>
                 </div>
               </CardContent>
@@ -141,12 +141,12 @@ export function GuildInstallTemplatePage() {
           )}
           {installError && <p className="text-sm text-[hsl(var(--destructive))]">{installError}</p>}
           {loading ? (
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Загрузка шаблонов…</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">Loading templates…</p>
           ) : error ? (
             <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>
           ) : templates.length === 0 ? (
             <p className="text-sm text-[hsl(var(--muted-foreground))]">
-              Нет доступных шаблонов. Оформите покупку в магазине или попросите администратора выдать доступ.
+              No available templates. Purchase one in the store or ask an administrator to grant access.
             </p>
           ) : (
             <ul className="space-y-4">
@@ -162,14 +162,14 @@ export function GuildInstallTemplatePage() {
                     )}
                     {t.discordTemplateUrl && (
                       <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1 break-all">
-                        Discord‑шаблон:{" "}
+                        Discord template:{" "}
                         <a
                           href={t.discordTemplateUrl}
                           target="_blank"
                           rel="noreferrer"
                           className="text-[hsl(var(--primary))] hover:underline"
                         >
-                          открыть
+                          open
                         </a>
                       </p>
                     )}
@@ -179,12 +179,12 @@ export function GuildInstallTemplatePage() {
                     {t.discordTemplateUrl && (
                       <Button size="sm" variant="outline" asChild>
                         <a href={t.discordTemplateUrl} target="_blank" rel="noreferrer">
-                          Открыть Discord‑шаблон
+                          Open Discord template
                         </a>
                       </Button>
                     )}
                     <Button size="sm" onClick={() => void handleInstall(t.id)} disabled={!!installingId}>
-                      {installingId === t.id ? "Установка…" : "Установить на этот сервер"}
+                      {installingId === t.id ? "Installing…" : "Install on this server"}
                     </Button>
                   </div>
                 </li>

@@ -81,15 +81,15 @@ function embedColorToPickerHex(color: string): string {
 
 /** Порядок ближе к ProBot: тёплые → холодные. Последний круг — системный color picker. */
 const EMBED_COLOR_PRESETS: { hex: string; label: string }[] = [
-  { hex: "#E67E22", label: "Оранжевый" },
-  { hex: "#FEE75C", label: "Жёлтый" },
-  { hex: "#1ABC9C", label: "Бирюзовый" },
-  { hex: "#5865F2", label: "Синий (Discord)" },
-  { hex: "#9B59B6", label: "Фиолетовый" },
-  { hex: "#ED4245", label: "Красный" },
-  { hex: "#57F287", label: "Зелёный" },
-  { hex: "#EB459E", label: "Розовый" },
-  { hex: "#99AAB5", label: "Серый" },
+  { hex: "#E67E22", label: "Orange" },
+  { hex: "#FEE75C", label: "Yellow" },
+  { hex: "#1ABC9C", label: "Teal" },
+  { hex: "#5865F2", label: "Blue (Discord)" },
+  { hex: "#9B59B6", label: "Purple" },
+  { hex: "#ED4245", label: "Red" },
+  { hex: "#57F287", label: "Green" },
+  { hex: "#EB459E", label: "Pink" },
+  { hex: "#99AAB5", label: "Gray" },
 ]
 
 function pickUrl(v: unknown): string {
@@ -264,7 +264,7 @@ export function DiscordEmbedPreview({ form }: { form: EmbedFormState }) {
   if (!raw) {
     return (
       <div className="rounded-lg border border-dashed border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.3)] px-4 py-8 text-center text-sm text-[hsl(var(--muted-foreground))]">
-        Заполните заголовок, описание, поля или изображения — здесь появится предпросмотр, как в Discord.
+        Fill in the title, description, fields or images — a Discord-style preview will appear here.
       </div>
     )
   }
@@ -378,7 +378,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
       if (kind === "image") patch({ imageUrl: url })
       else patch({ thumbnailUrl: url })
     } catch (e) {
-      setUploadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Ошибка загрузки")
+      setUploadError(e instanceof ApiError ? e.message : e instanceof Error ? e.message : "Upload error")
     } finally {
       setUploadingKind(null)
     }
@@ -388,14 +388,16 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] xl:items-start">
       <div className="space-y-5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.22)] p-4 sm:p-5">
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Автор в эмбед не настраивается — сообщение отправляет бот (как в ProBot). Загрузка картинок — на бэке{" "}
-          <code className="text-[10px]">POST /api/uploads</code>; для Discord нужен публичный{" "}
-          <code className="text-[10px]">PUBLIC_BASE_URL</code> (https), иначе в эмбед попадёт localhost и картинка не откроется.
+          Embed author is not configurable — the bot sends the message (like ProBot). Image uploads go
+          through the backend{" "}
+          <code className="text-[10px]">POST /api/uploads</code>; Discord requires a public{" "}
+          <code className="text-[10px]">PUBLIC_BASE_URL</code> (https), otherwise the embed will contain
+          localhost and the image won't load.
         </p>
 
         <div>
           <Label className="text-[11px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-            Цвет
+            Color
           </Label>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             {EMBED_COLOR_PRESETS.map((p) => {
@@ -427,8 +429,8 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                 "[&::-webkit-color-swatch-wrapper]:p-0.5 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-0",
                 "[&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-0"
               )}
-              title="Свой цвет (палитра системы)"
-              aria-label="Выбрать цвет из палитры"
+              title="Custom color (system picker)"
+              aria-label="Pick a color from the palette"
             />
             <Input
               className="h-9 max-w-[7.5rem] font-mono text-xs"
@@ -445,24 +447,24 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1 space-y-4">
             <div className="grid gap-2">
-              <Label>Заголовок</Label>
+              <Label>Title</Label>
               <Input
                 value={form.title}
                 onChange={(e) => patch({ title: e.target.value })}
-                placeholder="Заголовок эмбеда"
+                placeholder="Embed title"
               />
             </div>
             <div className="grid gap-2">
-              <Label>Ссылка у заголовка</Label>
+              <Label>Title URL</Label>
               <Input value={form.url} onChange={(e) => patch({ url: e.target.value })} placeholder="https://…" />
             </div>
             <div className="grid gap-2">
-              <Label>Описание</Label>
+              <Label>Description</Label>
               <textarea
                 className={textareaClass}
                 value={form.description}
                 onChange={(e) => patch({ description: e.target.value })}
-                placeholder="Текст эмбеда. Markdown: **жирный**, *курсив*…"
+                placeholder="Embed text. Markdown: **bold**, *italic*…"
                 rows={5}
               />
             </div>
@@ -481,7 +483,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                 disabled={form.fields.length >= 25}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Добавить поле
+                Add field
               </Button>
               <div className="space-y-2">
                 {form.fields.map((f, i) => (
@@ -489,7 +491,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                     <div className="flex flex-wrap items-center gap-2">
                       <Input
                         className="min-w-[120px] flex-1"
-                        placeholder="Название"
+                        placeholder="Name"
                         value={f.name}
                         onChange={(e) => setField(i, { name: e.target.value })}
                       />
@@ -499,7 +501,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                           checked={f.inline}
                           onChange={(e) => setField(i, { inline: e.target.checked })}
                         />
-                        В строку
+                        Inline
                       </label>
                       <Button
                         type="button"
@@ -512,7 +514,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                     </div>
                     <textarea
                       className={cn(textareaClass, "min-h-[72px]")}
-                      placeholder="Значение (**жирный** и т.д.)"
+                      placeholder="Value (**bold** etc.)"
                       value={f.value}
                       onChange={(e) => setField(i, { value: e.target.value })}
                       rows={3}
@@ -523,7 +525,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
             </div>
 
             <div className="grid gap-2">
-              <Label>Большое изображение</Label>
+              <Label>Large image</Label>
               <div className={cn(dashedMediaBox, "min-h-[140px]")}>
                 {form.imageUrl.trim() ? (
                   <img
@@ -538,7 +540,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
               <Input
                 value={form.imageUrl}
                 onChange={(e) => patch({ imageUrl: e.target.value })}
-                placeholder="URL изображения (image)"
+                placeholder="Image URL (image)"
               />
               <input
                 ref={imageFileRef}
@@ -560,14 +562,14 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                 onClick={() => imageFileRef.current?.click()}
               >
                 <Upload className="mr-2 h-4 w-4" />
-                {uploadingKind === "image" ? "Загрузка…" : "Загрузить PNG / JPEG / GIF / WebP"}
+                {uploadingKind === "image" ? "Uploading…" : "Upload PNG / JPEG / GIF / WebP"}
               </Button>
             </div>
           </div>
 
           <div className="flex w-full shrink-0 flex-col gap-2 lg:w-40">
             <Label className="text-[11px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-              Миниатюра
+              Thumbnail
             </Label>
             <div className={cn(dashedMediaBox, "aspect-square max-h-36 min-h-[7rem]")}>
               {form.thumbnailUrl.trim() ? (
@@ -583,7 +585,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
             <Input
               value={form.thumbnailUrl}
               onChange={(e) => patch({ thumbnailUrl: e.target.value })}
-              placeholder="URL миниатюры"
+              placeholder="Thumbnail URL"
               className="text-sm"
             />
             <input
@@ -606,7 +608,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
               onClick={() => thumbFileRef.current?.click()}
             >
               <Upload className="mr-2 h-4 w-4 shrink-0" />
-              {uploadingKind === "thumbnail" ? "…" : "Загрузить"}
+              {uploadingKind === "thumbnail" ? "…" : "Upload"}
             </Button>
           </div>
         </div>
@@ -619,7 +621,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
 
         <div className="border-t border-[hsl(var(--border))] pt-4 space-y-3">
           <Label className="text-[11px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-            Подвал
+            Footer
           </Label>
           <div className="flex flex-wrap items-start gap-3">
             <div
@@ -638,19 +640,19 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
               <Input
                 value={form.footerIconUrl}
                 onChange={(e) => patch({ footerIconUrl: e.target.value })}
-                placeholder="Иконка подвала (URL)"
+                placeholder="Footer icon (URL)"
               />
               <Input
                 value={form.footerText}
                 onChange={(e) => patch({ footerText: e.target.value })}
-                placeholder="Текст подвала"
+                placeholder="Footer text"
               />
             </div>
           </div>
         </div>
 
         <div className="grid gap-2 sm:max-w-xs">
-          <Label className="text-xs text-[hsl(var(--muted-foreground))]">Время (timestamp)</Label>
+          <Label className="text-xs text-[hsl(var(--muted-foreground))]">Time (timestamp)</Label>
           <Input
             type="datetime-local"
             value={form.timestampLocal}
@@ -660,7 +662,7 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
       </div>
 
       <div className="space-y-2 xl:sticky xl:top-2 xl:self-start">
-        <Label className="text-sm font-medium">Предпросмотр</Label>
+        <Label className="text-sm font-medium">Preview</Label>
         <DiscordEmbedPreview form={form} />
       </div>
     </div>

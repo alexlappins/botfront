@@ -15,11 +15,11 @@ import { updateLogsChannel, getLogEvents, type LogsType, type LogEvent } from "@
 import { ScrollText, ListChecks } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<LogsType, string> = {
-  joinLeave: "Вход/выход",
-  messages: "Сообщения",
-  moderation: "Модерация",
-  channel: "Канал",
-  banKick: "Бан/кик",
+  joinLeave: "Join/Leave",
+  messages: "Messages",
+  moderation: "Moderation",
+  channel: "Channel",
+  banKick: "Ban/Kick",
 }
 const LOG_TYPES: LogsType[] = ["joinLeave", "messages", "moderation", "channel", "banKick"]
 
@@ -27,7 +27,7 @@ const LIMIT = 50
 
 function formatDate(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleString("ru-RU", {
+  return d.toLocaleString("en-US", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -81,7 +81,7 @@ export function GuildLogsPage() {
         }
         setEventsMore(next.length === LIMIT)
       } catch (e) {
-        setEventsError(e instanceof Error ? e.message : "Ошибка загрузки")
+        setEventsError(e instanceof Error ? e.message : "Loading error")
       } finally {
         setEventsLoading(false)
       }
@@ -118,15 +118,15 @@ export function GuildLogsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ScrollText className="h-5 w-5" />
-            Каналы логов
+            Log Channels
           </CardTitle>
           <CardDescription>
-            Выберите канал для каждого типа логов. Можно задавать здесь, через API или командой /logs set в Discord.
+            Select a channel for each log type. You can configure them here, via the API, or with the /logs set command in Discord.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {savedAt != null && (
-            <p className="text-sm text-[hsl(var(--primary))]">Сохранено.</p>
+            <p className="text-sm text-[hsl(var(--primary))]">Saved.</p>
           )}
           {LOG_TYPES.map((type) => (
             <div key={type} className="flex flex-wrap items-center gap-3">
@@ -136,10 +136,10 @@ export function GuildLogsPage() {
                 onValueChange={(val) => handleChange(type, val === "none" ? null : val)}
               >
                 <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Не задан" />
+                  <SelectValue placeholder="Not set" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Отключить</SelectItem>
+                  <SelectItem value="none">Disable</SelectItem>
                   {channels.map((ch) => (
                     <SelectItem key={ch.id} value={ch.id}>
                       # {ch.name}
@@ -156,10 +156,10 @@ export function GuildLogsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ListChecks className="h-5 w-5" />
-            Лента событий
+            Event Feed
           </CardTitle>
           <CardDescription>
-            События логов за последние 3 месяца. Хранятся в БД независимо от настройки каналов в Discord.
+            Log events from the last 3 months. Stored in the database independently of Discord channel configuration.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -167,9 +167,9 @@ export function GuildLogsPage() {
             <p className="text-sm text-[hsl(var(--destructive))]">{eventsError}</p>
           )}
           {eventsLoading && events.length === 0 ? (
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Загрузка…</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">Loading…</p>
           ) : events.length === 0 ? (
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет событий.</p>
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">No events.</p>
           ) : (
             <>
               <ul className="space-y-2">
@@ -184,7 +184,7 @@ export function GuildLogsPage() {
                   onClick={loadMore}
                   disabled={eventsLoading}
                 >
-                  {eventsLoading ? "Загрузка…" : "Загрузить ещё"}
+                  {eventsLoading ? "Loading…" : "Load more"}
                 </Button>
               )}
             </>

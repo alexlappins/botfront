@@ -41,10 +41,10 @@ export function emptySelfRoleButton(): SelfRoleButtonDraft {
 }
 
 const STYLE_COLORS: { value: 1 | 2 | 3 | 4; color: string; label: string }[] = [
-  { value: 1, color: "#5865F2", label: "Синяя (Primary)" },
-  { value: 2, color: "#4E5058", label: "Серая (Secondary)" },
-  { value: 3, color: "#248046", label: "Зелёная (Success)" },
-  { value: 4, color: "#DA373C", label: "Красная (Danger)" },
+  { value: 1, color: "#5865F2", label: "Blue (Primary)" },
+  { value: 2, color: "#4E5058", label: "Gray (Secondary)" },
+  { value: 3, color: "#248046", label: "Green (Success)" },
+  { value: 4, color: "#DA373C", label: "Red (Danger)" },
 ]
 
 export function buildSelfRoleCustomId(mode: SelfRoleButtonMode, roleName: string): string {
@@ -218,16 +218,16 @@ export function TemplateSelfRoleButtonsEditor({
   return (
     <div className="space-y-4 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4">
       <div>
-        <p className="text-sm font-medium">Кнопки авторолей</p>
+        <p className="text-sm font-medium">Auto-role buttons</p>
         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-          Канал и порядок сообщения — в шапке карточки. При установке бот подставит id ролей в{" "}
-          <code className="text-[10px]">customId</code>. До 5 кнопок в ряд.
+          Channel and message order are set in the card header. On install the bot substitutes role IDs
+          into <code className="text-[10px]">customId</code>. Up to 5 buttons per row.
         </p>
       </div>
 
       {previewRows.length > 0 ? (
         <div className="rounded-lg border border-[hsl(var(--border))] bg-[#2b2d31] p-3 space-y-2">
-          <p className="text-[10px] uppercase tracking-wide text-[#b5bac1]">Как в Discord</p>
+          <p className="text-[10px] uppercase tracking-wide text-[#b5bac1]">Like in Discord</p>
           <div className="flex flex-col gap-2">
             {previewRows.map((row, ri) => (
               <div key={ri} className="flex flex-wrap gap-2">
@@ -239,7 +239,7 @@ export function TemplateSelfRoleButtonsEditor({
           </div>
         </div>
       ) : (
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">Добавьте кнопки ниже — здесь появится превью.</p>
+        <p className="text-xs text-[hsl(var(--muted-foreground))]">Add buttons below — a preview will appear here.</p>
       )}
 
       <div className="space-y-3">
@@ -250,7 +250,7 @@ export function TemplateSelfRoleButtonsEditor({
           >
             <div className="flex flex-wrap items-end gap-2 justify-between">
               <div className="grid gap-1.5 min-w-[140px] flex-1">
-                <Label className="text-xs">Режим</Label>
+                <Label className="text-xs">Mode</Label>
                 <Select
                   value={b.mode}
                   onValueChange={(v) => patchAt(i, { mode: v as SelfRoleButtonMode })}
@@ -259,29 +259,29 @@ export function TemplateSelfRoleButtonsEditor({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="give">Только выдать (give)</SelectItem>
-                    <SelectItem value="take">Только снять (take)</SelectItem>
-                    <SelectItem value="toggle">Переключить (toggle)</SelectItem>
+                    <SelectItem value="give">Give only (give)</SelectItem>
+                    <SelectItem value="take">Remove only (take)</SelectItem>
+                    <SelectItem value="toggle">Toggle (toggle)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="button" size="sm" variant="ghost" onClick={() => removeAt(i)} aria-label="Удалить кнопку">
+              <Button type="button" size="sm" variant="ghost" onClick={() => removeAt(i)} aria-label="Delete button">
                 <Trash2 className="h-4 w-4 text-[hsl(var(--destructive))]" />
               </Button>
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs">Роль</Label>
+                <Label className="text-xs">Role</Label>
                 {roleOptions && roleOptions.length > 0 ? (
                   <Select
                     value={b.roleName || "__none__"}
                     onValueChange={(v) => patchAt(i, { roleName: v === "__none__" ? "" : v })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Выберите роль" />
+                      <SelectValue placeholder="Pick a role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      <SelectItem value="__none__">Not selected</SelectItem>
                       {roleOptions.map((r) => (
                         <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                       ))}
@@ -291,12 +291,12 @@ export function TemplateSelfRoleButtonsEditor({
                   <Input
                     value={b.roleName}
                     onChange={(e) => patchAt(i, { roleName: e.target.value })}
-                    placeholder="Например Member"
+                    placeholder="e.g. Member"
                   />
                 )}
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">Текст на кнопке</Label>
+                <Label className="text-xs">Button text</Label>
                 <Input
                   value={b.label}
                   onChange={(e) => patchAt(i, { label: e.target.value })}
@@ -307,7 +307,7 @@ export function TemplateSelfRoleButtonsEditor({
             </div>
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs">Цвет кнопки</Label>
+                <Label className="text-xs">Button color</Label>
                 <div className="flex gap-2 items-center h-9">
                   {STYLE_COLORS.map((s) => (
                     <button
@@ -327,11 +327,11 @@ export function TemplateSelfRoleButtonsEditor({
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">Эмодзи (опционально)</Label>
+                <Label className="text-xs">Emoji (optional)</Label>
                 <Input
                   value={b.emojiName}
                   onChange={(e) => patchAt(i, { emojiName: e.target.value })}
-                  placeholder="✅ или id кастомного"
+                  placeholder="✅ or custom emoji id"
                 />
               </div>
             </div>
@@ -350,10 +350,10 @@ export function TemplateSelfRoleButtonsEditor({
         disabled={buttons.length >= 25}
       >
         <Plus className="mr-2 h-4 w-4" />
-        Добавить кнопку
+        Add button
       </Button>
       {buttons.length >= 25 ? (
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">Лимит 25 кнопок (запас под несколько рядов).</p>
+        <p className="text-xs text-[hsl(var(--muted-foreground))]">Limit 25 buttons (room for multiple rows).</p>
       ) : null}
     </div>
   )

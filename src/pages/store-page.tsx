@@ -20,8 +20,8 @@ export function StorePage() {
       setItems(await getStoreTemplates())
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
-      setError(e instanceof Error ? e.message : "Ошибка загрузки")
+      if (e instanceof ApiError && e.status === 403) return setError("No access")
+      setError(e instanceof Error ? e.message : "Loading error")
     } finally {
       setLoading(false)
     }
@@ -37,12 +37,12 @@ export function StorePage() {
     setSuccess(null)
     try {
       await checkoutTemplate(templateId)
-      setSuccess("Покупка успешно оформлена.")
+      setSuccess("Purchase completed successfully.")
       await load()
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      if (e instanceof ApiError && e.status === 403) return setError("Нет доступа")
-      setError(e instanceof Error ? e.message : "Ошибка покупки")
+      if (e instanceof ApiError && e.status === 403) return setError("No access")
+      setError(e instanceof Error ? e.message : "Purchase error")
     } finally {
       setBuyingId(null)
     }
@@ -50,11 +50,11 @@ export function StorePage() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <CustomerHeader title="Магазин серверов" />
+      <CustomerHeader title="Server Store" />
       <main className="container mx-auto max-w-5xl px-4 py-8 space-y-4">
         {success && <p className="text-sm text-[hsl(var(--primary))]">{success}</p>}
         {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
-        {loading ? <p className="text-sm text-[hsl(var(--muted-foreground))]">Загрузка...</p> : (
+        {loading ? <p className="text-sm text-[hsl(var(--muted-foreground))]">Loading...</p> : (
           <div className="grid gap-4 sm:grid-cols-2">
             {items.map((item) => (
               <Card key={item.templateId}>
@@ -70,7 +70,7 @@ export function StorePage() {
                     </a>
                   )}
                   <Button size="sm" onClick={() => handleBuy(item.templateId)} disabled={buyingId === item.templateId}>
-                    {buyingId === item.templateId ? "Покупка..." : "Купить"}
+                    {buyingId === item.templateId ? "Purchasing..." : "Buy"}
                   </Button>
                 </CardContent>
               </Card>

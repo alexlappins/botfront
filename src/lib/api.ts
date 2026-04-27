@@ -82,9 +82,9 @@ export async function uploadFile(file: File): Promise<{ url: string }> {
     body: formData,
     credentials: "include",
   })
-  if (!res.ok) await throwApiError(res, "Ошибка загрузки файла")
+  if (!res.ok) await throwApiError(res, "File upload error")
   const data = (await res.json()) as { url?: string }
-  if (typeof data.url !== "string") throw new Error("Ответ загрузки без поля url")
+  if (typeof data.url !== "string") throw new Error("Upload response missing url field")
   return { url: data.url }
 }
 
@@ -97,7 +97,7 @@ export async function previewTemplateMessage(
     method: "POST",
     body: JSON.stringify(body),
   })
-  if (!res.ok) await throwApiError(res, "Не удалось отправить превью в канал")
+  if (!res.ok) await throwApiError(res, "Failed to send preview to channel")
 }
 
 export async function sendMessage(
@@ -261,7 +261,7 @@ export async function addReactionRoleBinding(
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(typeof data.message === "string" ? data.message : "Не удалось добавить привязку")
+    throw new Error(typeof data.message === "string" ? data.message : "Failed to add binding")
   }
 }
 
@@ -682,7 +682,7 @@ export async function installServerTemplate(
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))
-    throw new Error(typeof data.message === "string" ? data.message : "Ошибка установки шаблона")
+    throw new Error(typeof data.message === "string" ? data.message : "Template install error")
   }
 }
 
@@ -746,7 +746,7 @@ export async function getStoreTemplates(): Promise<StoreTemplateProduct[]> {
           ? item.name
           : typeof nested?.name === "string"
             ? nested.name
-            : "Без названия",
+            : "Untitled",
       description:
         typeof item?.description === "string"
           ? item.description
@@ -828,7 +828,7 @@ export async function liftBotRole(
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok && res.status !== 200) {
-    return { ok: false, needsManual: true, message: (data as { message?: string })?.message ?? "Ошибка" }
+    return { ok: false, needsManual: true, message: (data as { message?: string })?.message ?? "Error" }
   }
   return data
 }

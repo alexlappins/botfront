@@ -55,7 +55,7 @@ export function InstallWizardPage() {
       })
       .catch((e) => {
         if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-        setPageError(e instanceof Error ? e.message : "Ошибка загрузки")
+        setPageError(e instanceof Error ? e.message : "Loading error")
       })
       .finally(() => setLoading(false))
   }, [navigate, templateId])
@@ -140,7 +140,7 @@ export function InstallWizardPage() {
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      setInstallError(e instanceof Error ? e.message : "Ошибка установки")
+      setInstallError(e instanceof Error ? e.message : "Install error")
     } finally {
       setInstalling(false)
     }
@@ -175,7 +175,7 @@ export function InstallWizardPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[hsl(var(--background))]">
-        <CustomerHeader title="Установка шаблона" />
+        <CustomerHeader title="Template installation" />
         <div className="flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-[hsl(var(--muted-foreground))]" />
         </div>
@@ -186,11 +186,11 @@ export function InstallWizardPage() {
   if (pageError) {
     return (
       <div className="min-h-screen bg-[hsl(var(--background))]">
-        <CustomerHeader title="Установка шаблона" />
+        <CustomerHeader title="Template installation" />
         <div className="container mx-auto max-w-2xl px-4 py-8">
           <p className="text-[hsl(var(--destructive))]">{pageError}</p>
           <Link to="/" className="text-[hsl(var(--primary))] hover:underline mt-4 inline-block">
-            На главную
+            Back to home
           </Link>
         </div>
       </div>
@@ -202,63 +202,63 @@ export function InstallWizardPage() {
     const s = installResult.summary
     return (
       <div className="min-h-screen bg-[hsl(var(--background))]">
-        <CustomerHeader title="Установка завершена" />
+        <CustomerHeader title="Installation complete" />
         <main className="container mx-auto max-w-2xl px-4 py-12 flex flex-col items-center text-center space-y-6">
           <div className="flex flex-col items-center gap-3">
             <CheckCircle2 className="h-16 w-16 text-[hsl(var(--primary))]" />
-            <h1 className="text-2xl font-bold">Сервер успешно установлен!</h1>
+            <h1 className="text-2xl font-bold">Server installed successfully!</h1>
             <p className="text-[hsl(var(--muted-foreground))] max-w-sm">
-              Все дополнительные элементы развёрнуты. Ваш Discord-сервер готов к использованию.
+              All extra elements have been deployed. Your Discord server is ready to use.
             </p>
           </div>
 
           {s && (
             <div className="w-full grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-              {s.rolesCreated > 0 && <StatCard label="Роли" value={s.rolesCreated} />}
-              {s.channelsCreated > 0 && <StatCard label="Каналы" value={s.channelsCreated} />}
-              {s.messagesSent > 0 && <StatCard label="Сообщения" value={s.messagesSent} />}
-              {s.reactionRolesBound > 0 && <StatCard label="Автороли" value={s.reactionRolesBound} />}
-              {s.logChannelsSet > 0 && <StatCard label="Каналы логов" value={s.logChannelsSet} />}
+              {s.rolesCreated > 0 && <StatCard label="Roles" value={s.rolesCreated} />}
+              {s.channelsCreated > 0 && <StatCard label="Channels" value={s.channelsCreated} />}
+              {s.messagesSent > 0 && <StatCard label="Messages" value={s.messagesSent} />}
+              {s.reactionRolesBound > 0 && <StatCard label="Auto-roles" value={s.reactionRolesBound} />}
+              {s.logChannelsSet > 0 && <StatCard label="Log channels" value={s.logChannelsSet} />}
             </div>
           )}
 
           {installResult.warnings && installResult.warnings.length > 0 && (
             <div className="w-full text-left p-4 rounded-lg bg-[hsl(var(--muted))] text-sm space-y-1">
-              <p className="font-medium text-[hsl(var(--muted-foreground))]">Предупреждения:</p>
+              <p className="font-medium text-[hsl(var(--muted-foreground))]">Warnings:</p>
               <ul className="list-disc pl-5 space-y-1 text-[hsl(var(--muted-foreground))]">
                 {installResult.warnings.map((w, i) => <li key={i}>{w}</li>)}
               </ul>
             </div>
           )}
 
-          {/* Статус поднятия роли бота */}
+          {/* Bot role lift status */}
           {botRoleLifted?.ok && (
             <div className="w-full text-left p-4 rounded-lg bg-[hsl(var(--primary)/0.1)] border border-[hsl(var(--primary)/0.3)] text-sm">
               <p className="font-medium text-[hsl(var(--primary))]">
-                ✓ Роль бота автоматически поднята на сервере
+                ✓ Bot role automatically promoted on the server
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                Кнопки авторолей должны работать без дополнительных действий.
+                Auto-role buttons should work without any extra action.
               </p>
             </div>
           )}
           {botRoleLifted?.needsManual && (
             <div className="w-full text-left p-4 rounded-lg bg-[hsl(var(--muted))] border text-sm space-y-2">
               <p className="font-medium">
-                ⚠ Нужно один раз поднять роль бота вручную
+                ⚠ You need to promote the bot role manually one time
               </p>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Discord не позволил обновить иерархию автоматически. Чтобы кнопки авторолей работали,
-                откройте в Discord:
+                Discord did not allow updating the role hierarchy automatically. To make the auto-role
+                buttons work, open in Discord:
               </p>
               <ol className="text-xs text-[hsl(var(--muted-foreground))] list-decimal pl-5 space-y-0.5">
-                <li><b>Настройки сервера</b> → <b>Роли</b></li>
-                <li>Найдите роль бота (обычно это имя бота, например «Level UP»)</li>
-                <li>Перетащите её <b>наверх</b>, выше ролей, которые должны выдаваться кнопками</li>
-                <li>Нажмите <b>Сохранить изменения</b></li>
+                <li><b>Server Settings</b> → <b>Roles</b></li>
+                <li>Find the bot role (usually named after the bot, e.g. "Level UP")</li>
+                <li>Drag it <b>to the top</b>, above all roles that should be assigned by buttons</li>
+                <li>Click <b>Save Changes</b></li>
               </ol>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Это делается один раз. После этого все кнопки авторолей будут работать.
+                This is a one-time action. After that all auto-role buttons will work.
               </p>
             </div>
           )}
@@ -267,11 +267,11 @@ export function InstallWizardPage() {
             <Button asChild size="lg">
               <a href="https://discord.com" target="_blank" rel="noreferrer">
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Открыть Discord
+                Open Discord
               </a>
             </Button>
             <Button variant="outline" asChild>
-              <Link to="/my-servers">Мои серверы</Link>
+              <Link to="/my-servers">My servers</Link>
             </Button>
           </div>
         </main>
@@ -281,13 +281,13 @@ export function InstallWizardPage() {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--background))]">
-      <CustomerHeader title="Установка шаблона" />
+      <CustomerHeader title="Template installation" />
 
       <main className="container mx-auto max-w-2xl px-4 py-8 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">{template?.name ?? "Установка шаблона"}</h1>
+          <h1 className="text-2xl font-bold">{template?.name ?? "Template installation"}</h1>
           <p className="text-[hsl(var(--muted-foreground))] text-sm">
-            Следуйте трём простым шагам, чтобы развернуть готовый Discord-сервер
+            Follow three simple steps to deploy a fully configured Discord server
           </p>
         </div>
 
@@ -297,13 +297,13 @@ export function InstallWizardPage() {
         {/* Step 1 */}
         <StepCard
           number={1}
-          title="Создать сервер по шаблону Discord"
+          title="Create server from Discord template"
           done={step1Done}
           active={currentStep === 1}
         >
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Нажмите на кнопку, чтобы открыть шаблон Discord. Создайте новый сервер — Discord сам предложит
-            задать название и иконку.
+            Click the button to open the Discord template. Create a new server — Discord will ask you
+            for a name and icon.
           </p>
           <Button
             onClick={handleStep1Click}
@@ -311,22 +311,22 @@ export function InstallWizardPage() {
             className="w-full sm:w-auto"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Установить шаблон сервера
+            Install server template
           </Button>
           {!template?.discordTemplateUrl && (
-            <p className="text-xs text-[hsl(var(--destructive))]">Ссылка шаблона не задана</p>
+            <p className="text-xs text-[hsl(var(--destructive))]">Template URL is not set</p>
           )}
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            После создания сервера в Discord вернитесь на эту страницу и нажмите «Продолжить».
+            After creating the server in Discord, return to this page and click "Continue".
           </p>
           {!step1Done && (
             <Button variant="outline" size="sm" onClick={confirmStep1} className="w-full sm:w-auto">
-              Я создал сервер — продолжить
+              I created the server — continue
             </Button>
           )}
           {step1Done && currentStep === 1 && (
             <Button size="sm" onClick={() => setCurrentStep(2)} className="w-full sm:w-auto">
-              Продолжить →
+              Continue →
             </Button>
           )}
         </StepCard>
@@ -334,14 +334,14 @@ export function InstallWizardPage() {
         {/* Step 2 */}
         <StepCard
           number={2}
-          title="Добавить бота на сервер"
+          title="Add the bot to the server"
           done={step2Done}
           active={currentStep === 2}
           locked={!step1Done}
         >
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Нажмите на кнопку, чтобы добавить бота. Когда Discord спросит, на какой сервер, выберите тот,
-            что вы только что создали на первом шаге.
+            Click the button to add the bot. When Discord asks which server to add it to, pick the one
+            you just created in step one.
           </p>
           <Button
             onClick={handleStep2Click}
@@ -349,22 +349,22 @@ export function InstallWizardPage() {
             className="w-full sm:w-auto"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
-            Добавить бота на сервер
+            Add bot to server
           </Button>
           {!BOT_INVITE_URL && (
-            <p className="text-xs text-[hsl(var(--destructive))]">Ссылка приглашения бота не настроена</p>
+            <p className="text-xs text-[hsl(var(--destructive))]">Bot invite URL is not configured</p>
           )}
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            После добавления бота вернитесь на эту страницу и нажмите «Продолжить».
+            After adding the bot return to this page and click "Continue".
           </p>
           {!step2Done && currentStep === 2 && (
             <Button variant="outline" size="sm" onClick={confirmStep2} className="w-full sm:w-auto">
-              Я добавил бота — продолжить
+              I added the bot — continue
             </Button>
           )}
           {step2Done && currentStep === 2 && (
             <Button size="sm" onClick={() => setCurrentStep(3)} className="w-full sm:w-auto">
-              Продолжить →
+              Continue →
             </Button>
           )}
         </StepCard>
@@ -372,25 +372,25 @@ export function InstallWizardPage() {
         {/* Step 3 */}
         <StepCard
           number={3}
-          title="Развернуть дополнительные функции"
+          title="Deploy extra features"
           done={!!installResult?.ok}
           active={currentStep === 3}
           locked={!step2Done}
         >
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Выберите сервер, который вы только что создали, и нажмите «Завершить установку». Бот автоматически
-            развернёт все сообщения, автороли, логи и другие функции.
+            Pick the server you just created and click "Finish installation". The bot will automatically
+            deploy all messages, auto-roles, logs and other features.
           </p>
 
           <div className="space-y-3">
             <div className="grid gap-1.5">
-              <p className="text-sm font-medium">Выберите сервер</p>
+              <p className="text-sm font-medium">Pick a server</p>
               <Select value={guildId || "__none__"} onValueChange={(v) => setGuildId(v === "__none__" ? "" : v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Выберите сервер из списка" />
+                  <SelectValue placeholder="Pick a server from the list" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Не выбрано</SelectItem>
+                  <SelectItem value="__none__">Not selected</SelectItem>
                   {[...guilds].sort((a, b) => {
                     const aNew = baselineGuildIds && !baselineGuildIds.has(a.id)
                     const bNew = baselineGuildIds && !baselineGuildIds.has(b.id)
@@ -405,7 +405,7 @@ export function InstallWizardPage() {
                           {g.name}
                           {isNew && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] font-semibold">
-                              НОВЫЙ
+                              NEW
                             </span>
                           )}
                         </span>
@@ -427,30 +427,30 @@ export function InstallWizardPage() {
                     {isEmpty ? (
                       <div className="flex items-center gap-2 text-sm">
                         <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--primary))]" />
-                        <span>Ждём появления сервера… ({waitSeconds} сек)</span>
+                        <span>Waiting for the server to appear… ({waitSeconds}s)</span>
                       </div>
                     ) : hasNew ? (
                       <div className="flex items-center gap-2 text-sm text-[hsl(var(--primary))]">
-                        <span className="font-medium">✓ Новый сервер появился в списке</span>
+                        <span className="font-medium">✓ A new server appeared in the list</span>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2 text-sm">
                         <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--primary))]" />
-                        <span>Ждём появления нового сервера… ({waitSeconds} сек)</span>
+                        <span>Waiting for a new server to appear… ({waitSeconds}s)</span>
                       </div>
                     )}
 
                     <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                      После добавления бота серверу нужно время попасть в Discord API — обычно <b>до 2-3 минут</b>.
-                      Не закрывайте страницу, список обновится автоматически.
-                      {guilds.length > 1 && " Новые серверы помечены бейджем «НОВЫЙ» и подняты в начало списка."}
+                      After adding the bot, the server needs time to appear in the Discord API — usually <b>up to 2–3 minutes</b>.
+                      Don't close the page, the list will refresh automatically.
+                      {guilds.length > 1 && " New servers are marked with a \"NEW\" badge and pinned to the top of the list."}
                     </p>
 
                     {waitSeconds > 30 && !hasNew && (
                       <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                        Долго нет сервера? Убедитесь что:
-                        {" "}(1) бот действительно добавлен на нужный сервер;
-                        {" "}(2) у вас есть права администратора на этом сервере.
+                        Still no server? Make sure that:
+                        {" "}(1) the bot was actually added to the right server;
+                        {" "}(2) you have administrator permissions on that server.
                       </p>
                     )}
 
@@ -461,9 +461,9 @@ export function InstallWizardPage() {
                       disabled={refreshing}
                     >
                       {refreshing ? (
-                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Обновление…</>
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Refreshing…</>
                       ) : (
-                        "Обновить сейчас"
+                        "Refresh now"
                       )}
                     </Button>
                   </div>
@@ -480,10 +480,10 @@ export function InstallWizardPage() {
               {installing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Установка…
+                  Installing…
                 </>
               ) : (
-                "Завершить установку"
+                "Finish installation"
               )}
             </Button>
           </div>
@@ -493,8 +493,8 @@ export function InstallWizardPage() {
           )}
 
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Нажмите кнопку, чтобы автоматически установить все дополнительные элементы сервера.
-            Это завершит настройку и развернёт весь функционал.
+            Click the button to automatically install all extra elements on the server.
+            This will finish setup and deploy the entire feature set.
           </p>
         </StepCard>
       </main>
@@ -516,9 +516,9 @@ function StepProgress({
   done: boolean
 }) {
   const steps = [
-    { n: 1 as Step, label: "Шаблон сервера", done: step1Done },
-    { n: 2 as Step, label: "Добавить бота", done: step2Done },
-    { n: 3 as Step, label: "Развернуть", done },
+    { n: 1 as Step, label: "Server template", done: step1Done },
+    { n: 2 as Step, label: "Add bot", done: step2Done },
+    { n: 3 as Step, label: "Deploy", done },
   ]
   return (
     <div className="flex items-center justify-center gap-0">
@@ -605,7 +605,7 @@ function StepCard({
           <CardTitle className="text-base">
             {title}
             {done && (
-              <span className="ml-2 text-xs font-normal text-[hsl(var(--primary))]">Выполнено</span>
+              <span className="ml-2 text-xs font-normal text-[hsl(var(--primary))]">Done</span>
             )}
           </CardTitle>
         </div>

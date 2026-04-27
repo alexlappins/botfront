@@ -16,11 +16,11 @@ import {
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { to: ".", end: true, label: "Отправить сообщение", icon: Send },
-  { to: "templates", end: false, label: "Шаблоны", icon: FileStack },
-  { to: "install-template", end: false, label: "Установить шаблон сервера", icon: ServerCog },
-  { to: "logs", end: false, label: "Логи", icon: ScrollText },
-  { to: "reaction-roles", end: false, label: "Роли по реакции", icon: MessageSquare },
+  { to: ".", end: true, label: "Send Message", icon: Send },
+  { to: "templates", end: false, label: "Templates", icon: FileStack },
+  { to: "install-template", end: false, label: "Install Server Template", icon: ServerCog },
+  { to: "logs", end: false, label: "Logs", icon: ScrollText },
+  { to: "reaction-roles", end: false, label: "Reaction Roles", icon: MessageSquare },
 ] as const
 
 function GuildLayoutInner() {
@@ -30,7 +30,7 @@ function GuildLayoutInner() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[hsl(var(--background))]">
-        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Загрузка...</div>
+        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Loading...</div>
       </div>
     )
   }
@@ -39,10 +39,10 @@ function GuildLayoutInner() {
     return (
       <div className="min-h-screen p-4 bg-[hsl(var(--background))]">
         <Link to="/my-servers" className="text-[hsl(var(--primary))] hover:underline">
-          ← Назад к серверам
+          ← Back to servers
         </Link>
         <div className="mt-4 p-4 rounded-lg bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
-          {error ?? "Сервер не найден или нет доступа."}
+          {error ?? "Server not found or no access."}
         </div>
       </div>
     )
@@ -66,7 +66,7 @@ function GuildLayoutInner() {
               className="flex items-center gap-1 text-xs text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
             >
               <ArrowLeft className="h-3 w-3" />
-              Мои серверы
+              My Servers
             </Link>
             <span className="text-sm font-semibold truncate" title={guild.name}>
               {guild.name}
@@ -74,7 +74,7 @@ function GuildLayoutInner() {
           </div>
         </div>
         <Button variant="outline" size="sm" className="h-8 px-3" asChild>
-          <a href={LOGOUT_URL}>Выйти</a>
+          <a href={LOGOUT_URL}>Sign out</a>
         </Button>
       </div>
 
@@ -82,7 +82,7 @@ function GuildLayoutInner() {
       {mobileOpen && (
         <button
           type="button"
-          aria-label="Закрыть меню"
+          aria-label="Close menu"
           className="fixed inset-0 z-[35] bg-black/50 lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
@@ -101,7 +101,7 @@ function GuildLayoutInner() {
             className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
           >
             <ArrowLeft className="h-4 w-4" />
-            Мои серверы
+            My Servers
           </Link>
           <h1 className="mt-3 font-semibold truncate" title={guild.name}>
             {guild.name}
@@ -130,7 +130,7 @@ function GuildLayoutInner() {
         </nav>
         <div className="hidden lg:block p-2 border-t border-[hsl(var(--border))]">
           <Button variant="outline" size="sm" className="w-full" asChild>
-            <a href={LOGOUT_URL}>Выйти</a>
+            <a href={LOGOUT_URL}>Sign out</a>
           </Button>
         </div>
       </aside>

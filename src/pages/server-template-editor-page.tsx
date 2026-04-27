@@ -79,16 +79,16 @@ import { TemplateMessageSelfRoleCard } from "@/components/template-message-self-
 import { MessageSquare, ScrollText, Plus, Pencil, Trash2, Smile, Sticker, Upload } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
-  joinLeave: "Вход/выход",
-  messages: "Сообщения",
-  moderation: "Модерация",
-  channel: "Канал",
-  banKick: "Бан/кик",
+  joinLeave: "Join/Leave",
+  messages: "Messages",
+  moderation: "Moderation",
+  channel: "Channel",
+  banKick: "Ban/Kick",
 }
 
 /** Подсказка, если живой сервер не выбран */
 const CHANNEL_NAME_HINT_MANUAL =
-  "Имя канала без #. Можно выбрать сервер выше — подставятся каналы из Discord (кэш бота). Или введите вручную."
+  "Channel name without #. You can pick a server above — channels from Discord (bot cache) will be suggested. Or type manually."
 
 function ChannelNameField({
   id,
@@ -96,7 +96,7 @@ function ChannelNameField({
   onChange,
   channels,
   liveChannels = [],
-  placeholder = "например general",
+  placeholder = "e.g. general",
 }: {
   id: string
   value: string
@@ -123,7 +123,7 @@ function ChannelNameField({
   }
   const hint =
     liveChannels.length > 0
-      ? "Имена из выбранного сервера (кэш бота). Можно ввести другое имя вручную — как в Discord после установки шаблона."
+      ? "Names from the selected server (bot cache). You can enter a different name manually — as it will be in Discord after the template is installed."
       : CHANNEL_NAME_HINT_MANUAL
   return (
     <div className="grid gap-2">
@@ -197,7 +197,7 @@ export function ServerTemplateEditorPage() {
       setStatsBotsName(data.statsBotsName ?? "")
       setStatsOnlineName(data.statsOnlineName ?? "")
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки")
+      setError(e instanceof Error ? e.message : "Loading error")
     } finally {
       setLoading(false)
     }
@@ -231,7 +231,7 @@ export function ServerTemplateEditorPage() {
         setLiveRoles(r)
       })
       .catch((e) => {
-        setLiveError(e instanceof Error ? e.message : "Не удалось загрузить каналы и роли сервера")
+        setLiveError(e instanceof Error ? e.message : "Failed to load server channels and roles")
         setLiveChannels([])
         setLiveRoles([])
       })
@@ -256,7 +256,7 @@ export function ServerTemplateEditorPage() {
   if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Загрузка…</div>
+        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Loading…</div>
       </div>
     )
   }
@@ -264,7 +264,7 @@ export function ServerTemplateEditorPage() {
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link to="/login">Войти</Link>
+        <Link to="/login">Sign in</Link>
       </div>
     )
   }
@@ -272,7 +272,7 @@ export function ServerTemplateEditorPage() {
   if (!id) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-[hsl(var(--muted-foreground))]">Шаблон не выбран</p>
+        <p className="text-[hsl(var(--muted-foreground))]">No template selected</p>
       </div>
     )
   }
@@ -280,7 +280,7 @@ export function ServerTemplateEditorPage() {
   if (loading && !template) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Загрузка шаблона…</div>
+        <div className="animate-pulse text-[hsl(var(--muted-foreground))]">Loading template…</div>
       </div>
     )
   }
@@ -289,7 +289,7 @@ export function ServerTemplateEditorPage() {
     return (
       <div className="min-h-screen p-4">
         <Link to="/server-templates" className="text-[hsl(var(--primary))] hover:underline">
-          ← К списку шаблонов
+          ← Back to templates
         </Link>
         <div className="mt-4 p-4 rounded-lg bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
           {error}
@@ -311,7 +311,7 @@ export function ServerTemplateEditorPage() {
       setMetaIconUrl(url)
       setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Ошибка загрузки иконки")
+      setFormError(err instanceof Error ? err.message : "Failed to upload icon")
     } finally {
       setUploadingIcon(false)
       e.target.value = ""
@@ -330,10 +330,10 @@ export function ServerTemplateEditorPage() {
         statsOnlineName: statsOnlineName.trim() || null,
       })
       setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
-      setStatsSavedMsg("Сохранено")
+      setStatsSavedMsg("Saved")
       setTimeout(() => setStatsSavedMsg(null), 2000)
     } catch (err) {
-      setStatsSavedMsg(err instanceof Error ? err.message : "Ошибка сохранения")
+      setStatsSavedMsg(err instanceof Error ? err.message : "Failed to save")
     } finally {
       setSavingStats(false)
     }
@@ -348,7 +348,7 @@ export function ServerTemplateEditorPage() {
     } catch (err) {
       // откатываем на бэкапное значение
       setMetaEnableServerStats(!next)
-      setFormError(err instanceof Error ? err.message : "Ошибка сохранения")
+      setFormError(err instanceof Error ? err.message : "Failed to save")
     }
   }
 
@@ -359,7 +359,7 @@ export function ServerTemplateEditorPage() {
       setMetaIconUrl(null)
       setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Ошибка удаления иконки")
+      setFormError(err instanceof Error ? err.message : "Failed to delete icon")
     }
   }
 
@@ -376,7 +376,7 @@ export function ServerTemplateEditorPage() {
       setTemplate((prev) => (prev ? { ...prev, ...updated } : null))
       setEditMetaOpen(false)
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка сохранения")
+      setFormError(e instanceof Error ? e.message : "Failed to save")
     } finally {
       setSavingMeta(false)
     }
@@ -395,21 +395,21 @@ export function ServerTemplateEditorPage() {
           </div>
           <Button variant="outline" size="sm" onClick={() => setEditMetaOpen(true)} className="shrink-0">
             <Pencil className="h-4 w-4 mr-1" />
-            Изменить
+            Edit
           </Button>
         </div>
-        {/* Блок Discord‑шаблона (основной сценарий развёртывания) */}
+        {/* Discord template block (primary deployment scenario) */}
         <Card>
           <CardHeader>
-            <CardTitle>Discord‑шаблон сервера</CardTitle>
+            <CardTitle>Discord server template</CardTitle>
             <CardDescription>
-              Укажи ссылку на нативный Discord‑шаблон. Через него создаётся структура ролей и каналов,
-              а бот сверху накидывает сообщения, автороли и логи.
+              Provide a link to a native Discord template. It creates the role and channel structure,
+              and the bot then layers messages, auto-roles and logs on top.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-2">
-              <Label htmlFor="meta-discord-url">Ссылка Discord‑шаблона</Label>
+              <Label htmlFor="meta-discord-url">Discord template URL</Label>
               <Input
                 id="meta-discord-url"
                 value={metaDiscordUrl}
@@ -419,7 +419,7 @@ export function ServerTemplateEditorPage() {
             </div>
             <div className="flex flex-wrap gap-3">
               <Button size="sm" onClick={handleSaveMeta} disabled={savingMeta}>
-                {savingMeta ? "Сохранение…" : "Сохранить"}
+                {savingMeta ? "Saving…" : "Save"}
               </Button>
               {template.discordTemplateUrl && (
                 <Button
@@ -428,7 +428,7 @@ export function ServerTemplateEditorPage() {
                   asChild
                 >
                   <a href={template.discordTemplateUrl} target="_blank" rel="noreferrer">
-                    Открыть в Discord
+                    Open in Discord
                   </a>
                 </Button>
               )}
@@ -437,28 +437,28 @@ export function ServerTemplateEditorPage() {
           </CardContent>
         </Card>
 
-        {/* Блок иконки сервера — бот установит её при развёртывании */}
+        {/* Server icon — bot will set it during deployment */}
         <Card>
           <CardHeader>
-            <CardTitle>Иконка сервера</CardTitle>
+            <CardTitle>Server icon</CardTitle>
             <CardDescription>
-              Бот автоматически установит эту иконку при развёртывании шаблона на Discord-сервер.
-              PNG/JPG/GIF, рекомендуется 512×512 px, до 256 КБ.
+              The bot will automatically set this icon when deploying the template to a Discord server.
+              PNG/JPG/GIF, 512×512 px recommended, up to 256 KB.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-4">
               <div className="w-20 h-20 rounded-full overflow-hidden bg-[hsl(var(--muted))] border flex items-center justify-center shrink-0">
                 {metaIconUrl ? (
-                  <img src={metaIconUrl} alt="Иконка" className="w-full h-full object-cover" />
+                  <img src={metaIconUrl} alt="Icon" className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-xs text-[hsl(var(--muted-foreground))]">нет</span>
+                  <span className="text-xs text-[hsl(var(--muted-foreground))]">none</span>
                 )}
               </div>
               <div className="space-y-2">
                 <label className="inline-flex items-center gap-2 cursor-pointer">
                   <Button size="sm" variant="outline" asChild disabled={uploadingIcon}>
-                    <span>{uploadingIcon ? "Загрузка…" : metaIconUrl ? "Заменить" : "Загрузить"}</span>
+                    <span>{uploadingIcon ? "Uploading…" : metaIconUrl ? "Replace" : "Upload"}</span>
                   </Button>
                   <input
                     type="file"
@@ -476,7 +476,7 @@ export function ServerTemplateEditorPage() {
                     className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
-                    Удалить
+                    Delete
                   </Button>
                 )}
               </div>
@@ -484,13 +484,13 @@ export function ServerTemplateEditorPage() {
           </CardContent>
         </Card>
 
-        {/* Статистика сервера (клон ServerStats) */}
+        {/* Server stats (ServerStats clone) */}
         <Card>
           <CardHeader>
-            <CardTitle>Статистика сервера</CardTitle>
+            <CardTitle>Server stats</CardTitle>
             <CardDescription>
-              При установке шаблона бот создаст в самом верху категорию с 4 голосовыми каналами-счётчиками.
-              Числа обновляются раз в 10 минут (лимит Discord на переименование каналов).
+              When the template is installed, the bot will create a category at the very top with 4 voice
+              counter channels. Numbers refresh every 10 minutes (Discord rate limit on channel renames).
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -503,10 +503,10 @@ export function ServerTemplateEditorPage() {
               />
               <div className="space-y-0.5">
                 <span className="text-sm font-medium">
-                  Включить каналы статистики при установке шаблона
+                  Enable stats channels on template install
                 </span>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Пользователь сможет отключить их позже командой <code>/serverstats-disable</code>.
+                  The user can disable them later with the <code>/serverstats-disable</code> command.
                 </p>
               </div>
             </label>
@@ -514,68 +514,68 @@ export function ServerTemplateEditorPage() {
             {metaEnableServerStats && (
               <div className="space-y-3 border-t pt-4">
                 <div>
-                  <p className="text-sm font-medium mb-1">Названия</p>
+                  <p className="text-sm font-medium mb-1">Names</p>
                   <p className="text-xs text-[hsl(var(--muted-foreground))] mb-3">
-                    Используйте <code>{"{count}"}</code> для подстановки числа. Пусто = дефолтное значение.
+                    Use <code>{"{count}"}</code> as a placeholder for the number. Empty = default value.
                   </p>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div className="grid gap-1 md:col-span-2">
-                    <Label className="text-xs">Название категории</Label>
+                    <Label className="text-xs">Category name</Label>
                     <Input
                       value={statsCategoryName}
                       onChange={(e) => setStatsCategoryName(e.target.value)}
-                      placeholder="📊 Статистика сервера"
+                      placeholder="📊 Server Stats"
                       maxLength={100}
                     />
                   </div>
                   <div className="grid gap-1">
-                    <Label className="text-xs">Канал «Всего»</Label>
+                    <Label className="text-xs">"Total" channel</Label>
                     <Input
                       value={statsTotalName}
                       onChange={(e) => setStatsTotalName(e.target.value)}
-                      placeholder="👥 Всего: {count}"
+                      placeholder="👥 Total: {count}"
                       maxLength={100}
                     />
                   </div>
                   <div className="grid gap-1">
-                    <Label className="text-xs">Канал «Люди»</Label>
+                    <Label className="text-xs">"Humans" channel</Label>
                     <Input
                       value={statsHumansName}
                       onChange={(e) => setStatsHumansName(e.target.value)}
-                      placeholder="👤 Люди: {count}"
+                      placeholder="👤 Humans: {count}"
                       maxLength={100}
                     />
                   </div>
                   <div className="grid gap-1">
-                    <Label className="text-xs">Канал «Боты»</Label>
+                    <Label className="text-xs">"Bots" channel</Label>
                     <Input
                       value={statsBotsName}
                       onChange={(e) => setStatsBotsName(e.target.value)}
-                      placeholder="🤖 Боты: {count}"
+                      placeholder="🤖 Bots: {count}"
                       maxLength={100}
                     />
                   </div>
                   <div className="grid gap-1">
-                    <Label className="text-xs">Канал «В сети»</Label>
+                    <Label className="text-xs">"Online" channel</Label>
                     <Input
                       value={statsOnlineName}
                       onChange={(e) => setStatsOnlineName(e.target.value)}
-                      placeholder="🟢 В сети: {count}"
+                      placeholder="🟢 Online: {count}"
                       maxLength={100}
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button size="sm" onClick={handleSaveStatsNames} disabled={savingStats}>
-                    {savingStats ? "Сохранение…" : "Сохранить названия"}
+                    {savingStats ? "Saving…" : "Save names"}
                   </Button>
                   {statsSavedMsg && (
                     <span className="text-xs text-[hsl(var(--muted-foreground))]">{statsSavedMsg}</span>
                   )}
                 </div>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  Пример: «Adventurers: {"{count}"}» станет «Adventurers: 5» после установки.
+                  Example: "Adventurers: {"{count}"}" becomes "Adventurers: 5" after install.
                 </p>
               </div>
             )}
@@ -584,26 +584,28 @@ export function ServerTemplateEditorPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Подсказки с живого сервера</CardTitle>
+            <CardTitle>Live server suggestions</CardTitle>
             <CardDescription>
-              После того как сервер уже создан по Discord-шаблону, выберите его здесь — в формах ниже в подсказках появятся реальные имена каналов и ролей из кэша бота (
+              Once the server has already been created from the Discord template, pick it here — the forms
+              below will show real channel and role names from the bot cache (
               <code className="text-xs">GET /api/guilds/…/channels</code>,{" "}
               <code className="text-xs">GET /api/guilds/…/roles</code>
-              ). Это не меняет записи шаблона в БД — только помогает ввести те же имена, что при установке.
+              ). This does not change template records in the DB — it only helps you type the same names
+              that will be used at install time.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 max-w-lg">
             <div className="grid gap-2">
-              <Label htmlFor="source-guild">Сервер для подсказок</Label>
+              <Label htmlFor="source-guild">Server for suggestions</Label>
               <Select
                 value={sourceGuildId || "__none__"}
                 onValueChange={(v) => setSourceGuildId(v === "__none__" ? "" : v)}
               >
                 <SelectTrigger id="source-guild">
-                  <SelectValue placeholder="Не выбрано" />
+                  <SelectValue placeholder="Not selected" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Не выбрано</SelectItem>
+                  <SelectItem value="__none__">Not selected</SelectItem>
                   {guilds.map((g) => (
                     <SelectItem key={g.id} value={g.id}>
                       {g.name}
@@ -613,14 +615,14 @@ export function ServerTemplateEditorPage() {
               </Select>
             </div>
             {loadingLive && (
-              <p className="text-xs text-[hsl(var(--muted-foreground))]">Загрузка каналов и ролей…</p>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">Loading channels and roles…</p>
             )}
             {liveError && (
               <p className="text-sm text-[hsl(var(--destructive))]">{liveError}</p>
             )}
             {sourceGuildId && !loadingLive && !liveError && (
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Загружено: {liveChannels.length} каналов, {liveRoles.length} ролей (без @everyone и managed).
+                Loaded: {liveChannels.length} channels, {liveRoles.length} roles (excluding @everyone and managed).
               </p>
             )}
           </CardContent>
@@ -692,19 +694,19 @@ export function ServerTemplateEditorPage() {
       <Dialog open={editMetaOpen} onOpenChange={setEditMetaOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Название и описание</DialogTitle>
+            <DialogTitle>Name and description</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Название</Label>
+              <Label>Name</Label>
               <Input value={metaName} onChange={(e) => setMetaName(e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label>Описание</Label>
+              <Label>Description</Label>
               <Input value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="meta-discord-url-modal">Ссылка Discord‑шаблона</Label>
+              <Label htmlFor="meta-discord-url-modal">Discord template URL</Label>
               <Input
                 id="meta-discord-url-modal"
                 value={metaDiscordUrl}
@@ -715,9 +717,9 @@ export function ServerTemplateEditorPage() {
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditMetaOpen(false)}>Отмена</Button>
+            <Button variant="outline" onClick={() => setEditMetaOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveMeta} disabled={savingMeta}>
-              {savingMeta ? "Сохранение…" : "Сохранить"}
+              {savingMeta ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -826,7 +828,7 @@ function SectionMessages({
       .catch((e) => {
         if (!cancelled) {
           setPreviewChannelsList([])
-          setPreviewPanelError(e instanceof Error ? e.message : "Не удалось загрузить каналы")
+          setPreviewPanelError(e instanceof Error ? e.message : "Failed to load channels")
         }
       })
       .finally(() => {
@@ -841,11 +843,11 @@ function SectionMessages({
     const embedJsonStr = serializeFormToEmbedJson(embedForm)
     const hasContent = Boolean(content.trim())
     if (!hasContent && !embedJsonStr) {
-      setPreviewPanelError("Нужен текст или эмбед. Одного цвета полосы недостаточно — API вернёт 400.")
+      setPreviewPanelError("Text or embed is required. A color bar alone isn't enough — the API will return 400.")
       return
     }
     if (!previewGuildId.trim() || !previewChannelId.trim()) {
-      setPreviewPanelError("Выберите сервер и канал")
+      setPreviewPanelError("Pick a server and a channel")
       return
     }
     setPreviewPanelError(null)
@@ -857,7 +859,7 @@ function SectionMessages({
         embedJson: embedJsonStr ?? undefined,
       })
     } catch (e) {
-      setPreviewPanelError(e instanceof ApiError ? e.message : "Не удалось отправить превью")
+      setPreviewPanelError(e instanceof ApiError ? e.message : "Failed to send preview")
     } finally {
       setPreviewSending(false)
     }
@@ -873,12 +875,12 @@ function SectionMessages({
 
   async function handleSubmitCreate() {
     const ch = channelName.trim()
-    if (!ch) { setFormError("Выберите канал"); return }
+    if (!ch) { setFormError("Pick a channel"); return }
     const embedJsonStr = serializeFormToEmbedJson(embedForm)
     const hasContent = Boolean(content.trim())
     const hasEmbed = embedJsonStr != null
     if (!hasContent && !hasEmbed) {
-      setFormError("Укажите текст или эмбед")
+      setFormError("Provide text or an embed")
       return
     }
     setFormError(null)
@@ -899,7 +901,7 @@ function SectionMessages({
       handleDialogOpenChange(false)
       onUpdate()
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка")
+      setFormError(e instanceof Error ? e.message : "Error")
     } finally {
       setSubmitting(false)
     }
@@ -911,21 +913,22 @@ function SectionMessages({
         <div>
           <CardTitle className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            Шаблоны сообщений
+            Message templates
           </CardTitle>
           <CardDescription>
-            Сообщения, которые бот отправит в каналы после установки шаблона. Каждая карточка — одно сообщение: канал, порядок, текст/эмбед и кнопки авторолей.
+            Messages the bot will send to channels after the template is installed. Each card is one
+            message: channel, order, text/embed and auto-role buttons.
           </CardDescription>
         </div>
         <Button size="sm" onClick={openCreate} className="shrink-0">
           <Plus className="h-4 w-4 mr-1" />
-          Добавить сообщение
+          Add message
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
         {sortedMessages.length === 0 ? (
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Нет сообщений. Нажмите «Добавить сообщение» — затем настройте контент, кнопки или реакции в карточке.
+            No messages. Click "Add message" — then configure content, buttons or reactions in the card.
           </p>
         ) : (
           <div className="space-y-6">
@@ -947,27 +950,27 @@ function SectionMessages({
       <Dialog open={addOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Добавить сообщение</DialogTitle>
+            <DialogTitle>Add message</DialogTitle>
             <DialogDescription>
-              Текст, эмбед и кнопки авторолей — одно сообщение шаблона. Эмбед: <code className="text-xs">{"{ \"embeds\": [ … ] }"}</code>
-              . Кнопки: <code className="text-xs">components</code> Discord (Action Row + кнопки с{" "}
-              <code className="text-xs">rr/give/{"{{"}роль{"}}"})</code> и т.д.
+              Text, embed and auto-role buttons together form one template message. Embed: <code className="text-xs">{"{ \"embeds\": [ … ] }"}</code>
+              . Buttons: Discord <code className="text-xs">components</code> (Action Row + buttons with{" "}
+              <code className="text-xs">rr/give/{"{{"}role{"}}"})</code> etc.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
             <div className="grid gap-2 sm:grid-cols-2">
               <div className="grid gap-2 sm:col-span-2">
-                <Label>Канал *</Label>
+                <Label>Channel *</Label>
                 {liveChannels.length > 0 ? (
                   <Select
                     value={channelName || "__none__"}
                     onValueChange={(v) => setChannelName(v === "__none__" ? "" : v)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Выберите канал" />
+                      <SelectValue placeholder="Pick a channel" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Выберите канал</SelectItem>
+                      <SelectItem value="__none__">Pick a channel</SelectItem>
                       {liveChannels
                         .filter((c) => c.type === 0 || c.type === 5)
                         .map((c) => (
@@ -986,13 +989,13 @@ function SectionMessages({
                 )}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor={`msg-order-${templateId}`}>Порядок (messageOrder)</Label>
+                <Label htmlFor={`msg-order-${templateId}`}>Order (messageOrder)</Label>
                 <Input
                   id={`msg-order-${templateId}`}
                   type="number"
                   value={messageOrder}
                   onChange={(e) => setMessageOrder(e.target.value)}
-                  placeholder="Напр. 0, 1, 2…"
+                  placeholder="e.g. 0, 1, 2…"
                 />
               </div>
             </div>
@@ -1008,7 +1011,7 @@ function SectionMessages({
                     : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                 )}
               >
-                Сообщение
+                Message
               </button>
               <button
                 type="button"
@@ -1020,19 +1023,19 @@ function SectionMessages({
                     : "text-[hsl(var(--muted-foreground))] hover:text-[hsl(var(--foreground))]"
                 )}
               >
-                Эмбед
+                Embed
               </button>
             </div>
 
             {msgUiTab === "message" ? (
               <div className="grid gap-2">
-                <Label htmlFor={`msg-content-${templateId}`}>Содержимое сообщения</Label>
+                <Label htmlFor={`msg-content-${templateId}`}>Message content</Label>
                 <textarea
                   id={`msg-content-${templateId}`}
                   className={msgTextareaClass}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Обычный текст Discord — показывается над карточкой эмбеда, если эмбед задан на вкладке «Эмбед»."
+                  placeholder="Plain Discord text — shown above the embed card if the embed is configured on the 'Embed' tab."
                   rows={6}
                 />
               </div>
@@ -1042,14 +1045,14 @@ function SectionMessages({
 
             <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-3">
               <div>
-                <p className="text-sm font-medium">Превью в Discord</p>
+                <p className="text-sm font-medium">Preview in Discord</p>
                 <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                  Отправляет текущий черновик в канал (без сохранения шаблона). Нужны права бота на запись в канал. В эмбеде должно быть видимое содержимое (не только цвет полосы) — иначе API вернёт 400.
+                  Sends the current draft to a channel (without saving the template). The bot needs send permission on the channel. The embed must have visible content (not just a color bar) — otherwise the API returns 400.
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor={`preview-guild-${templateId}`}>Сервер</Label>
+                  <Label htmlFor={`preview-guild-${templateId}`}>Server</Label>
                   <Select
                     value={previewGuildId || "__none__"}
                     onValueChange={(v) => {
@@ -1059,10 +1062,10 @@ function SectionMessages({
                     }}
                   >
                     <SelectTrigger id={`preview-guild-${templateId}`}>
-                      <SelectValue placeholder="Выберите сервер" />
+                      <SelectValue placeholder="Pick a server" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      <SelectItem value="__none__">Not selected</SelectItem>
                       {guilds.map((g) => (
                         <SelectItem key={g.id} value={g.id}>
                           {g.name}
@@ -1072,17 +1075,17 @@ function SectionMessages({
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor={`preview-ch-${templateId}`}>Канал</Label>
+                  <Label htmlFor={`preview-ch-${templateId}`}>Channel</Label>
                   <Select
                     value={previewChannelId || "__none__"}
                     onValueChange={(v) => setPreviewChannelId(v === "__none__" ? "" : v)}
                     disabled={!previewGuildId.trim() || loadingPreviewChannels}
                   >
                     <SelectTrigger id={`preview-ch-${templateId}`}>
-                      <SelectValue placeholder={loadingPreviewChannels ? "Загрузка…" : "Канал"} />
+                      <SelectValue placeholder={loadingPreviewChannels ? "Loading…" : "Channel"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      <SelectItem value="__none__">Not selected</SelectItem>
                       {previewChannelsList.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           #{c.name}
@@ -1093,7 +1096,7 @@ function SectionMessages({
                 </div>
               </div>
               {loadingPreviewChannels && previewGuildId ? (
-                <p className="text-xs text-[hsl(var(--muted-foreground))]">Загрузка списка каналов…</p>
+                <p className="text-xs text-[hsl(var(--muted-foreground))]">Loading channel list…</p>
               ) : null}
               {previewPanelError ? (
                 <p className="text-sm text-[hsl(var(--destructive))]">{previewPanelError}</p>
@@ -1104,7 +1107,7 @@ function SectionMessages({
                 onClick={() => void handlePreviewInDiscord()}
                 disabled={previewSending || !previewGuildId.trim() || !previewChannelId.trim()}
               >
-                {previewSending ? "Отправка…" : "Отправить тест в канал"}
+                {previewSending ? "Sending…" : "Send test to channel"}
               </Button>
             </div>
 
@@ -1112,10 +1115,10 @@ function SectionMessages({
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>
-              Отмена
+              Cancel
             </Button>
             <Button onClick={() => void handleSubmitCreate()} disabled={submitting || !channelName.trim()}>
-              {submitting ? "Добавление…" : "Добавить"}
+              {submitting ? "Adding…" : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1163,14 +1166,14 @@ function SectionLogChannels({
       setAddOpen(false)
       onUpdate()
     } catch (e) {
-      setFormError(e instanceof Error ? e.message : "Ошибка")
+      setFormError(e instanceof Error ? e.message : "Error")
     } finally {
       setSubmitting(false)
     }
   }
 
   async function handleDelete(lcId: string) {
-    if (!confirm("Удалить лог-канал?")) return
+    if (!confirm("Delete log channel?")) return
     try {
       await deleteTemplateLogChannel(templateId, lcId)
       onUpdate()
@@ -1185,20 +1188,20 @@ function SectionLogChannels({
         <div>
           <CardTitle className="flex items-center gap-2">
             <ScrollText className="h-5 w-5" />
-            Лог-каналы
+            Log channels
           </CardTitle>
           <CardDescription>
-            Тип лога и имя канала. Имя можно взять из «Подсказки с живого сервера» или ввести вручную.
+            Log type and channel name. The name can be taken from "Live server suggestions" or typed manually.
           </CardDescription>
         </div>
         <Button size="sm" onClick={() => setAddOpen(true)}>
           <Plus className="h-4 w-4 mr-1" />
-          Добавить
+          Add
         </Button>
       </CardHeader>
       <CardContent>
         {logChannels.length === 0 ? (
-          <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет лог-каналов</p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">No log channels</p>
         ) : (
           <ul className="space-y-2">
             {logChannels.map((lc) => (
@@ -1215,11 +1218,11 @@ function SectionLogChannels({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Добавить лог-канал</DialogTitle>
+            <DialogTitle>Add log channel</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Тип лога *</Label>
+              <Label>Log type *</Label>
               <Select value={logType} onValueChange={(v) => setLogType(v as TemplateLogType)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -1232,7 +1235,7 @@ function SectionLogChannels({
               </Select>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor={`log-ch-${templateId}`}>Канал (имя) *</Label>
+              <Label htmlFor={`log-ch-${templateId}`}>Channel (name) *</Label>
               <ChannelNameField
                 id={`log-ch-${templateId}`}
                 value={channelName}
@@ -1244,8 +1247,8 @@ function SectionLogChannels({
             {formError && <p className="text-sm text-[hsl(var(--destructive))]">{formError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Отмена</Button>
-            <Button onClick={handleAdd} disabled={submitting || !channelName.trim()}>{submitting ? "Добавление…" : "Добавить"}</Button>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={submitting || !channelName.trim()}>{submitting ? "Adding…" : "Add"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1271,7 +1274,7 @@ function buildMsgOptions(messages: TemplateMessage[]) {
     }
     const label = title
       ? `#${m.channelName} · ${order} · ${title}`
-      : `#${m.channelName} · порядок ${order}`
+      : `#${m.channelName} · order ${order}`
     return { key, label, message: m }
   })
 }
@@ -1339,7 +1342,7 @@ function SectionAutoRoles({
   async function handleAddReaction() {
     const em = emojiKey.trim()
     const r = roleName.trim()
-    if (!msgKey || !em || !r) { setRrError("Заполните все поля"); return }
+    if (!msgKey || !em || !r) { setRrError("Fill in all fields"); return }
     const colonIdx = msgKey.indexOf(":")
     const channelName = msgKey.slice(0, colonIdx)
     const messageOrder = Number(msgKey.slice(colonIdx + 1)) || 0
@@ -1351,14 +1354,14 @@ function SectionAutoRoles({
       setRoleName("")
       onUpdate()
     } catch (e) {
-      setRrError(e instanceof Error ? e.message : "Ошибка")
+      setRrError(e instanceof Error ? e.message : "Error")
     } finally {
       setAdding(false)
     }
   }
 
   async function handleDeleteRR(rrId: string) {
-    if (!confirm("Удалить эту привязку?")) return
+    if (!confirm("Delete this binding?")) return
     try {
       await deleteTemplateReactionRole(templateId, rrId)
       onUpdate()
@@ -1376,7 +1379,7 @@ function SectionAutoRoles({
     } catch (e) {
       setBtnErrorByMsg((prev) => ({
         ...prev,
-        [msgId]: e instanceof Error ? e.message : "Ошибка сохранения",
+        [msgId]: e instanceof Error ? e.message : "Failed to save",
       }))
     } finally {
       setSavingMsgId(null)
@@ -1410,20 +1413,20 @@ function SectionAutoRoles({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <ScrollText className="h-5 w-5" />
-          Автороли
+          Auto-roles
         </CardTitle>
         <CardDescription>
-          Управляй реакциями и кнопками, которые выдают роли после установки шаблона.
+          Manage reactions and buttons that grant roles after the template is installed.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Переключатель вкладок */}
         <div className="flex flex-wrap rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-1 gap-1">
           <button type="button" onClick={() => setActiveTab("reactions")} className={tabClass(activeTab === "reactions")}>
-            Реакции
+            Reactions
           </button>
           <button type="button" onClick={() => setActiveTab("buttons")} className={tabClass(activeTab === "buttons")}>
-            Кнопки
+            Buttons
           </button>
         </div>
 
@@ -1431,7 +1434,7 @@ function SectionAutoRoles({
           <>
             {/* Список реакций */}
             {reactionRoles.length === 0 ? (
-              <p className="text-sm text-[hsl(var(--muted-foreground))]">Нет привязок реакций.</p>
+              <p className="text-sm text-[hsl(var(--muted-foreground))]">No reaction bindings.</p>
             ) : (
               <ul className="space-y-2">
                 {reactionRoles.map((rr) => {
@@ -1448,7 +1451,7 @@ function SectionAutoRoles({
                     >
                       <span>
                         #{rr.channelName} · {rr.messageOrder ?? 0} · {rr.emojiKey} → {rr.roleName}
-                        {isOrphan && <span className="ml-2 font-sans text-xs text-amber-300">нет сообщения</span>}
+                        {isOrphan && <span className="ml-2 font-sans text-xs text-amber-300">no message</span>}
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="text-[hsl(var(--destructive))] shrink-0" onClick={() => void handleDeleteRR(rr.id)}>
                         <Trash2 className="h-4 w-4" />
@@ -1461,32 +1464,32 @@ function SectionAutoRoles({
 
             {/* Форма добавления реакции */}
             <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.2)] p-4 space-y-4">
-              <h4 className="text-sm font-medium flex items-center gap-2"><Plus className="h-4 w-4" />Добавить реакцию</h4>
+              <h4 className="text-sm font-medium flex items-center gap-2"><Plus className="h-4 w-4" />Add reaction</h4>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-2 sm:col-span-2">
-                  <Label>Сообщение</Label>
+                  <Label>Message</Label>
                   {messages.length === 0 ? (
-                    <p className="text-sm text-[hsl(var(--muted-foreground))]">Сначала добавьте сообщения выше.</p>
+                    <p className="text-sm text-[hsl(var(--muted-foreground))]">Add messages above first.</p>
                   ) : (
                     <Select value={msgKey || "__none__"} onValueChange={(v) => setMsgKey(v === "__none__" ? "" : v)}>
-                      <SelectTrigger><SelectValue placeholder="Выберите сообщение" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Pick a message" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">Не выбрано</SelectItem>
+                        <SelectItem value="__none__">Not selected</SelectItem>
                         {msgOptions.map((o) => <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}
                 </div>
                 <div className="grid gap-2">
-                  <Label>Эмодзи</Label>
-                  <Input value={emojiKey} onChange={(e) => setEmojiKey(e.target.value)} placeholder="✅ или name:id" />
+                  <Label>Emoji</Label>
+                  <Input value={emojiKey} onChange={(e) => setEmojiKey(e.target.value)} placeholder="✅ or name:id" />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Роль</Label>
+                  <Label>Role</Label>
                   <Select value={roleName || "__none__"} onValueChange={(v) => setRoleName(v === "__none__" ? "" : v)} disabled={roleOptions.length === 0}>
-                    <SelectTrigger><SelectValue placeholder={roleOptions.length === 0 ? "Нет ролей" : "Выберите роль"} /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder={roleOptions.length === 0 ? "No roles" : "Pick a role"} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="__none__">Не выбрано</SelectItem>
+                      <SelectItem value="__none__">Not selected</SelectItem>
                       {roleOptions.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -1494,7 +1497,7 @@ function SectionAutoRoles({
               </div>
               {rrError && <p className="text-sm text-[hsl(var(--destructive))]">{rrError}</p>}
               <Button onClick={() => void handleAddReaction()} disabled={adding || !msgKey || !emojiKey.trim() || !roleName.trim() || messages.length === 0}>
-                {adding ? "Добавление…" : "Добавить реакцию"}
+                {adding ? "Adding…" : "Add reaction"}
               </Button>
             </div>
           </>
@@ -1502,13 +1505,13 @@ function SectionAutoRoles({
           <>
             {messages.length === 0 ? (
               <p className="text-sm text-[hsl(var(--muted-foreground))]">
-                Сначала добавьте сообщения выше.
+                Add messages above first.
               </p>
             ) : (
               <div className="space-y-3">
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                  К каждому сообщению можно независимо добавить свои кнопки авторолей.
-                  Нажмите на сообщение, чтобы развернуть редактор.
+                  Each message can have its own auto-role buttons added independently.
+                  Click a message to expand its editor.
                 </p>
                 {messages.map((m) => {
                   const btns = buttonsByMsg[m.id] ?? []
@@ -1529,12 +1532,12 @@ function SectionAutoRoles({
                           <span className="text-sm font-medium truncate">{getMsgLabel(m.id)}</span>
                           {btns.length > 0 && (
                             <span className="text-xs px-1.5 py-0.5 rounded bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]">
-                              {btns.length} {btns.length === 1 ? "кнопка" : "кнопок"}
+                              {btns.length} {btns.length === 1 ? "button" : "buttons"}
                             </span>
                           )}
                         </div>
                         <span className="text-xs text-[hsl(var(--muted-foreground))] shrink-0">
-                          {isExpanded ? "▲ скрыть" : "▼ редактировать"}
+                          {isExpanded ? "▲ collapse" : "▼ edit"}
                         </span>
                       </button>
                       {isExpanded && (
@@ -1552,7 +1555,7 @@ function SectionAutoRoles({
                             onClick={() => void handleSaveButtonsFor(m.id)}
                             disabled={isSaving}
                           >
-                            {isSaving ? "Сохранение…" : "Сохранить кнопки этого сообщения"}
+                            {isSaving ? "Saving…" : "Save buttons for this message"}
                           </Button>
                         </div>
                       )}
@@ -1606,7 +1609,7 @@ function SectionEmojisStickers({
       await createTemplateEmoji(templateId, { name, imageUrl: url })
       onUpdate()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки эмодзи")
+      setError(err instanceof Error ? err.message : "Failed to upload emoji")
     } finally {
       setUploading(false)
       e.target.value = ""
@@ -1647,7 +1650,7 @@ function SectionEmojisStickers({
       setStickerName("")
       setStickerDesc("")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка загрузки стикера")
+      setError(err instanceof Error ? err.message : "Failed to upload sticker")
     } finally {
       setUploading(false)
       e.target.value = ""
@@ -1668,10 +1671,10 @@ function SectionEmojisStickers({
       <CardHeader>
         <div className="flex items-center gap-2">
           <Smile className="h-5 w-5" />
-          <CardTitle>Эмодзи и стикеры</CardTitle>
+          <CardTitle>Emojis and stickers</CardTitle>
         </div>
         <CardDescription>
-          Загрузите изображения — при установке шаблона бот автоматически добавит их на сервер.
+          Upload images — when the template is installed, the bot will automatically add them to the server.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -1682,7 +1685,7 @@ function SectionEmojisStickers({
             onClick={() => setTab("emojis")}
           >
             <Smile className="h-4 w-4 mr-1" />
-            Эмодзи ({emojis.length})
+            Emojis ({emojis.length})
           </Button>
           <Button
             size="sm"
@@ -1690,7 +1693,7 @@ function SectionEmojisStickers({
             onClick={() => setTab("stickers")}
           >
             <Sticker className="h-4 w-4 mr-1" />
-            Стикеры ({stickers.length})
+            Stickers ({stickers.length})
           </Button>
         </div>
 
@@ -1729,7 +1732,7 @@ function SectionEmojisStickers({
                 <Button size="sm" variant="outline" asChild disabled={uploading}>
                   <span>
                     <Upload className="h-4 w-4 mr-1" />
-                    {uploading ? "Загрузка…" : "Загрузить эмодзи"}
+                    {uploading ? "Uploading…" : "Upload emoji"}
                   </span>
                 </Button>
                 <input
@@ -1741,7 +1744,7 @@ function SectionEmojisStickers({
                 />
               </label>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                PNG, GIF или WebP. Макс. 256 КБ, рекомендуется 128×128 px. Имя берётся из названия файла.
+                PNG, GIF or WebP. Max 256 KB, 128×128 px recommended. The name is taken from the file name.
               </p>
             </div>
           </div>
@@ -1777,16 +1780,16 @@ function SectionEmojisStickers({
 
             <div className="grid gap-2 max-w-sm">
               <div className="grid gap-1">
-                <Label className="text-xs">Имя стикера</Label>
+                <Label className="text-xs">Sticker name</Label>
                 <Input
                   value={stickerName}
                   onChange={(e) => setStickerName(e.target.value)}
-                  placeholder="Имя стикера (2-30 символов)"
+                  placeholder="Sticker name (2-30 characters)"
                   maxLength={30}
                 />
               </div>
               <div className="grid gap-1">
-                <Label className="text-xs">Тег-эмодзи</Label>
+                <Label className="text-xs">Emoji tag</Label>
                 <Input
                   value={stickerTags}
                   onChange={(e) => setStickerTags(e.target.value)}
@@ -1795,11 +1798,11 @@ function SectionEmojisStickers({
                 />
               </div>
               <div className="grid gap-1">
-                <Label className="text-xs">Описание (необязательно)</Label>
+                <Label className="text-xs">Description (optional)</Label>
                 <Input
                   value={stickerDesc}
                   onChange={(e) => setStickerDesc(e.target.value)}
-                  placeholder="Описание стикера"
+                  placeholder="Sticker description"
                   maxLength={100}
                 />
               </div>
@@ -1810,7 +1813,7 @@ function SectionEmojisStickers({
                 <Button size="sm" variant="outline" asChild disabled={uploading || !stickerName.trim()}>
                   <span>
                     <Upload className="h-4 w-4 mr-1" />
-                    {uploading ? "Загрузка…" : "Загрузить стикер"}
+                    {uploading ? "Uploading…" : "Upload sticker"}
                   </span>
                 </Button>
                 <input
@@ -1822,7 +1825,7 @@ function SectionEmojisStickers({
                 />
               </label>
               <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-                PNG или APNG. Макс. 512 КБ, 320×320 px. Укажите имя и тег перед загрузкой.
+                PNG or APNG. Max 512 KB, 320×320 px. Provide name and tag before uploading.
               </p>
             </div>
           </div>
@@ -1839,14 +1842,14 @@ function SectionEmojisStickers({
 // ════════════════════════════════════════════════════════════════════════════
 
 const ROLE_COLOR_PRESETS: { hex: string; label: string }[] = [
-  { hex: "#99AAB5", label: "Серый (дефолт)" },
-  { hex: "#F04747", label: "Красный" },
-  { hex: "#E67E22", label: "Оранжевый" },
-  { hex: "#F1C40F", label: "Жёлтый" },
-  { hex: "#2ECC71", label: "Зелёный" },
-  { hex: "#3498DB", label: "Синий" },
-  { hex: "#9B59B6", label: "Фиолетовый" },
-  { hex: "#E91E63", label: "Розовый" },
+  { hex: "#99AAB5", label: "Gray (default)" },
+  { hex: "#F04747", label: "Red" },
+  { hex: "#E67E22", label: "Orange" },
+  { hex: "#F1C40F", label: "Yellow" },
+  { hex: "#2ECC71", label: "Green" },
+  { hex: "#3498DB", label: "Blue" },
+  { hex: "#9B59B6", label: "Purple" },
+  { hex: "#E91E63", label: "Pink" },
 ]
 
 function hexToInt(hex: string): number {
@@ -1893,14 +1896,14 @@ function SectionRoles({
       setNewMentionable(false)
       onUpdate()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка добавления роли")
+      setError(e instanceof Error ? e.message : "Failed to add role")
     } finally {
       setAdding(false)
     }
   }
 
   async function handleDelete(roleId: string) {
-    if (!confirm("Удалить роль из шаблона?")) return
+    if (!confirm("Delete role from template?")) return
     setDeletingId(roleId)
     try {
       await deleteTemplateRole(templateId, roleId)
@@ -1915,11 +1918,11 @@ function SectionRoles({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Роли шаблона</CardTitle>
+        <CardTitle>Template roles</CardTitle>
         <CardDescription>
-          Роли, которые бот создаст при установке шаблона на сервер. Все эти роли окажутся <b>ниже роли бота</b>,
-          поэтому кнопки авторолей смогут их выдавать. Именно эти роли появятся в выпадающем списке при
-          настройке кнопок в разделе «Автороли» ниже.
+          Roles the bot will create when installing the template on a server. All these roles will end
+          up <b>below the bot role</b>, so auto-role buttons can assign them. These same roles will
+          appear in the role dropdown when configuring buttons in the "Auto-roles" section below.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -1938,7 +1941,7 @@ function SectionRoles({
                   />
                   <span className="text-sm font-medium flex-1 truncate">{r.name}</span>
                   <span className="text-xs text-[hsl(var(--muted-foreground))] shrink-0">
-                    {r.hoist ? "• отдельно" : ""} {r.mentionable ? "• упоминаемая" : ""}
+                    {r.hoist ? "• hoisted" : ""} {r.mentionable ? "• mentionable" : ""}
                   </span>
                   <Button
                     size="sm"
@@ -1956,19 +1959,19 @@ function SectionRoles({
         )}
 
         <div className="rounded-lg border border-dashed p-3 space-y-3">
-          <p className="text-sm font-medium">Добавить роль</p>
+          <p className="text-sm font-medium">Add role</p>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="grid gap-1">
-              <Label className="text-xs">Имя роли</Label>
+              <Label className="text-xs">Role name</Label>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Например: Adventurer"
+                placeholder="e.g. Adventurer"
                 maxLength={100}
               />
             </div>
             <div className="grid gap-1">
-              <Label className="text-xs">Цвет</Label>
+              <Label className="text-xs">Color</Label>
               <div className="flex items-center gap-2 flex-wrap">
                 {ROLE_COLOR_PRESETS.map((c) => (
                   <button
@@ -1990,7 +1993,7 @@ function SectionRoles({
                   value={newColor}
                   onChange={(e) => setNewColor(e.target.value)}
                   className="w-7 h-7 rounded cursor-pointer border"
-                  title="Свой цвет"
+                  title="Custom color"
                 />
               </div>
             </div>
@@ -2003,7 +2006,7 @@ function SectionRoles({
                 onChange={(e) => setNewHoist(e.target.checked)}
                 className="h-4 w-4 accent-[hsl(var(--primary))]"
               />
-              Отображать отдельно в списке
+              Display separately in role list
             </label>
             <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input
@@ -2012,18 +2015,18 @@ function SectionRoles({
                 onChange={(e) => setNewMentionable(e.target.checked)}
                 className="h-4 w-4 accent-[hsl(var(--primary))]"
               />
-              Можно упоминать (@роль)
+              Mentionable (@role)
             </label>
           </div>
           {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
           <Button size="sm" onClick={() => void handleAdd()} disabled={adding || !newName.trim()}>
-            {adding ? "Добавление…" : "Добавить роль"}
+            {adding ? "Adding…" : "Add role"}
           </Button>
         </div>
 
         {roles.length === 0 && (
           <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            Пока нет ни одной роли. Добавьте роли выше — они появятся в списке ролей для кнопок авторолей.
+            No roles yet. Add roles above — they will appear in the role dropdown for auto-role buttons.
           </p>
         )}
       </CardContent>
@@ -2068,14 +2071,14 @@ function SectionCategoryGrants({
       setSelected("")
       onUpdate()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка добавления")
+      setError(e instanceof Error ? e.message : "Failed to add")
     } finally {
       setAdding(false)
     }
   }
 
   async function handleDelete(grantId: string) {
-    if (!confirm("Убрать категорию из списка?")) return
+    if (!confirm("Remove category from the list?")) return
     setDeletingId(grantId)
     try {
       await deleteTemplateCategoryGrant(templateId, grantId)
@@ -2090,14 +2093,14 @@ function SectionCategoryGrants({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Настройки прав</CardTitle>
+        <CardTitle>Permissions setup</CardTitle>
         <CardDescription>
-          Выберите категории шаблона, которые должны открываться для <b>верификационной роли</b>
-          (это первая роль из секции «Роли шаблона»). При установке бот:
-          <br />• для @everyone в этих категориях запретит видеть каналы
-          <br />• для верификационной роли — разрешит View / Send / Read History
-          <br />Категории, которых нет в этом списке, бот не трогает. Привязка хранится по{" "}
-          <b>имени категории</b>, не по Discord ID — поэтому работает на любом новом сервере.
+          Pick template categories that should be opened for the <b>verification role</b>
+          (the first role from the "Template roles" section). On install the bot will:
+          <br />• deny @everyone the View Channel permission in these categories
+          <br />• allow the verification role View / Send / Read History
+          <br />Categories not in this list are left untouched. The binding is stored by{" "}
+          <b>category name</b>, not Discord ID — so it works on any new server.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -2113,7 +2116,7 @@ function SectionCategoryGrants({
                   <span className="text-sm font-medium flex-1 truncate">{g.categoryName}</span>
                   {!exists && (
                     <span className="text-xs px-2 py-0.5 rounded bg-[hsl(var(--destructive)/0.2)] text-[hsl(var(--destructive))]">
-                      нет такой категории в шаблоне
+                      no such category in the template
                     </span>
                   )}
                   <Button
@@ -2132,25 +2135,25 @@ function SectionCategoryGrants({
         )}
 
         <div className="rounded-lg border border-dashed p-3 space-y-3">
-          <p className="text-sm font-medium">Добавить категорию</p>
+          <p className="text-sm font-medium">Add category</p>
           {categories.length === 0 ? (
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              Сначала добавьте категории в шаблон (через секцию каналов/категорий).
+              First add categories to the template (via the channels/categories section).
             </p>
           ) : available.length === 0 ? (
             <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              Все категории шаблона уже добавлены.
+              All template categories are already added.
             </p>
           ) : (
             <div className="flex items-end gap-2">
               <div className="flex-1 grid gap-1">
-                <Label className="text-xs">Категория</Label>
+                <Label className="text-xs">Category</Label>
                 <Select value={selected || "__none__"} onValueChange={(v) => setSelected(v === "__none__" ? "" : v)}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите категорию" />
+                    <SelectValue placeholder="Pick a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Не выбрано</SelectItem>
+                    <SelectItem value="__none__">Not selected</SelectItem>
                     {available.map((c) => (
                       <SelectItem key={c.id} value={c.name}>
                         {c.name}
@@ -2160,7 +2163,7 @@ function SectionCategoryGrants({
                 </Select>
               </div>
               <Button size="sm" onClick={() => void handleAdd()} disabled={adding || !selected}>
-                {adding ? "Добавление…" : "Добавить"}
+                {adding ? "Adding…" : "Add"}
               </Button>
             </div>
           )}
@@ -2201,14 +2204,14 @@ function SectionCategories({
       setNewName("")
       onUpdate()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка добавления")
+      setError(e instanceof Error ? e.message : "Failed to add")
     } finally {
       setAdding(false)
     }
   }
 
   async function handleDelete(catId: string) {
-    if (!confirm("Удалить категорию из шаблона?")) return
+    if (!confirm("Delete category from template?")) return
     setDeletingId(catId)
     try {
       await deleteTemplateCategory(templateId, catId)
@@ -2223,10 +2226,11 @@ function SectionCategories({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Категории шаблона</CardTitle>
+        <CardTitle>Template categories</CardTitle>
         <CardDescription>
-          Категории, которые бот создаст при установке шаблона. Имена должны совпадать с именами категорий
-          из Discord-шаблона (если используешь его) — иначе при настройке прав ниже не будет совпадений.
+          Categories the bot will create when installing the template. Names must match category names
+          from the Discord template (if you use one) — otherwise the permissions setup below will have
+          no matches.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -2253,19 +2257,19 @@ function SectionCategories({
         )}
 
         <div className="rounded-lg border border-dashed p-3 space-y-3">
-          <p className="text-sm font-medium">Добавить категорию</p>
+          <p className="text-sm font-medium">Add category</p>
           <div className="flex items-end gap-2">
             <div className="flex-1 grid gap-1">
-              <Label className="text-xs">Имя категории</Label>
+              <Label className="text-xs">Category name</Label>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Например: Verification"
+                placeholder="e.g. Verification"
                 maxLength={100}
               />
             </div>
             <Button size="sm" onClick={() => void handleAdd()} disabled={adding || !newName.trim()}>
-              {adding ? "Добавление…" : "Добавить"}
+              {adding ? "Adding…" : "Add"}
             </Button>
           </div>
           {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
