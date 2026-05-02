@@ -296,6 +296,10 @@ export type ServerTemplate = {
   statsHumansName?: string | null
   statsBotsName?: string | null
   statsOnlineName?: string | null
+  /** Verification: category name to hide from the role */
+  verifiedHideCategoryName?: string | null
+  /** Verification: role name that won't see the category */
+  verifiedHideRoleName?: string | null
   createdAt: string
 }
 
@@ -418,6 +422,8 @@ export async function updateServerTemplate(
     statsHumansName?: string | null
     statsBotsName?: string | null
     statsOnlineName?: string | null
+    verifiedHideCategoryName?: string | null
+    verifiedHideRoleName?: string | null
   }
 ): Promise<ServerTemplate> {
   const res = await fetch(st(id), { ...fetchOptions, method: "PATCH", body: JSON.stringify(body) })
@@ -869,3 +875,92 @@ export async function adminRevokeTemplateAccess(userId: string, templateId: stri
 
 export const LOGIN_URL = `${API_BASE}/auth/discord`
 export const LOGOUT_URL = `${API_BASE}/auth/logout`
+
+// ─── Per-guild snapshots (User Admin Panel) ─────────────────────────────────
+
+export type GuildMessage = {
+  id: string
+  guildId: string
+  discordChannelId: string
+  discordMessageId: string
+  channelName: string
+  content: string | null
+  embedJson: Record<string, unknown> | null
+  componentsJson: unknown[] | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type GuildReactionRole = {
+  id: string
+  guildId: string
+  discordChannelId: string
+  discordMessageId: string
+  emojiKey: string
+  discordRoleId: string
+  createdAt: string
+}
+
+export async function getGuildMessages(guildId: string): Promise<GuildMessage[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/messages`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load guild messages")
+  return res.json()
+}
+
+export async function updateGuildMessage(
+  guildId: string,
+  msgId: string,
+  body: {
+    content?: string | null
+    embedJson?: Record<string, unknown> | string | null
+    componentsJson?: unknown[] | string | null
+  },
+): Promise<GuildMessage> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/messages/${msgId}`, {
+    ...fetchOptions,
+    method: "PATCH",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update message")
+  return res.json()
+}
+
+export async function deleteGuildMessage(guildId: string, msgId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/messages/${msgId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to delete message")
+}
+
+export async function getGuildReactionRoles(guildId: string): Promise<GuildReactionRole[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/reaction-roles`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load reaction roles")
+  return res.json()
+}
+
+export async function addGuildReactionRole(
+  guildId: string,
+  body: {
+    discordChannelId: string
+    discordMessageId: string
+    emojiKey: string
+    discordRoleId: string
+  },
+): Promise<GuildReactionRole> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/reaction-roles`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to add reaction role")
+  return res.json()
+}
+
+export async function deleteGuildReactionRole(guildId: string, rrId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/reaction-roles/${rrId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to delete reaction role")
+}

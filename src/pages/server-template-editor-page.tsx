@@ -647,6 +647,15 @@ export function ServerTemplateEditorPage() {
           onUpdate={load}
         />
 
+        <SectionVerifyHide
+          templateId={id}
+          categories={template.categories}
+          roles={template.roles}
+          currentCategoryName={template.verifiedHideCategoryName ?? null}
+          currentRoleName={template.verifiedHideRoleName ?? null}
+          onUpdate={load}
+        />
+
         <SectionMessages
           templateId={id}
           channels={template.channels}
@@ -2273,6 +2282,179 @@ function SectionCategories({
             </Button>
           </div>
           {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// «Verification Category» — одна категория + одна роль.
+// Бот при установке выставит deny ViewChannel для выбранной роли на этой
+// категории и всех каналах внутри. Используется для канала верификации,
+// который должен исчезать после получения роли.
+// ════════════════════════════════════════════════════════════════════════════
+
+function SectionVerifyHide({
+  templateId,
+  categories,
+  roles,
+  currentCategoryName,
+  currentRoleName,
+  onUpdate,
+}: {
+  templateId: string
+  categories: TemplateCategory[]
+  roles: TemplateRole[]
+  currentCategoryName: string | null
+  currentRoleName: string | null
+  onUpdate: () => void
+}) {
+  const [categoryName, setCategoryName] = useState(currentCategoryName ?? "")
+  const [roleName, setRoleName] = useState(currentRoleName ?? "")
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [savedMsg, setSavedMsg] = useState<string | null>(null)
+
+  useEffect(() => {
+    setCategoryName(currentCategoryName ?? "")
+    setRoleName(currentRoleName ?? "")
+  }, [currentCategoryName, currentRoleName])
+
+  async function handleSave() {
+    setError(null)
+    setSavedMsg(null)
+    setSaving(true)
+    try {
+      const updated = await updateServerTemplate(templateId, {
+        verifiedHideCategoryName: categoryName.trim() || null,
+        verifiedHideRoleName: roleName.trim() || null,
+      })
+      onUpdate()
+      setSavedMsg("Saved")
+      setTimeout(() => setSavedMsg(null), 2000)
+      void updated
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleClear() {
+    setCategoryName("")
+    setRoleName("")
+    setError(null)
+    setSaving(true)
+    try {
+      await updateServerTemplate(templateId, {
+        verifiedHideCategoryName: null,
+        verifiedHideRoleName: null,
+      })
+      onUpdate()
+      setSavedMsg("Cleared")
+      setTimeout(() => setSavedMsg(null), 2000)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Verification Category</CardTitle>
+        <CardDescription>
+          Pick one category and one role — when the template is installed, the bot will
+          <b> hide that category and all its channels from the chosen role</b> (deny ViewChannel).
+          Useful for a verification channel: visible to everyone, then disappears after the user
+          gets the verification role. Binding by name, not Discord ID.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-1">
+            <Label className="text-xs">Category to hide</Label>
+            {categories.length === 0 ? (
+              <Input
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="e.g. Verification"
+              />
+            ) : (
+              <Select
+                value={categoryName || "__none__"}
+                onValueChange={(v) => setCategoryName(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pick a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Not selected</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.name}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="grid gap-1">
+            <Label className="text-xs">Role that won't see the category</Label>
+            {roles.length === 0 ? (
+              <Input
+                value={roleName}
+                onChange={(e) => setRoleName(e.target.value)}
+                placeholder="e.g. Verified"
+              />
+            ) : (
+              <Select
+                value={roleName || "__none__"}
+                onValueChange={(v) => setRoleName(v === "__none__" ? "" : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Pick a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Not selected</SelectItem>
+                  {roles.map((r) => (
+                    <SelectItem key={r.id} value={r.name}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+        </div>
+
+        {error && <p className="text-sm text-[hsl(var(--destructive))]">{error}</p>}
+
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            onClick={() => void handleSave()}
+            disabled={saving || (!categoryName.trim() && !roleName.trim())}
+          >
+            {saving ? "Saving…" : "Save"}
+          </Button>
+          {(currentCategoryName || currentRoleName) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void handleClear()}
+              disabled={saving}
+              className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+            >
+              Clear
+            </Button>
+          )}
+          {savedMsg && (
+            <span className="text-xs text-[hsl(var(--muted-foreground))]">{savedMsg}</span>
+          )}
         </div>
       </CardContent>
     </Card>

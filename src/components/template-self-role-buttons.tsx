@@ -55,6 +55,116 @@ export function buildSelfRoleCustomId(mode: SelfRoleButtonMode, roleName: string
   return `rr/${wrapped}`
 }
 
+/**
+ * GUILD variant — works with real Discord role IDs (after install).
+ * Use it in User Admin Panel where customId already contains real IDs, e.g. `rr/give/123456789`.
+ */
+export function buildGuildSelfRoleCustomId(mode: SelfRoleButtonMode, roleId: string): string {
+  const r = roleId.trim()
+  if (mode === "give") return `rr/give/${r}`
+  if (mode === "take") return `rr/take/${r}`
+  return `rr/${r}`
+}
+
+/** Serializer for guild context — roleName field stores raw role ID, no `{{…}}` wrapping. */
+export function serializeGuildSelfRoleComponents(buttons: SelfRoleButtonDraft[]): unknown[] | undefined {
+  const valid = buttons.filter((b) => b.roleName.trim() && b.label.trim())
+  if (valid.length === 0) return undefined
+
+  const rows: { type: 1; components: Record<string, unknown>[] }[] = []
+  let row: { type: 1; components: Record<string, unknown>[] } = { type: 1, components: [] }
+
+  for (const b of valid) {
+    const btn: Record<string, unknown> = {
+      type: 2,
+      style: b.style,
+      label: b.label.trim().slice(0, 80),
+      customId: buildGuildSelfRoleCustomId(b.mode, b.roleName),
+    }
+    const em = b.emojiName.trim()
+    if (em) {
+      if (/^\d{17,20}$/.test(em)) {
+        btn.emoji = { id: em }
+      } else {
+        btn.emoji = { name: em }
+      }
+    }
+    if (row.components.length >= 5) {
+      rows.push(row)
+      row = { type: 1, components: [] }
+    }
+    row.components.push(btn)
+  }
+  if (row.components.length) rows.push(row)
+  return rows
+}
+
+/** Parser for guild context — accepts customId with raw role IDs (no `{{…}}`). */
+export function parseGuildSelfRoleComponents(raw: unknown): SelfRoleButtonDraft[] {
+  if (raw == null) return []
+  let parsed: unknown
+  if (typeof raw === "string") {
+    if (!raw.trim()) return []
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      return []
+    }
+  } else if (Array.isArray(raw)) {
+    parsed = raw
+  } else {
+    return []
+  }
+  if (!Array.isArray(parsed)) return []
+
+  const out: SelfRoleButtonDraft[] = []
+  for (const row of parsed) {
+    if (!row || typeof row !== "object" || (row as { type?: number }).type !== 1) continue
+    const comps = (row as { components?: unknown[] }).components ?? []
+    for (const c of comps) {
+      if (!c || typeof c !== "object" || (c as { type?: number }).type !== 2) continue
+      const btn = c as {
+        customId?: string
+        label?: string
+        style?: number
+        emoji?: { name?: string; id?: string }
+      }
+      const cid = btn.customId ?? ""
+      // Match raw IDs first; fall back to {{…}} placeholders for safety
+      let mode: SelfRoleButtonMode = "toggle"
+      let roleId = ""
+      const giveRaw = cid.match(/^rr\/give\/(\d{17,20})$/)
+      const takeRaw = cid.match(/^rr\/take\/(\d{17,20})$/)
+      const togRaw = cid.match(/^rr\/(\d{17,20})$/)
+      const giveTpl = cid.match(/^rr\/give\/\{\{([^}]+)\}\}$/)
+      const takeTpl = cid.match(/^rr\/take\/\{\{([^}]+)\}\}$/)
+      const togTpl = cid.match(/^rr\/\{\{([^}]+)\}\}$/)
+      if (giveRaw) { mode = "give"; roleId = giveRaw[1] }
+      else if (takeRaw) { mode = "take"; roleId = takeRaw[1] }
+      else if (togRaw) { mode = "toggle"; roleId = togRaw[1] }
+      else if (giveTpl) { mode = "give"; roleId = giveTpl[1] }
+      else if (takeTpl) { mode = "take"; roleId = takeTpl[1] }
+      else if (togTpl) { mode = "toggle"; roleId = togTpl[1] }
+      else continue
+
+      const st = btn.style
+      const style: 1 | 2 | 3 | 4 = st === 1 || st === 2 || st === 3 || st === 4 ? st : 2
+      let emojiName = ""
+      if (btn.emoji?.id) emojiName = btn.emoji.id
+      else if (btn.emoji?.name) emojiName = btn.emoji.name
+      out.push({
+        localId: newLocalId(),
+        mode,
+        roleName: roleId,
+        label: typeof btn.label === "string" ? btn.label : "",
+        style,
+        emojiName,
+      })
+    }
+  }
+  return out
+}
+
 function buildCustomId(mode: SelfRoleButtonMode, roleName: string): string {
   return buildSelfRoleCustomId(mode, roleName)
 }

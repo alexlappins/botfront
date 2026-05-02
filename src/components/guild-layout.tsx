@@ -19,8 +19,10 @@ const navItems = [
   { to: ".", end: true, label: "Send Message", icon: Send },
   { to: "templates", end: false, label: "Templates", icon: FileStack },
   { to: "install-template", end: false, label: "Install Server Template", icon: ServerCog },
+  { to: "server-messages", end: false, label: "Server Messages", icon: MessageSquare },
+  { to: "auto-roles", end: false, label: "Auto-roles (buttons & reactions)", icon: MessageSquare },
   { to: "logs", end: false, label: "Logs", icon: ScrollText },
-  { to: "reaction-roles", end: false, label: "Reaction Roles", icon: MessageSquare },
+  { to: "reaction-roles", end: false, label: "Reaction Roles (advanced)", icon: MessageSquare },
 ] as const
 
 function GuildLayoutInner() {

@@ -10,6 +10,8 @@ import { GuildTemplatesPage } from "@/pages/guild/templates-page"
 import { GuildLogsPage } from "@/pages/guild/logs-page"
 import { GuildReactionRolesPage } from "@/pages/guild/reaction-roles-page"
 import { GuildInstallTemplatePage } from "@/pages/guild/install-template-page"
+import { GuildServerMessagesPage } from "@/pages/guild/server-messages-page"
+import { GuildAutoRolesPage } from "@/pages/guild/auto-roles-page"
 import { ServerTemplatesListPage } from "@/pages/server-templates-list-page"
 import { ServerTemplateEditorPage } from "@/pages/server-template-editor-page"
 import { StorePage } from "@/pages/store-page"
@@ -132,6 +134,8 @@ function App() {
               <Route path="logs" element={<GuildLogsPage />} />
               <Route path="reaction-roles" element={<GuildReactionRolesPage />} />
               <Route path="install-template" element={<GuildInstallTemplatePage />} />
+              <Route path="server-messages" element={<GuildServerMessagesPage />} />
+              <Route path="auto-roles" element={<GuildAutoRolesPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
