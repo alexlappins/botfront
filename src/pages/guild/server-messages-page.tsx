@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent } from "react"
-import { useParams } from "react-router-dom"
+import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -10,12 +10,6 @@ import {
   TemplateEmbedBuilder,
   type EmbedFormState,
 } from "@/components/template-embed-builder"
-import {
-  TemplateSelfRoleButtonsEditor,
-  parseGuildSelfRoleComponents,
-  serializeGuildSelfRoleComponents,
-  type SelfRoleButtonDraft,
-} from "@/components/template-self-role-buttons"
 import {
   getGuildMessages,
   updateGuildMessage,
@@ -34,7 +28,7 @@ import { cn } from "@/lib/utils"
  * Edits are mirrored to the actual Discord message via PATCH (the bot calls message.edit).
  */
 export function GuildServerMessagesPage() {
-  const { guildId } = useParams<{ guildId: string }>()
+  const guildId = useCurrentGuildId()
   const [messages, setMessages] = useState<GuildMessage[]>([])
   const [channels, setChannels] = useState<Channel[]>([])
   const [roles, setRoles] = useState<GuildRole[]>([])
@@ -66,6 +60,7 @@ export function GuildServerMessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [guildId])
 
+  if (!guildId) return <NoServerHint />
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -113,7 +108,7 @@ export function GuildServerMessagesPage() {
   )
 }
 
-type Tab = "text" | "embed" | "buttons"
+type Tab = "text" | "embed"
 
 function ServerMessageCard({
   guildId,
@@ -141,16 +136,11 @@ function ServerMessageCard({
       : null
     return parseEmbedJsonToForm(raw ?? null)
   })
-  const [buttons, setButtons] = useState<SelfRoleButtonDraft[]>(() =>
-    parseGuildSelfRoleComponents(message.componentsJson),
-  )
 
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
-
-  const roleOptions = roles.map((r) => ({ value: r.id, label: r.name }))
 
   async function handleSave() {
     setErr(null)
@@ -171,13 +161,11 @@ function ServerMessageCard({
         ? (mentionsInObject(embedObj, channels, roles, "toRaw") as Record<string, unknown>)
         : null
 
-      // Components / buttons
-      const componentsArr = serializeGuildSelfRoleComponents(buttons) ?? null
-
+      // Buttons / componentsJson are managed in the "Roles by reaction" page,
+      // so we DO NOT touch componentsJson here — pass undefined to leave them as-is.
       await updateGuildMessage(guildId, message.id, {
         content: rawContent.trim() || null,
         embedJson: embedRaw,
-        componentsJson: componentsArr,
       })
       setSavedMsg("Saved")
       setTimeout(() => setSavedMsg(null), 2000)
@@ -243,13 +231,6 @@ function ServerMessageCard({
           <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
             Embed
           </button>
-          <button type="button" onClick={() => setTab("buttons")} className={tabClass(tab === "buttons")}>
-            Buttons {buttons.length > 0 && (
-              <span className="ml-1 text-[10px] px-1 rounded bg-[hsl(var(--primary)/0.2)]">
-                {buttons.length}
-              </span>
-            )}
-          </button>
         </div>
 
         {tab === "text" && (
@@ -270,14 +251,6 @@ function ServerMessageCard({
         )}
 
         {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
-
-        {tab === "buttons" && (
-          <TemplateSelfRoleButtonsEditor
-            buttons={buttons}
-            onChange={setButtons}
-            roleOptions={roleOptions.length > 0 ? roleOptions : undefined}
-          />
-        )}
 
         {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
         {savedMsg && <p className="text-xs text-[hsl(var(--primary))]">{savedMsg}</p>}
@@ -316,4 +289,15 @@ function mentionsInObject(
     }
   }
   return out
+}
+
+function NoServerHint() {
+  return (
+    <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
+      <p className="text-white/60">Выберите сервер в селекторе слева вверху.</p>
+      <p className="text-xs text-white/40 mt-1">
+        После установки шаблона сообщения отсюда можно редактировать.
+      </p>
+    </div>
+  )
 }

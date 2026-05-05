@@ -8,19 +8,18 @@ import { GuildLayout } from "@/components/guild-layout"
 import { GuildOverviewPage } from "@/pages/guild/overview-page"
 import { GuildTemplatesPage } from "@/pages/guild/templates-page"
 import { GuildLogsPage } from "@/pages/guild/logs-page"
-import { GuildReactionRolesPage } from "@/pages/guild/reaction-roles-page"
 import { GuildInstallTemplatePage } from "@/pages/guild/install-template-page"
 import { GuildServerMessagesPage } from "@/pages/guild/server-messages-page"
 import { GuildAutoRolesPage } from "@/pages/guild/auto-roles-page"
 import { ServerTemplatesListPage } from "@/pages/server-templates-list-page"
 import { ServerTemplateEditorPage } from "@/pages/server-template-editor-page"
 import { StorePage } from "@/pages/store-page"
-import { MyTemplatesPage } from "@/pages/my-templates-page"
 import { MyPurchasesPage } from "@/pages/my-purchases-page"
 import { InstallWizardPage } from "@/pages/install-wizard-page"
 import { AdminStorePage } from "@/pages/admin-store-page"
 import { AdminTemplateAccessPage } from "@/pages/admin-template-access-page"
-import { MyGuildsPage } from "@/pages/my-guilds-page"
+import { AdminLayout } from "@/components/admin-layout"
+import { ServerLogsPage } from "@/pages/server-logs-page"
 
 function RequireRole({ role, children }: { role: "admin" | "customer"; children: ReactElement }) {
   const { user, loading } = useAuth()
@@ -79,30 +78,22 @@ function App() {
             }
           />
 
+          {/* Customer pages — shared AdminLayout (sidebar + active server) */}
           <Route
-            path="/store"
             element={
               <RequireRole role="customer">
-                <StorePage />
+                <AdminLayout />
               </RequireRole>
             }
-          />
-          <Route
-            path="/my-templates"
-            element={
-              <RequireRole role="customer">
-                <MyTemplatesPage />
-              </RequireRole>
-            }
-          />
-          <Route
-            path="/my-purchases"
-            element={
-              <RequireRole role="customer">
-                <MyPurchasesPage />
-              </RequireRole>
-            }
-          />
+          >
+            <Route path="/store" element={<StorePage />} />
+            <Route path="/my-purchases" element={<MyPurchasesPage />} />
+            <Route path="/server-messages" element={<GuildServerMessagesPage />} />
+            <Route path="/reaction-roles" element={<GuildAutoRolesPage />} />
+            <Route path="/server-logs" element={<ServerLogsPage />} />
+          </Route>
+
+          {/* Standalone install wizard (no admin shell) */}
           <Route
             path="/install/:templateId"
             element={
@@ -111,15 +102,8 @@ function App() {
               </RequireRole>
             }
           />
-          <Route
-            path="/my-servers"
-            element={
-              <RequireRole role="customer">
-                <MyGuildsPage />
-              </RequireRole>
-            }
-          />
 
+          {/* Legacy /guild/:guildId pages — kept for now, will be migrated in next iteration */}
           <Route
             path="/guild/:guildId"
             element={
@@ -132,7 +116,6 @@ function App() {
               <Route index element={<GuildOverviewPage />} />
               <Route path="templates" element={<GuildTemplatesPage />} />
               <Route path="logs" element={<GuildLogsPage />} />
-              <Route path="reaction-roles" element={<GuildReactionRolesPage />} />
               <Route path="install-template" element={<GuildInstallTemplatePage />} />
               <Route path="server-messages" element={<GuildServerMessagesPage />} />
               <Route path="auto-roles" element={<GuildAutoRolesPage />} />

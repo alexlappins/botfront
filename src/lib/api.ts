@@ -698,6 +698,7 @@ export type StoreTemplateProduct = {
   name: string
   description: string | null
   discordTemplateUrl: string | null
+  iconUrl?: string | null
   price: number
   currency: string
   isActive?: boolean
@@ -706,7 +707,22 @@ export type StoreTemplateProduct = {
     name: string
     description: string | null
     discordTemplateUrl: string | null
+    iconUrl?: string | null
   } | null
+}
+
+/** Per-user template access record (purchases history with usage tracking) */
+export type MyTemplateAccess = {
+  grantedAt: string
+  installedAt: string | null
+  installedGuildId: string | null
+  usageType: "oneShot" | "multi"
+  pricePaid: number | null
+  currency: string | null
+}
+
+export type MyTemplateRow = ServerTemplate & {
+  access: MyTemplateAccess | null
 }
 
 export type Purchase = {
@@ -788,7 +804,7 @@ export async function getMyPurchases(): Promise<Purchase[]> {
   return res.json()
 }
 
-export async function getMyServerTemplates(): Promise<ServerTemplate[]> {
+export async function getMyServerTemplates(): Promise<MyTemplateRow[]> {
   const res = await fetch(`${API_BASE}/my/server-templates`, { ...fetchOptions, method: "GET" })
   if (!res.ok) await throwApiError(res, "Failed to fetch my templates")
   return res.json()
@@ -901,10 +917,15 @@ export type GuildReactionRole = {
   createdAt: string
 }
 
+// All guild-data endpoints live under /api/guilds/:id/data/* to avoid collision with
+// legacy /api/guilds/:id/reaction-roles which has a different response shape.
+const guildData = (guildId: string) => `${API_BASE}/guilds/${guildId}/data`
+
 export async function getGuildMessages(guildId: string): Promise<GuildMessage[]> {
-  const res = await fetch(`${API_BASE}/guilds/${guildId}/messages`, { ...fetchOptions, method: "GET" })
+  const res = await fetch(`${guildData(guildId)}/messages`, { ...fetchOptions, method: "GET" })
   if (!res.ok) await throwApiError(res, "Failed to load guild messages")
-  return res.json()
+  const data = await res.json().catch(() => [])
+  return Array.isArray(data) ? data : []
 }
 
 export async function updateGuildMessage(
@@ -916,7 +937,7 @@ export async function updateGuildMessage(
     componentsJson?: unknown[] | string | null
   },
 ): Promise<GuildMessage> {
-  const res = await fetch(`${API_BASE}/guilds/${guildId}/messages/${msgId}`, {
+  const res = await fetch(`${guildData(guildId)}/messages/${msgId}`, {
     ...fetchOptions,
     method: "PATCH",
     body: JSON.stringify(body),
@@ -926,7 +947,7 @@ export async function updateGuildMessage(
 }
 
 export async function deleteGuildMessage(guildId: string, msgId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/guilds/${guildId}/messages/${msgId}`, {
+  const res = await fetch(`${guildData(guildId)}/messages/${msgId}`, {
     ...fetchOptions,
     method: "DELETE",
   })
@@ -934,9 +955,10 @@ export async function deleteGuildMessage(guildId: string, msgId: string): Promis
 }
 
 export async function getGuildReactionRoles(guildId: string): Promise<GuildReactionRole[]> {
-  const res = await fetch(`${API_BASE}/guilds/${guildId}/reaction-roles`, { ...fetchOptions, method: "GET" })
+  const res = await fetch(`${guildData(guildId)}/reaction-roles`, { ...fetchOptions, method: "GET" })
   if (!res.ok) await throwApiError(res, "Failed to load reaction roles")
-  return res.json()
+  const data = await res.json().catch(() => [])
+  return Array.isArray(data) ? data : []
 }
 
 export async function addGuildReactionRole(
@@ -948,7 +970,7 @@ export async function addGuildReactionRole(
     discordRoleId: string
   },
 ): Promise<GuildReactionRole> {
-  const res = await fetch(`${API_BASE}/guilds/${guildId}/reaction-roles`, {
+  const res = await fetch(`${guildData(guildId)}/reaction-roles`, {
     ...fetchOptions,
     method: "POST",
     body: JSON.stringify(body),
@@ -958,7 +980,7 @@ export async function addGuildReactionRole(
 }
 
 export async function deleteGuildReactionRole(guildId: string, rrId: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/guilds/${guildId}/reaction-roles/${rrId}`, {
+  const res = await fetch(`${guildData(guildId)}/reaction-roles/${rrId}`, {
     ...fetchOptions,
     method: "DELETE",
   })
