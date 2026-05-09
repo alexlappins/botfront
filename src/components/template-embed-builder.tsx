@@ -387,14 +387,6 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] xl:items-start">
       <div className="space-y-5 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.22)] p-4 sm:p-5">
-        <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Embed author is not configurable — the bot sends the message (like ProBot). Image uploads go
-          through the backend{" "}
-          <code className="text-[10px]">POST /api/uploads</code>; Discord requires a public{" "}
-          <code className="text-[10px]">PUBLIC_BASE_URL</code> (https), otherwise the embed will contain
-          localhost and the image won't load.
-        </p>
-
         <div>
           <Label className="text-[11px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
             Color
@@ -537,11 +529,6 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                   <ImageIcon className="h-12 w-12 opacity-40" strokeWidth={1.25} />
                 )}
               </div>
-              <Input
-                value={form.imageUrl}
-                onChange={(e) => patch({ imageUrl: e.target.value })}
-                placeholder="Image URL (image)"
-              />
               <input
                 ref={imageFileRef}
                 type="file"
@@ -582,12 +569,6 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
                 <ImageIcon className="h-10 w-10 opacity-40" strokeWidth={1.25} />
               )}
             </div>
-            <Input
-              value={form.thumbnailUrl}
-              onChange={(e) => patch({ thumbnailUrl: e.target.value })}
-              placeholder="Thumbnail URL"
-              className="text-sm"
-            />
             <input
               ref={thumbFileRef}
               type="file"
@@ -651,14 +632,6 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
           </div>
         </div>
 
-        <div className="grid gap-2 sm:max-w-xs">
-          <Label className="text-xs text-[hsl(var(--muted-foreground))]">Time (timestamp)</Label>
-          <Input
-            type="datetime-local"
-            value={form.timestampLocal}
-            onChange={(e) => patch({ timestampLocal: e.target.value })}
-          />
-        </div>
       </div>
 
       <div className="space-y-2 xl:sticky xl:top-2 xl:self-start">

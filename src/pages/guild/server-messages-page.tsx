@@ -1,7 +1,6 @@
 import { useEffect, useState, type ChangeEvent } from "react"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Loader2, Save, Trash2, MessageSquare } from "lucide-react"
 import {
@@ -75,21 +74,14 @@ export function GuildServerMessagesPage() {
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <MessageSquare className="h-6 w-6" />
-          Server Messages
+          Шаблоны сообщений
         </h1>
-        <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">
-          Messages added by the template are listed here. Edit text / embed / buttons and the bot
-          will update them in Discord. Channel mentions are shown as <code>#name</code> and roles
-          as <code>@Name</code> for readability — both forms are converted automatically on save.
-        </p>
       </div>
 
       {messages.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center text-[hsl(var(--muted-foreground))]">
-            <p>No messages yet. They appear here automatically after a template is installed.</p>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-12 text-center text-white/55">
+          <p>No messages yet. They appear here automatically after a template is installed.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {messages.map((m) => (
@@ -198,64 +190,79 @@ function ServerMessageCard({
         : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]",
     )
 
+  // Collapsed by default — compact list, expand a single card for editing.
+  const [open, setOpen] = useState(false)
+
+  const previewText = (content || message.content || "").trim().slice(0, 60)
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-start justify-between gap-3">
-        <div className="min-w-0">
-          <CardTitle className="text-base truncate">#{message.channelName}</CardTitle>
-          <CardDescription className="text-xs">
-            Discord message ID: <code className="text-[10px]">{message.discordMessageId}</code>
-          </CardDescription>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.05]"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-medium text-white truncate">#{message.channelName}</span>
+          <span className="text-xs text-white/40 truncate">{previewText || "(embed)"}</span>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button size="sm" onClick={() => void handleSave()} disabled={saving}>
-            {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-            Save
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => void handleDelete()}
-            disabled={deleting}
-            className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex gap-2">
-          <button type="button" onClick={() => setTab("text")} className={tabClass(tab === "text")}>
-            Text
-          </button>
-          <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
-            Embed
-          </button>
-        </div>
+        <span className="text-xs text-white/40 shrink-0">
+          {open ? "▲ скрыть" : "▼ редактировать"}
+        </span>
+      </button>
 
-        {tab === "text" && (
-          <div className="grid gap-2">
-            <Label className="text-xs">Message content</Label>
-            <textarea
-              className="flex min-h-[100px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-              value={content}
-              onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
-              placeholder="Plain text shown above the embed (or alone)"
-              rows={5}
-            />
-            <p className="text-xs text-[hsl(var(--muted-foreground))]">
-              You can type <code>#channel-name</code> for a channel link and <code>@RoleName</code>{" "}
-              for a role mention — they will be converted to clickable Discord mentions on save.
-            </p>
+      {open && (
+        <div className="border-t border-white/5 p-4 space-y-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setTab("text")} className={tabClass(tab === "text")}>
+                Text
+              </button>
+              <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
+                Embed
+              </button>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button size="sm" onClick={() => void handleSave()} disabled={saving}>
+                {saving ? (
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                ) : (
+                  <Save className="h-3 w-3 mr-1" />
+                )}
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => void handleDelete()}
+                disabled={deleting}
+                className="text-[hsl(var(--destructive))] hover:text-[hsl(var(--destructive))]"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        )}
 
-        {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+          {tab === "text" && (
+            <div className="grid gap-2">
+              <Label className="text-xs">Message content</Label>
+              <textarea
+                className="flex min-h-[100px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                value={content}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
+                placeholder="Plain text shown above the embed (or alone)"
+                rows={5}
+              />
+            </div>
+          )}
 
-        {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
-        {savedMsg && <p className="text-xs text-[hsl(var(--primary))]">{savedMsg}</p>}
-      </CardContent>
-    </Card>
+          {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+
+          {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
+          {savedMsg && <p className="text-xs text-[hsl(var(--primary))]">{savedMsg}</p>}
+        </div>
+      )}
+    </div>
   )
 }
 

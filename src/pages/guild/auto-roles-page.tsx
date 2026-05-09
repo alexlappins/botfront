@@ -41,7 +41,8 @@ import { cn } from "@/lib/utils"
  */
 export function GuildAutoRolesPage() {
   const guildId = useCurrentGuildId()
-  const [tab, setTab] = useState<"reactions" | "buttons">("reactions")
+  // Buttons is the most-used sub-section, so it's the default tab.
+  const [tab, setTab] = useState<"reactions" | "buttons">("buttons")
   const [messages, setMessages] = useState<GuildMessage[]>([])
   const [bindings, setBindings] = useState<GuildReactionRole[]>([])
   const [roles, setRoles] = useState<GuildRole[]>([])
@@ -102,16 +103,16 @@ export function GuildAutoRolesPage() {
       </div>
 
       <div className="flex gap-2 border-b border-white/5">
-        <TabBtn active={tab === "reactions"} onClick={() => setTab("reactions")}>
-          Реакции
-          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
-            {bindings.length}
-          </span>
-        </TabBtn>
         <TabBtn active={tab === "buttons"} onClick={() => setTab("buttons")}>
           Кнопки
           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
             {messages.length}
+          </span>
+        </TabBtn>
+        <TabBtn active={tab === "reactions"} onClick={() => setTab("reactions")}>
+          Реакции
+          <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
+            {bindings.length}
           </span>
         </TabBtn>
       </div>

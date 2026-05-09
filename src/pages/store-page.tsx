@@ -176,7 +176,7 @@ function ServerTemplatesGrid() {
           <p className="text-white/50">В магазине пока нет товаров.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {items.map((p) => (
             <ProductCard
               key={p.templateId}
@@ -211,38 +211,38 @@ function ProductCard({
       : `${product.price.toFixed(2)} ${product.currency}`
 
   return (
-    <article className="group rounded-2xl bg-[#11111c] border border-white/5 hover:border-violet-500/30 transition-colors overflow-hidden flex flex-col">
-      <div className="aspect-[16/9] bg-gradient-to-br from-violet-700/40 to-fuchsia-700/30 grid place-items-center overflow-hidden">
+    <article className="group rounded-xl bg-[#11111c] border border-white/5 hover:border-violet-500/30 transition-colors overflow-hidden flex flex-col">
+      <div className="aspect-square bg-gradient-to-br from-violet-700/40 to-fuchsia-700/30 grid place-items-center overflow-hidden">
         {iconUrl ? (
           <img src={iconUrl} alt={product.name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-6xl font-bold text-white/30">{initial}</span>
+          <span className="text-3xl font-bold text-white/30">{initial}</span>
         )}
       </div>
-      <div className="p-5 flex-1 flex flex-col">
-        <h3 className="text-lg font-semibold text-white">{product.name}</h3>
-        <p className="text-sm text-white/55 mt-1.5 flex-1 leading-snug line-clamp-3">
+      <div className="p-3 flex-1 flex flex-col gap-1.5">
+        <h3 className="text-sm font-semibold text-white truncate">{product.name}</h3>
+        <p className="text-[11px] text-white/55 leading-snug line-clamp-2 flex-1">
           {product.description ?? "Без описания"}
         </p>
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
-            {tags.map((t) => (
+          <div className="flex flex-wrap gap-1">
+            {tags.slice(0, 2).map((t) => (
               <span
                 key={t}
-                className="text-[11px] px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-300 border border-violet-500/20"
+                className="text-[9px] px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 border border-violet-500/20"
               >
                 {t}
               </span>
             ))}
           </div>
         )}
-        <div className="mt-4 flex items-center justify-between">
-          <span className="text-lg font-semibold text-white">{priceLabel}</span>
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold text-white">{priceLabel}</span>
           <button
             type="button"
             onClick={onBuy}
             disabled={busy}
-            className="px-4 h-9 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+            className="px-2.5 h-7 rounded-md bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
           >
             {busy ? "…" : "Купить"}
           </button>

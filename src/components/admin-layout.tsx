@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet } from "react-router-dom"
 import {
   Bell,
   ChevronDown,
+  HandHeart,
   Loader2,
   LogOut,
   MessageSquareText,
@@ -29,6 +30,7 @@ const NAV: NavItem[] = [
   { to: "/store", label: "Магазин", icon: ShoppingBag },
   { to: "/my-purchases", label: "Список покупок", icon: ScrollText },
   { to: "/server-messages", label: "Шаблоны сообщений", icon: MessageSquareText },
+  { to: "/welcome", label: "Приветствия", icon: HandHeart },
   { to: "/reaction-roles", label: "Роли по реакции", icon: Smile },
   { to: "/server-logs", label: "Логи сервера", icon: ScrollText },
 ]
@@ -42,10 +44,14 @@ export function AdminLayout({ children }: { children?: ReactNode }) {
 }
 
 function AdminLayoutInner({ children }: { children?: ReactNode }) {
+  // Layout strategy:
+  // - Wrapper is `h-screen overflow-hidden flex` so the page never scrolls as a whole.
+  // - Sidebar has `h-screen` so it stays put.
+  // - Right column has its own scroll inside `<main>`.
   return (
-    <div className="min-h-screen bg-[#0b0b14] text-[#e7e7f0] flex">
+    <div className="h-screen overflow-hidden bg-[#0b0b14] text-[#e7e7f0] flex">
       <Sidebar />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
         <TopBar />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           {children ?? <Outlet />}
@@ -56,9 +62,11 @@ function AdminLayoutInner({ children }: { children?: ReactNode }) {
 }
 
 function Sidebar() {
+  // Full-height column. Top: server selector (sticky-feel because column is fixed height).
+  // Middle: scrollable nav. Bottom: pinned premium block via mt-auto wrapper.
   return (
-    <aside className="w-[260px] shrink-0 border-r border-white/5 bg-[#0e0e18] flex flex-col">
-      <div className="px-5 pt-6 pb-3">
+    <aside className="w-[260px] shrink-0 border-r border-white/5 bg-[#0e0e18] flex flex-col h-screen sticky top-0">
+      <div className="px-5 pt-6 pb-3 shrink-0">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
           Мои сервера
         </p>
@@ -67,7 +75,7 @@ function Sidebar() {
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto min-h-0">
         {NAV.map((item) => (
           <NavLink
             key={item.to}
@@ -88,7 +96,7 @@ function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-5 py-4 border-t border-white/5">
+      <div className="px-5 py-4 border-t border-white/5 shrink-0">
         <Link
           to="#"
           className="block w-full text-center rounded-xl border border-white/10 bg-white/[0.03] py-2 text-sm text-white/60 hover:bg-white/5"
@@ -100,6 +108,47 @@ function Sidebar() {
         </Link>
       </div>
     </aside>
+  )
+}
+
+/**
+ * Build a Discord CDN icon URL for a guild from its hash.
+ * Returns null if the guild has no custom icon (caller falls back to the default avatar tile).
+ */
+function discordGuildIconUrl(guildId: string, iconHash: string | null): string | null {
+  if (!iconHash) return null
+  const ext = iconHash.startsWith("a_") ? "gif" : "png"
+  return `https://cdn.discordapp.com/icons/${guildId}/${iconHash}.${ext}?size=64`
+}
+
+/** Avatar tile for a guild — real Discord icon if available, otherwise initials on gradient. */
+function GuildAvatar({
+  guild,
+  size,
+}: {
+  guild: { id: string; name: string; icon: string | null } | null | undefined
+  size: number
+}) {
+  const url = guild ? discordGuildIconUrl(guild.id, guild.icon) : null
+  const initial = guild?.name?.[0]?.toUpperCase() ?? "?"
+  const fontSize = Math.max(10, Math.round(size / 2.6))
+  if (url) {
+    return (
+      <img
+        src={url}
+        alt={guild?.name ?? ""}
+        className="rounded-full object-cover shrink-0"
+        style={{ width: size, height: size }}
+      />
+    )
+  }
+  return (
+    <div
+      className="rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-semibold shrink-0"
+      style={{ width: size, height: size, fontSize }}
+    >
+      {initial}
+    </div>
   )
 }
 
@@ -133,9 +182,13 @@ function ServerSelector() {
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.06] transition-colors"
       >
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white font-semibold">
-          {activeGuild?.name?.[0]?.toUpperCase() ?? <Server className="h-4 w-4" />}
-        </div>
+        {activeGuild ? (
+          <GuildAvatar guild={activeGuild} size={36} />
+        ) : (
+          <div className="w-9 h-9 rounded-full bg-white/[0.06] grid place-items-center text-white/50">
+            <Server className="h-4 w-4" />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">
             {activeGuild?.name ?? "Сервер не выбран"}
@@ -170,9 +223,7 @@ function ServerSelector() {
                   g.id === activeGuildId && "bg-white/[0.04]",
                 )}
               >
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-white text-xs font-semibold">
-                  {g.name[0]?.toUpperCase() ?? "?"}
-                </div>
+                <GuildAvatar guild={g} size={28} />
                 <span className="text-sm text-white/85 truncate">{g.name}</span>
               </button>
             ))}

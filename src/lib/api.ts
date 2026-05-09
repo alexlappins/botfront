@@ -986,3 +986,163 @@ export async function deleteGuildReactionRole(guildId: string, rrId: string): Pr
   })
   if (!res.ok) await throwApiError(res, "Failed to delete reaction role")
 }
+
+// ─── Welcome / Goodbye ──────────────────────────────────────────────────────
+
+export type WelcomeTemplateRow = {
+  id: string
+  text: string
+  orderIndex: number
+}
+
+export type WelcomeButton = {
+  label: string
+  url: string
+  emoji?: string | null
+}
+
+export type ImageSendMode = "with_text" | "before_text" | "image_only"
+
+export type AvatarConfig = {
+  enabled: boolean
+  x: number
+  y: number
+  radius: number
+  borderColor: string
+  borderWidth: number
+}
+
+export type ImageTextBlock = {
+  enabled: boolean
+  text: string
+  x: number
+  y: number
+  fontSize: number
+  color: string
+  bold: boolean
+  align: "left" | "center" | "right"
+  strokeColor?: string | null
+  strokeWidth?: number
+}
+
+export type UsernameConfig = Omit<ImageTextBlock, "text">
+
+export type ImageFields = {
+  imageEnabled: boolean
+  imageSendMode: ImageSendMode
+  backgroundImageUrl: string | null
+  backgroundFill: string | null
+  avatarConfig: AvatarConfig | null
+  usernameConfig: UsernameConfig | null
+  imageTextConfig: ImageTextBlock | null
+}
+
+export type WelcomeConfig = ImageFields & {
+  id: string
+  guildId: string
+  enabled: boolean
+  sendMode: "channel" | "dm"
+  channelId: string | null
+  buttonsConfig: WelcomeButton[] | null
+  returningMemberEnabled: boolean
+  returningMemberText: string | null
+  templates: WelcomeTemplateRow[]
+  variables?: { key: string; desc: string }[]
+}
+
+export type GoodbyeConfig = ImageFields & {
+  id: string
+  guildId: string
+  enabled: boolean
+  channelId: string | null
+  templates: WelcomeTemplateRow[]
+  variables?: { key: string; desc: string }[]
+}
+
+export type WelcomeUpdateBody = Partial<ImageFields> & {
+  enabled?: boolean
+  sendMode?: "channel" | "dm"
+  channelId?: string | null
+  templates?: { id?: string; text: string; orderIndex?: number }[]
+  buttonsConfig?: WelcomeButton[] | null
+  returningMemberEnabled?: boolean
+  returningMemberText?: string | null
+}
+
+export type GoodbyeUpdateBody = Partial<ImageFields> & {
+  enabled?: boolean
+  channelId?: string | null
+  templates?: { id?: string; text: string; orderIndex?: number }[]
+}
+
+export type PreviewImageBody = Partial<ImageFields> & {
+  sampleText?: string
+}
+
+export async function getWelcomeConfig(guildId: string): Promise<WelcomeConfig> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/welcome`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load welcome config")
+  return res.json()
+}
+
+export async function updateWelcomeConfig(guildId: string, body: WelcomeUpdateBody): Promise<WelcomeConfig> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/welcome`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save welcome config")
+  return res.json()
+}
+
+export async function testWelcomeMessage(guildId: string): Promise<{ ok: boolean; sent: string }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/welcome/test`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to send test welcome")
+  return res.json()
+}
+
+export async function getGoodbyeConfig(guildId: string): Promise<GoodbyeConfig> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/goodbye`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load goodbye config")
+  return res.json()
+}
+
+export async function updateGoodbyeConfig(guildId: string, body: GoodbyeUpdateBody): Promise<GoodbyeConfig> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/goodbye`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save goodbye config")
+  return res.json()
+}
+
+export async function testGoodbyeMessage(guildId: string): Promise<{ ok: boolean; sent: string }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/goodbye/test`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to send test goodbye")
+  return res.json()
+}
+
+/**
+ * Render a welcome/goodbye preview image on the server with the given form state.
+ * Returns a Blob the caller can turn into a URL.createObjectURL.
+ */
+export async function fetchWelcomePreviewImage(
+  guildId: string,
+  body: PreviewImageBody,
+  kind: "welcome" | "goodbye" = "welcome",
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/${kind}/preview-image`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to render preview")
+  return res.blob()
+}
