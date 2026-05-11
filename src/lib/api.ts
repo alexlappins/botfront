@@ -371,6 +371,22 @@ export type TemplateCategoryGrant = {
   categoryName: string
 }
 
+export type TemplateWelcomeVariant = VariantImageFields & {
+  id: string
+  templateId: string
+  role: WelcomeVariantRole
+  text: string
+  orderIndex: number
+  buttonsConfig: WelcomeButton[] | null
+}
+
+export type TemplateGoodbyeVariant = VariantImageFields & {
+  id: string
+  templateId: string
+  text: string
+  orderIndex: number
+}
+
 export type ServerTemplateDetail = ServerTemplate & {
   roles: TemplateRole[]
   categories: TemplateCategory[]
@@ -381,6 +397,15 @@ export type ServerTemplateDetail = ServerTemplate & {
   emojis: TemplateEmoji[]
   stickers: TemplateSticker[]
   categoryGrants?: TemplateCategoryGrant[]
+  welcomeVariants?: TemplateWelcomeVariant[]
+  goodbyeVariants?: TemplateGoodbyeVariant[]
+  // template-level config (mirrors ServerTemplate columns)
+  welcomeEnabled?: boolean
+  welcomeSendMode?: "channel" | "dm"
+  welcomeChannelName?: string | null
+  welcomeReturningEnabled?: boolean
+  goodbyeEnabled?: boolean
+  goodbyeChannelName?: string | null
 }
 
 const ST = `${API_BASE}/server-templates`
@@ -424,6 +449,12 @@ export async function updateServerTemplate(
     statsOnlineName?: string | null
     verifiedHideCategoryName?: string | null
     verifiedHideRoleName?: string | null
+    welcomeEnabled?: boolean
+    welcomeSendMode?: "channel" | "dm"
+    welcomeChannelName?: string | null
+    welcomeReturningEnabled?: boolean
+    goodbyeEnabled?: boolean
+    goodbyeChannelName?: string | null
   }
 ): Promise<ServerTemplate> {
   const res = await fetch(st(id), { ...fetchOptions, method: "PATCH", body: JSON.stringify(body) })
@@ -889,6 +920,91 @@ export async function adminRevokeTemplateAccess(userId: string, templateId: stri
   if (!res.ok) await throwApiError(res, "Failed to revoke access")
 }
 
+// ─── Server template welcome/goodbye variants ──────────────────────────────
+
+export type TemplateVariantBody = Partial<VariantImageFields> & {
+  text: string
+  orderIndex?: number
+  role?: WelcomeVariantRole
+  buttonsConfig?: WelcomeButton[] | null
+}
+
+export async function createTemplateWelcomeVariant(
+  templateId: string,
+  body: TemplateVariantBody,
+): Promise<TemplateWelcomeVariant> {
+  const res = await fetch(`${st(templateId)}/welcome-variants`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to create welcome variant")
+  return res.json()
+}
+
+export async function updateTemplateWelcomeVariant(
+  templateId: string,
+  vId: string,
+  body: Partial<TemplateVariantBody>,
+): Promise<TemplateWelcomeVariant> {
+  const res = await fetch(`${st(templateId)}/welcome-variants/${vId}`, {
+    ...fetchOptions,
+    method: "PATCH",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update welcome variant")
+  return res.json()
+}
+
+export async function deleteTemplateWelcomeVariant(
+  templateId: string,
+  vId: string,
+): Promise<void> {
+  const res = await fetch(`${st(templateId)}/welcome-variants/${vId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to delete welcome variant")
+}
+
+export async function createTemplateGoodbyeVariant(
+  templateId: string,
+  body: TemplateVariantBody,
+): Promise<TemplateGoodbyeVariant> {
+  const res = await fetch(`${st(templateId)}/goodbye-variants`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to create goodbye variant")
+  return res.json()
+}
+
+export async function updateTemplateGoodbyeVariant(
+  templateId: string,
+  vId: string,
+  body: Partial<TemplateVariantBody>,
+): Promise<TemplateGoodbyeVariant> {
+  const res = await fetch(`${st(templateId)}/goodbye-variants/${vId}`, {
+    ...fetchOptions,
+    method: "PATCH",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update goodbye variant")
+  return res.json()
+}
+
+export async function deleteTemplateGoodbyeVariant(
+  templateId: string,
+  vId: string,
+): Promise<void> {
+  const res = await fetch(`${st(templateId)}/goodbye-variants/${vId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to delete goodbye variant")
+}
+
 export const LOGIN_URL = `${API_BASE}/auth/discord`
 export const LOGOUT_URL = `${API_BASE}/auth/logout`
 
@@ -926,6 +1042,24 @@ export async function getGuildMessages(guildId: string): Promise<GuildMessage[]>
   if (!res.ok) await throwApiError(res, "Failed to load guild messages")
   const data = await res.json().catch(() => [])
   return Array.isArray(data) ? data : []
+}
+
+export async function createGuildMessage(
+  guildId: string,
+  body: {
+    discordChannelId: string
+    content?: string | null
+    embedJson?: Record<string, unknown> | string | null
+    componentsJson?: unknown[] | string | null
+  },
+): Promise<GuildMessage> {
+  const res = await fetch(`${guildData(guildId)}/messages`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to create message")
+  return res.json()
 }
 
 export async function updateGuildMessage(
@@ -989,12 +1123,6 @@ export async function deleteGuildReactionRole(guildId: string, rrId: string): Pr
 
 // ─── Welcome / Goodbye ──────────────────────────────────────────────────────
 
-export type WelcomeTemplateRow = {
-  id: string
-  text: string
-  orderIndex: number
-}
-
 export type WelcomeButton = {
   label: string
   url: string
@@ -1002,6 +1130,7 @@ export type WelcomeButton = {
 }
 
 export type ImageSendMode = "with_text" | "before_text" | "image_only"
+export type WelcomeVariantRole = "new_member" | "returning_member"
 
 export type AvatarConfig = {
   enabled: boolean
@@ -1027,7 +1156,7 @@ export type ImageTextBlock = {
 
 export type UsernameConfig = Omit<ImageTextBlock, "text">
 
-export type ImageFields = {
+export type VariantImageFields = {
   imageEnabled: boolean
   imageSendMode: ImageSendMode
   backgroundImageUrl: string | null
@@ -1037,45 +1166,69 @@ export type ImageFields = {
   imageTextConfig: ImageTextBlock | null
 }
 
-export type WelcomeConfig = ImageFields & {
+export type WelcomeVariant = VariantImageFields & {
+  id: string
+  text: string
+  orderIndex: number
+  role: WelcomeVariantRole
+  buttonsConfig: WelcomeButton[] | null
+}
+
+export type GoodbyeVariant = VariantImageFields & {
+  id: string
+  text: string
+  orderIndex: number
+}
+
+export type WelcomeConfig = {
   id: string
   guildId: string
   enabled: boolean
   sendMode: "channel" | "dm"
   channelId: string | null
-  buttonsConfig: WelcomeButton[] | null
   returningMemberEnabled: boolean
-  returningMemberText: string | null
-  templates: WelcomeTemplateRow[]
+  templates: WelcomeVariant[]
   variables?: { key: string; desc: string }[]
 }
 
-export type GoodbyeConfig = ImageFields & {
+export type GoodbyeConfig = {
   id: string
   guildId: string
   enabled: boolean
   channelId: string | null
-  templates: WelcomeTemplateRow[]
+  templates: GoodbyeVariant[]
   variables?: { key: string; desc: string }[]
 }
 
-export type WelcomeUpdateBody = Partial<ImageFields> & {
+export type WelcomeVariantInput = Partial<VariantImageFields> & {
+  id?: string
+  text: string
+  orderIndex?: number
+  role?: WelcomeVariantRole
+  buttonsConfig?: WelcomeButton[] | null
+}
+
+export type GoodbyeVariantInput = Partial<VariantImageFields> & {
+  id?: string
+  text: string
+  orderIndex?: number
+}
+
+export type WelcomeUpdateBody = {
   enabled?: boolean
   sendMode?: "channel" | "dm"
   channelId?: string | null
-  templates?: { id?: string; text: string; orderIndex?: number }[]
-  buttonsConfig?: WelcomeButton[] | null
   returningMemberEnabled?: boolean
-  returningMemberText?: string | null
+  variants?: WelcomeVariantInput[]
 }
 
-export type GoodbyeUpdateBody = Partial<ImageFields> & {
+export type GoodbyeUpdateBody = {
   enabled?: boolean
   channelId?: string | null
-  templates?: { id?: string; text: string; orderIndex?: number }[]
+  variants?: GoodbyeVariantInput[]
 }
 
-export type PreviewImageBody = Partial<ImageFields> & {
+export type PreviewImageBody = Partial<VariantImageFields> & {
   sampleText?: string
 }
 
@@ -1095,10 +1248,14 @@ export async function updateWelcomeConfig(guildId: string, body: WelcomeUpdateBo
   return res.json()
 }
 
-export async function testWelcomeMessage(guildId: string): Promise<{ ok: boolean; sent: string }> {
+export async function testWelcomeMessage(
+  guildId: string,
+  body?: { variantId?: string; returning?: boolean },
+): Promise<{ ok: boolean; sent: string; withImage: boolean }> {
   const res = await fetch(`${API_BASE}/guilds/${guildId}/welcome/test`, {
     ...fetchOptions,
     method: "POST",
+    body: JSON.stringify(body ?? {}),
   })
   if (!res.ok) await throwApiError(res, "Failed to send test welcome")
   return res.json()
@@ -1120,10 +1277,14 @@ export async function updateGoodbyeConfig(guildId: string, body: GoodbyeUpdateBo
   return res.json()
 }
 
-export async function testGoodbyeMessage(guildId: string): Promise<{ ok: boolean; sent: string }> {
+export async function testGoodbyeMessage(
+  guildId: string,
+  body?: { variantId?: string },
+): Promise<{ ok: boolean; sent: string; withImage: boolean }> {
   const res = await fetch(`${API_BASE}/guilds/${guildId}/goodbye/test`, {
     ...fetchOptions,
     method: "POST",
+    body: JSON.stringify(body ?? {}),
   })
   if (!res.ok) await throwApiError(res, "Failed to send test goodbye")
   return res.json()

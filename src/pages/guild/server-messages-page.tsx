@@ -2,14 +2,16 @@ import { useEffect, useState, type ChangeEvent } from "react"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Loader2, Save, Trash2, MessageSquare } from "lucide-react"
+import { Loader2, Plus, Save, Trash2, MessageSquare, X } from "lucide-react"
 import {
+  emptyEmbedForm,
   parseEmbedJsonToForm,
   serializeFormToEmbedJson,
   TemplateEmbedBuilder,
   type EmbedFormState,
 } from "@/components/template-embed-builder"
 import {
+  createGuildMessage,
   getGuildMessages,
   updateGuildMessage,
   deleteGuildMessage,
@@ -33,6 +35,7 @@ export function GuildServerMessagesPage() {
   const [roles, setRoles] = useState<GuildRole[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
 
   async function load() {
     if (!guildId) return
@@ -71,16 +74,24 @@ export function GuildServerMessagesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <MessageSquare className="h-6 w-6" />
           Шаблоны сообщений
         </h1>
+        <Button
+          size="sm"
+          onClick={() => setCreating(true)}
+          className="inline-flex items-center gap-1.5"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Создать новое сообщение
+        </Button>
       </div>
 
       {messages.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-12 text-center text-white/55">
-          <p>No messages yet. They appear here automatically after a template is installed.</p>
+          <p>Пока сообщений нет. Создайте новое или установите шаблон сервера.</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -95,6 +106,19 @@ export function GuildServerMessagesPage() {
             />
           ))}
         </div>
+      )}
+
+      {creating && (
+        <CreateMessageModal
+          guildId={guildId}
+          channels={channels}
+          roles={roles}
+          onClose={() => setCreating(false)}
+          onCreated={() => {
+            setCreating(false)
+            void load()
+          }}
+        />
       )}
     </div>
   )
@@ -296,6 +320,150 @@ function mentionsInObject(
     }
   }
   return out
+}
+
+function CreateMessageModal({
+  guildId,
+  channels,
+  roles,
+  onClose,
+  onCreated,
+}: {
+  guildId: string
+  channels: Channel[]
+  roles: GuildRole[]
+  onClose: () => void
+  onCreated: () => void
+}) {
+  const [tab, setTab] = useState<Tab>("text")
+  const [channelId, setChannelId] = useState<string>("")
+  const [content, setContent] = useState("")
+  const [embedForm, setEmbedForm] = useState<EmbedFormState>(() => emptyEmbedForm())
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
+
+  async function handleCreate() {
+    setErr(null)
+    if (!channelId) {
+      setErr("Выберите канал")
+      return
+    }
+    const rawContent = friendlyToMentions(content, channels, roles)
+    const embedStr = serializeFormToEmbedJson(embedForm)
+    let embedObj: Record<string, unknown> | null = null
+    if (embedStr) {
+      try {
+        const parsed = JSON.parse(embedStr) as { embeds?: Record<string, unknown>[] }
+        embedObj = parsed.embeds?.[0] ?? null
+      } catch {
+        setErr("Embed JSON некорректен")
+        return
+      }
+    }
+    const embedRaw = embedObj
+      ? (mentionsInObject(embedObj, channels, roles, "toRaw") as Record<string, unknown>)
+      : null
+
+    if (!rawContent.trim() && !embedRaw) {
+      setErr("Нужно заполнить текст или embed")
+      return
+    }
+    setSaving(true)
+    try {
+      await createGuildMessage(guildId, {
+        discordChannelId: channelId,
+        content: rawContent.trim() || null,
+        embedJson: embedRaw,
+      })
+      onCreated()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Не удалось создать сообщение")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const tabClass = (active: boolean) =>
+    cn(
+      "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+      active
+        ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]",
+    )
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+          <h2 className="text-base font-semibold text-white">Новое сообщение</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
+            aria-label="Закрыть"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid gap-2">
+            <Label className="text-xs">Канал</Label>
+            <select
+              value={channelId}
+              onChange={(e) => setChannelId(e.target.value)}
+              className="rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+            >
+              <option value="">Выберите канал</option>
+              {textChannels.map((c) => (
+                <option key={c.id} value={c.id}>
+                  # {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setTab("text")} className={tabClass(tab === "text")}>
+              Текст
+            </button>
+            <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
+              Embed
+            </button>
+          </div>
+
+          {tab === "text" && (
+            <div className="grid gap-2">
+              <Label className="text-xs">Содержимое сообщения</Label>
+              <textarea
+                className="flex min-h-[120px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                value={content}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
+                placeholder="Текст, который пользователи увидят. Поддерживает #канал и @роль."
+                rows={6}
+              />
+            </div>
+          )}
+
+          {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+
+          {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              Отмена
+            </Button>
+            <Button onClick={() => void handleCreate()} disabled={saving}>
+              {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+              Отправить и сохранить
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function NoServerHint() {

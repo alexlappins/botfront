@@ -1,13 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
-import {
-  HandHeart,
-  Loader2,
-  Plus,
-  Send,
-  Trash2,
-  Wand2,
-  X,
-} from "lucide-react"
+import { useEffect, useState } from "react"
+import { HandHeart, Loader2, Plus, Send, Wand2 } from "lucide-react"
 import {
   ApiError,
   getChannels,
@@ -19,12 +11,18 @@ import {
   updateWelcomeConfig,
   type Channel,
   type GoodbyeConfig,
-  type WelcomeButton,
+  type GoodbyeVariant,
   type WelcomeConfig,
+  type WelcomeVariant,
+  type WelcomeVariantRole,
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { cn } from "@/lib/utils"
-import { ImageEditor, type ImageEditorState } from "@/components/welcome/image-editor"
+import {
+  emptyVariant,
+  VariantEditor,
+  type VariantState,
+} from "@/components/welcome/variant-editor"
 
 type Tab = "welcome" | "goodbye"
 
@@ -37,8 +35,10 @@ const VARIABLES: { key: string; desc: string }[] = [
   { key: "{server.memberCount}", desc: "Кол-во участников" },
 ]
 
-const DEFAULT_WELCOME = "Привет, {user}! Добро пожаловать на **{server.name}** 🎉"
-const DEFAULT_GOODBYE = "{user.name} покинул(а) **{server.name}**. Нас стало {server.memberCount}."
+const DEFAULT_WELCOME_TEXT = "Привет, {user}! Добро пожаловать на **{server.name}** 🎉"
+const DEFAULT_RETURNING_TEXT = "С возвращением, {user}!"
+const DEFAULT_GOODBYE_TEXT =
+  "{user.name} покинул(а) **{server.name}**. Нас стало {server.memberCount}."
 
 export function WelcomePage() {
   const guildId = useCurrentGuildId()
@@ -54,11 +54,7 @@ export function WelcomePage() {
     let alive = true
     setLoading(true)
     setError(null)
-    Promise.all([
-      getChannels(guildId),
-      getWelcomeConfig(guildId),
-      getGoodbyeConfig(guildId),
-    ])
+    Promise.all([getChannels(guildId), getWelcomeConfig(guildId), getGoodbyeConfig(guildId)])
       .then(([c, w, g]) => {
         if (!alive) return
         setChannels(c)
@@ -97,7 +93,8 @@ export function WelcomePage() {
           Приветствия
         </h1>
         <p className="text-sm text-white/50 mt-1">
-          Сообщения при входе и выходе участников. Поддерживает переменные.
+          Сообщения при входе и выходе участников. Каждый вариант — полноценная копия со своим
+          текстом, картинкой и кнопками. При срабатывании бот выбирает один вариант случайно.
         </p>
       </div>
 
@@ -132,28 +129,47 @@ export function WelcomePage() {
       )}
 
       {!loading && !error && tab === "welcome" && welcome && (
-        <WelcomeTab
-          guildId={guildId}
-          channels={channels}
-          value={welcome}
-          onChange={setWelcome}
-        />
+        <WelcomeTab guildId={guildId} channels={channels} value={welcome} onChange={setWelcome} />
       )}
       {!loading && !error && tab === "goodbye" && goodbye && (
-        <GoodbyeTab
-          guildId={guildId}
-          channels={channels}
-          value={goodbye}
-          onChange={setGoodbye}
-        />
+        <GoodbyeTab guildId={guildId} channels={channels} value={goodbye} onChange={setGoodbye} />
       )}
     </div>
   )
 }
 
 // ─────────────────────────────────────────────────────────
-// Welcome
+// Welcome tab
 // ─────────────────────────────────────────────────────────
+
+function welcomeVariantToState(v: WelcomeVariant): VariantState {
+  return {
+    id: v.id,
+    text: v.text,
+    imageEnabled: v.imageEnabled,
+    imageSendMode: v.imageSendMode,
+    backgroundImageUrl: v.backgroundImageUrl,
+    backgroundFill: v.backgroundFill,
+    avatarConfig: v.avatarConfig,
+    usernameConfig: v.usernameConfig,
+    imageTextConfig: v.imageTextConfig,
+    buttonsConfig: v.buttonsConfig,
+  }
+}
+
+function goodbyeVariantToState(v: GoodbyeVariant): VariantState {
+  return {
+    id: v.id,
+    text: v.text,
+    imageEnabled: v.imageEnabled,
+    imageSendMode: v.imageSendMode,
+    backgroundImageUrl: v.backgroundImageUrl,
+    backgroundFill: v.backgroundFill,
+    avatarConfig: v.avatarConfig,
+    usernameConfig: v.usernameConfig,
+    imageTextConfig: v.imageTextConfig,
+  }
+}
 
 function WelcomeTab({
   guildId,
@@ -169,26 +185,24 @@ function WelcomeTab({
   const [enabled, setEnabled] = useState(value.enabled)
   const [sendMode, setSendMode] = useState<"channel" | "dm">(value.sendMode)
   const [channelId, setChannelId] = useState<string | null>(value.channelId)
-  const [templates, setTemplates] = useState(
-    value.templates.length
-      ? value.templates.map((t) => ({ id: t.id, text: t.text }))
-      : [{ id: undefined as string | undefined, text: DEFAULT_WELCOME }],
-  )
-  const [buttons, setButtons] = useState<WelcomeButton[]>(value.buttonsConfig ?? [])
   const [returningEnabled, setReturningEnabled] = useState(value.returningMemberEnabled)
-  const [returningText, setReturningText] = useState(value.returningMemberText ?? "")
-  const [image, setImage] = useState<ImageEditorState>({
-    imageEnabled: value.imageEnabled,
-    imageSendMode: value.imageSendMode,
-    backgroundImageUrl: value.backgroundImageUrl,
-    backgroundFill: value.backgroundFill,
-    avatarConfig: value.avatarConfig,
-    usernameConfig: value.usernameConfig,
-    imageTextConfig: value.imageTextConfig,
+
+  const [newVariants, setNewVariants] = useState<VariantState[]>(() => {
+    const fromServer = value.templates
+      .filter((t) => t.role === "new_member")
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map(welcomeVariantToState)
+    return fromServer.length ? fromServer : [emptyVariant(DEFAULT_WELCOME_TEXT)]
   })
+  const [returningVariants, setReturningVariants] = useState<VariantState[]>(() =>
+    value.templates
+      .filter((t) => t.role === "returning_member")
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map(welcomeVariantToState),
+  )
 
   const [saving, setSaving] = useState(false)
-  const [testing, setTesting] = useState(false)
+  const [testing, setTesting] = useState<string | null>(null)
   const [flash, setFlash] = useState<{ type: "ok" | "err"; text: string } | null>(null)
 
   function setFlashAuto(type: "ok" | "err", text: string) {
@@ -199,21 +213,29 @@ function WelcomeTab({
   async function handleSave() {
     setSaving(true)
     try {
+      const allVariants: WelcomeVariantsForApi[] = [
+        ...newVariants.map((v) => withRole(v, "new_member")),
+        ...returningVariants.map((v) => withRole(v, "returning_member")),
+      ]
       const next = await updateWelcomeConfig(guildId, {
         enabled,
         sendMode,
         channelId,
-        templates: templates.map((t, i) => ({ id: t.id, text: t.text, orderIndex: i })),
-        buttonsConfig: buttons.length ? buttons : null,
         returningMemberEnabled: returningEnabled,
-        returningMemberText: returningText.trim() || null,
-        ...image,
+        variants: allVariants,
       })
       onChange(next)
-      setTemplates(
-        next.templates.length
-          ? next.templates.map((t) => ({ id: t.id, text: t.text }))
-          : [{ id: undefined, text: "" }],
+      setNewVariants(
+        next.templates
+          .filter((t) => t.role === "new_member")
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map(welcomeVariantToState),
+      )
+      setReturningVariants(
+        next.templates
+          .filter((t) => t.role === "returning_member")
+          .sort((a, b) => a.orderIndex - b.orderIndex)
+          .map(welcomeVariantToState),
       )
       setFlashAuto("ok", "Сохранено")
     } catch (e) {
@@ -223,22 +245,20 @@ function WelcomeTab({
     }
   }
 
-  async function handleTest() {
-    setTesting(true)
+  async function handleTest(variantId?: string, returning?: boolean) {
+    setTesting(variantId ?? "any")
     try {
-      await testWelcomeMessage(guildId)
+      await testWelcomeMessage(guildId, { variantId, returning })
       setFlashAuto("ok", "Тестовое сообщение отправлено")
     } catch (e) {
       setFlashAuto("err", e instanceof Error ? e.message : "Не удалось отправить")
     } finally {
-      setTesting(false)
+      setTesting(null)
     }
   }
 
-  const previewText = templates[0]?.text ?? ""
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
       <div className="space-y-6">
         <Card>
           <div className="flex items-center justify-between">
@@ -281,175 +301,55 @@ function WelcomeTab({
           )}
           {sendMode === "dm" && (
             <p className="text-xs text-white/50">
-              Бот напишет в ЛС нового участника. Если у пользователя выключены ЛС от незнакомцев — сообщение не дойдёт.
+              Бот напишет в ЛС нового участника. Если у пользователя выключены ЛС от незнакомцев —
+              сообщение не дойдёт.
             </p>
           )}
         </Card>
 
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Тексты сообщений
-                <span className="ml-2 text-[11px] font-normal text-white/40">
-                  до 5 — выбор случайный
-                </span>
-              </p>
-              <p className="text-xs text-white/50 mt-0.5">
-                Поддерживаются переменные: {"{user}"}, {"{server.name}"} и др.
-              </p>
-            </div>
-            {templates.length < 5 && (
-              <button
-                type="button"
-                onClick={() =>
-                  setTemplates((arr) => [...arr, { id: undefined, text: "" }])
-                }
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/40 text-sm text-violet-100"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Добавить вариант
-              </button>
-            )}
-          </div>
-          <div className="space-y-3">
-            {templates.map((t, i) => (
-              <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] uppercase tracking-wider text-white/40">
-                    Вариант {i + 1}
-                  </span>
-                  {templates.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setTemplates((arr) => arr.filter((_, idx) => idx !== i))
-                      }
-                      className="text-white/40 hover:text-red-400"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  value={t.text}
-                  onChange={(e) =>
-                    setTemplates((arr) =>
-                      arr.map((row, idx) =>
-                        idx === i ? { ...row, text: e.target.value } : row,
-                      ),
-                    )
-                  }
-                  placeholder="Привет, {user}!"
-                  rows={3}
-                  className="w-full rounded-lg bg-black/40 border border-white/10 text-sm text-white p-3 outline-none focus:border-violet-500/60 resize-y"
-                />
-              </div>
-            ))}
-          </div>
-        </Card>
+        <VariantsList
+          title="Приветствие новых участников"
+          subtitle="До 5 вариантов. Бот выберет один случайно."
+          variants={newVariants}
+          onChange={setNewVariants}
+          defaultText={DEFAULT_WELCOME_TEXT}
+          guildId={guildId}
+          previewKind="welcome"
+          onTest={(id) => handleTest(id, false)}
+          testing={testing}
+        />
 
         <Card>
           <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Кнопки-ссылки
-                <span className="ml-2 text-[11px] font-normal text-white/40">до 3</span>
-              </p>
-              <p className="text-xs text-white/50 mt-0.5">
-                Прикрепляются под текстом приветствия. Только URL-кнопки.
-              </p>
-            </div>
-            {buttons.length < 3 && (
-              <button
-                type="button"
-                onClick={() =>
-                  setButtons((arr) => [...arr, { label: "", url: "", emoji: null }])
-                }
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-white/80"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Добавить кнопку
-              </button>
-            )}
-          </div>
-          {buttons.length === 0 && (
-            <p className="text-xs text-white/40">Нет кнопок.</p>
-          )}
-          <div className="space-y-2">
-            {buttons.map((b, i) => (
-              <div key={i} className="grid grid-cols-[1fr_2fr_auto] gap-2">
-                <input
-                  value={b.label}
-                  onChange={(e) =>
-                    setButtons((arr) =>
-                      arr.map((row, idx) =>
-                        idx === i ? { ...row, label: e.target.value } : row,
-                      ),
-                    )
-                  }
-                  placeholder="Текст кнопки"
-                  className="rounded-lg bg-black/40 border border-white/10 text-sm text-white px-3 py-2 outline-none focus:border-violet-500/60"
-                />
-                <input
-                  value={b.url}
-                  onChange={(e) =>
-                    setButtons((arr) =>
-                      arr.map((row, idx) =>
-                        idx === i ? { ...row, url: e.target.value } : row,
-                      ),
-                    )
-                  }
-                  placeholder="https://..."
-                  className="rounded-lg bg-black/40 border border-white/10 text-sm text-white px-3 py-2 outline-none focus:border-violet-500/60"
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setButtons((arr) => arr.filter((_, idx) => idx !== i))
-                  }
-                  className="grid place-items-center w-9 rounded-lg border border-white/10 hover:bg-white/5 text-white/40 hover:text-red-400"
-                  aria-label="Удалить"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <ImageEditor guildId={guildId} kind="welcome" value={image} onChange={setImage} />
-
-        <Card>
-          <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold text-white">
                 Возвращающиеся участники
               </p>
               <p className="text-xs text-white/50 mt-0.5">
-                Отдельный текст, если человек был на сервере раньше.
+                Отдельный пул вариантов для тех, кто уже был на сервере. Полный набор настроек как
+                у обычного приветствия.
               </p>
             </div>
             <Toggle checked={returningEnabled} onChange={setReturningEnabled} />
           </div>
           {returningEnabled && (
-            <textarea
-              value={returningText}
-              onChange={(e) => setReturningText(e.target.value)}
-              placeholder="С возвращением, {user}!"
-              rows={2}
-              className="mt-3 w-full rounded-lg bg-black/40 border border-white/10 text-sm text-white p-3 outline-none focus:border-violet-500/60"
+            <VariantsList
+              title=""
+              subtitle=""
+              variants={returningVariants}
+              onChange={setReturningVariants}
+              defaultText={DEFAULT_RETURNING_TEXT}
+              guildId={guildId}
+              previewKind="welcome"
+              onTest={(id) => handleTest(id, true)}
+              testing={testing}
+              embedded
             />
           )}
         </Card>
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-4 self-start">
-        <Card>
-          <p className="text-sm font-semibold text-white mb-2">Превью</p>
-          <PreviewBox text={previewText} buttons={buttons} />
-        </Card>
-
         <VariablesList />
 
         <div className="flex flex-col gap-2">
@@ -459,48 +359,29 @@ function WelcomeTab({
             disabled={saving}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold disabled:opacity-50"
           >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Wand2 className="h-4 w-4" />
-            )}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
             Сохранить
           </button>
           <button
             type="button"
-            onClick={handleTest}
-            disabled={testing || !enabled}
+            onClick={() => handleTest()}
+            disabled={!!testing || !enabled}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-sm font-medium disabled:opacity-50"
             title={!enabled ? "Включите приветствие, чтобы тестировать" : ""}
           >
-            {testing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            Отправить тест
+            {testing === "any" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Случайный тест
           </button>
         </div>
 
-        {flash && (
-          <div
-            className={cn(
-              "rounded-lg px-3 py-2 text-xs border",
-              flash.type === "ok"
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                : "bg-red-500/10 border-red-500/30 text-red-300",
-            )}
-          >
-            {flash.text}
-          </div>
-        )}
+        {flash && <FlashBox flash={flash} />}
       </aside>
     </div>
   )
 }
 
 // ─────────────────────────────────────────────────────────
-// Goodbye
+// Goodbye tab
 // ─────────────────────────────────────────────────────────
 
 function GoodbyeTab({
@@ -516,23 +397,15 @@ function GoodbyeTab({
 }) {
   const [enabled, setEnabled] = useState(value.enabled)
   const [channelId, setChannelId] = useState<string | null>(value.channelId)
-  const [templates, setTemplates] = useState(
-    value.templates.length
-      ? value.templates.map((t) => ({ id: t.id, text: t.text }))
-      : [{ id: undefined as string | undefined, text: DEFAULT_GOODBYE }],
-  )
-  const [image, setImage] = useState<ImageEditorState>({
-    imageEnabled: value.imageEnabled,
-    imageSendMode: value.imageSendMode,
-    backgroundImageUrl: value.backgroundImageUrl,
-    backgroundFill: value.backgroundFill,
-    avatarConfig: value.avatarConfig,
-    usernameConfig: value.usernameConfig,
-    imageTextConfig: value.imageTextConfig,
+  const [variants, setVariants] = useState<VariantState[]>(() => {
+    const fromServer = value.templates
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .map(goodbyeVariantToState)
+    return fromServer.length ? fromServer : [emptyVariant(DEFAULT_GOODBYE_TEXT)]
   })
 
   const [saving, setSaving] = useState(false)
-  const [testing, setTesting] = useState(false)
+  const [testing, setTesting] = useState<string | null>(null)
   const [flash, setFlash] = useState<{ type: "ok" | "err"; text: string } | null>(null)
 
   function setFlashAuto(type: "ok" | "err", text: string) {
@@ -546,14 +419,11 @@ function GoodbyeTab({
       const next = await updateGoodbyeConfig(guildId, {
         enabled,
         channelId,
-        templates: templates.map((t, i) => ({ id: t.id, text: t.text, orderIndex: i })),
-        ...image,
+        variants: variants.map((v) => stripButtons(v)),
       })
       onChange(next)
-      setTemplates(
-        next.templates.length
-          ? next.templates.map((t) => ({ id: t.id, text: t.text }))
-          : [{ id: undefined, text: "" }],
+      setVariants(
+        next.templates.sort((a, b) => a.orderIndex - b.orderIndex).map(goodbyeVariantToState),
       )
       setFlashAuto("ok", "Сохранено")
     } catch (e) {
@@ -563,22 +433,20 @@ function GoodbyeTab({
     }
   }
 
-  async function handleTest() {
-    setTesting(true)
+  async function handleTest(variantId?: string) {
+    setTesting(variantId ?? "any")
     try {
-      await testGoodbyeMessage(guildId)
+      await testGoodbyeMessage(guildId, { variantId })
       setFlashAuto("ok", "Тестовое сообщение отправлено")
     } catch (e) {
       setFlashAuto("err", e instanceof Error ? e.message : "Не удалось отправить")
     } finally {
-      setTesting(false)
+      setTesting(null)
     }
   }
 
-  const previewText = templates[0]?.text ?? ""
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
       <div className="space-y-6">
         <Card>
           <div className="flex items-center justify-between">
@@ -602,75 +470,21 @@ function GoodbyeTab({
           />
         </Card>
 
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-white">
-                Тексты прощаний
-                <span className="ml-2 text-[11px] font-normal text-white/40">
-                  до 5 — выбор случайный
-                </span>
-              </p>
-            </div>
-            {templates.length < 5 && (
-              <button
-                type="button"
-                onClick={() =>
-                  setTemplates((arr) => [...arr, { id: undefined, text: "" }])
-                }
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/40 text-sm text-violet-100"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Добавить вариант
-              </button>
-            )}
-          </div>
-          <div className="space-y-3">
-            {templates.map((t, i) => (
-              <div key={i} className="rounded-xl border border-white/10 bg-black/20 p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] uppercase tracking-wider text-white/40">
-                    Вариант {i + 1}
-                  </span>
-                  {templates.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setTemplates((arr) => arr.filter((_, idx) => idx !== i))
-                      }
-                      className="text-white/40 hover:text-red-400"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  value={t.text}
-                  onChange={(e) =>
-                    setTemplates((arr) =>
-                      arr.map((row, idx) =>
-                        idx === i ? { ...row, text: e.target.value } : row,
-                      ),
-                    )
-                  }
-                  placeholder="{user.name} покинул(а) {server.name}"
-                  rows={3}
-                  className="w-full rounded-lg bg-black/40 border border-white/10 text-sm text-white p-3 outline-none focus:border-violet-500/60 resize-y"
-                />
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        <ImageEditor guildId={guildId} kind="goodbye" value={image} onChange={setImage} />
+        <VariantsList
+          title="Прощания"
+          subtitle="До 5 вариантов. Бот выберет один случайно."
+          variants={variants}
+          onChange={setVariants}
+          defaultText={DEFAULT_GOODBYE_TEXT}
+          guildId={guildId}
+          previewKind="goodbye"
+          onTest={handleTest}
+          testing={testing}
+          hideButtons
+        />
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-4 self-start">
-        <Card>
-          <p className="text-sm font-semibold text-white mb-2">Превью</p>
-          <PreviewBox text={previewText} buttons={[]} />
-        </Card>
-
         <VariablesList />
 
         <div className="flex flex-col gap-2">
@@ -680,41 +494,21 @@ function GoodbyeTab({
             disabled={saving}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold disabled:opacity-50"
           >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Wand2 className="h-4 w-4" />
-            )}
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
             Сохранить
           </button>
           <button
             type="button"
-            onClick={handleTest}
-            disabled={testing || !enabled}
+            onClick={() => handleTest()}
+            disabled={!!testing || !enabled}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-sm font-medium disabled:opacity-50"
-            title={!enabled ? "Включите прощание, чтобы тестировать" : ""}
           >
-            {testing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            Отправить тест
+            {testing === "any" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Случайный тест
           </button>
         </div>
 
-        {flash && (
-          <div
-            className={cn(
-              "rounded-lg px-3 py-2 text-xs border",
-              flash.type === "ok"
-                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                : "bg-red-500/10 border-red-500/30 text-red-300",
-            )}
-          >
-            {flash.text}
-          </div>
-        )}
+        {flash && <FlashBox flash={flash} />}
       </aside>
     </div>
   )
@@ -724,10 +518,98 @@ function GoodbyeTab({
 // Shared bits
 // ─────────────────────────────────────────────────────────
 
-function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl bg-[#11111c] border border-white/5 p-5">{children}</div>
+type WelcomeVariantsForApi = VariantState & { role: WelcomeVariantRole }
+
+function withRole(v: VariantState, role: WelcomeVariantRole): WelcomeVariantsForApi {
+  return { ...v, role }
+}
+
+function stripButtons(v: VariantState): VariantState {
+  const { buttonsConfig: _b, ...rest } = v
+  void _b
+  return rest
+}
+
+function VariantsList({
+  title,
+  subtitle,
+  variants,
+  onChange,
+  defaultText,
+  guildId,
+  previewKind,
+  onTest,
+  testing,
+  hideButtons,
+  embedded,
+}: {
+  title: string
+  subtitle: string
+  variants: VariantState[]
+  onChange: (next: VariantState[]) => void
+  defaultText: string
+  guildId: string
+  previewKind: "welcome" | "goodbye"
+  onTest: (variantId?: string) => void
+  testing: string | null
+  hideButtons?: boolean
+  embedded?: boolean
+}) {
+  const inner = (
+    <>
+      <div className={cn("flex items-center justify-between", embedded ? "mb-2 mt-3" : "mb-3")}>
+        <div>
+          {title && <p className="text-sm font-semibold text-white">{title}</p>}
+          {subtitle && <p className="text-xs text-white/50 mt-0.5">{subtitle}</p>}
+        </div>
+        {variants.length < 5 && (
+          <button
+            type="button"
+            onClick={() => onChange([...variants, emptyVariant(defaultText)])}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/40 text-sm text-violet-100"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Добавить вариант
+          </button>
+        )}
+      </div>
+      <div className="space-y-2">
+        {variants.length === 0 && (
+          <p className="text-xs text-white/40 italic">
+            Нет вариантов. Добавьте хотя бы один.
+          </p>
+        )}
+        {variants.map((v, i) => (
+          <VariantEditor
+            key={v.id ?? `new-${i}`}
+            previewGuildId={guildId}
+            previewKind={previewKind}
+            value={v}
+            onChange={(next) =>
+              onChange(variants.map((row, idx) => (idx === i ? next : row)))
+            }
+            onRemove={
+              variants.length > 1
+                ? () => onChange(variants.filter((_, idx) => idx !== i))
+                : undefined
+            }
+            onTest={v.id ? () => onTest(v.id) : undefined}
+            testing={testing === v.id}
+            label={`Вариант ${i + 1}`}
+            hideButtons={hideButtons}
+            defaultOpen={variants.length === 1 || i === 0}
+          />
+        ))}
+      </div>
+    </>
   )
+
+  if (embedded) return inner
+  return <Card>{inner}</Card>
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-2xl bg-[#11111c] border border-white/5 p-5">{children}</div>
 }
 
 function Toggle({
@@ -769,11 +651,7 @@ function ChannelPicker({
   onChange: (v: string | null) => void
   placeholder: string
 }) {
-  // type 0 = text, 5 = announcement
-  const textChannels = useMemo(
-    () => channels.filter((c) => c.type === 0 || c.type === 5),
-    [channels],
-  )
+  const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
   return (
     <select
       value={value ?? ""}
@@ -788,57 +666,6 @@ function ChannelPicker({
       ))}
     </select>
   )
-}
-
-function PreviewBox({ text, buttons }: { text: string; buttons: WelcomeButton[] }) {
-  // Render variables in muted color so the user sees them clearly.
-  const tokens = useMemo(() => splitVariables(text), [text])
-  return (
-    <div className="rounded-xl bg-[#36393f] border border-black/30 p-3 text-sm text-white whitespace-pre-wrap break-words">
-      {tokens.length === 0 ? (
-        <span className="text-white/40 italic">пусто</span>
-      ) : (
-        tokens.map((t, i) =>
-          t.kind === "var" ? (
-            <span key={i} className="rounded bg-violet-500/30 px-1 text-violet-100">
-              {t.value}
-            </span>
-          ) : (
-            <span key={i}>{t.value}</span>
-          ),
-        )
-      )}
-      {buttons.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {buttons.map((b, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-[#4f545c] border border-black/30 text-xs text-white"
-            >
-              {b.emoji && <span>{b.emoji}</span>}
-              {b.label || "(без названия)"}
-              <span className="text-white/40">↗</span>
-            </span>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function splitVariables(text: string): { kind: "text" | "var"; value: string }[] {
-  if (!text) return []
-  const out: { kind: "text" | "var"; value: string }[] = []
-  const re = /\{[\w.]+\}/g
-  let last = 0
-  let m: RegExpExecArray | null
-  while ((m = re.exec(text)) !== null) {
-    if (m.index > last) out.push({ kind: "text", value: text.slice(last, m.index) })
-    out.push({ kind: "var", value: m[0] })
-    last = m.index + m[0].length
-  }
-  if (last < text.length) out.push({ kind: "text", value: text.slice(last) })
-  return out
 }
 
 function VariablesList() {
@@ -863,6 +690,21 @@ function VariablesList() {
           ))}
         </ul>
       )}
+    </div>
+  )
+}
+
+function FlashBox({ flash }: { flash: { type: "ok" | "err"; text: string } }) {
+  return (
+    <div
+      className={cn(
+        "rounded-lg px-3 py-2 text-xs border",
+        flash.type === "ok"
+          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+          : "bg-red-500/10 border-red-500/30 text-red-300",
+      )}
+    >
+      {flash.text}
     </div>
   )
 }

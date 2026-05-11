@@ -7,6 +7,7 @@ import {
   type ImageSendMode,
   type ImageTextBlock,
   type UsernameConfig,
+  type VariantImageFields,
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -47,26 +48,21 @@ const DEFAULT_TEXT: ImageTextBlock = {
   strokeWidth: 2,
 }
 
-export type ImageEditorState = {
-  imageEnabled: boolean
-  imageSendMode: ImageSendMode
-  backgroundImageUrl: string | null
-  backgroundFill: string | null
-  avatarConfig: AvatarConfig | null
-  usernameConfig: UsernameConfig | null
-  imageTextConfig: ImageTextBlock | null
-}
-
-export function ImageEditor({
-  guildId,
-  kind,
+/**
+ * Embeddable image-editing controls used inside VariantEditor (and reused
+ * in owner-admin template builder). When `previewGuildId` + `previewKind`
+ * are set, fetches a live PNG preview from the server.
+ */
+export function ImageControls({
+  previewGuildId,
+  previewKind,
   value,
   onChange,
 }: {
-  guildId: string
-  kind: "welcome" | "goodbye"
-  value: ImageEditorState
-  onChange: (next: ImageEditorState) => void
+  previewGuildId: string | null
+  previewKind: "welcome" | "goodbye" | null
+  value: VariantImageFields
+  onChange: (next: Partial<VariantImageFields>) => void
 }) {
   const enabled = value.imageEnabled
   const sendMode = value.imageSendMode
@@ -76,8 +72,8 @@ export function ImageEditor({
   const username = value.usernameConfig ?? DEFAULT_USERNAME
   const text = value.imageTextConfig ?? DEFAULT_TEXT
 
-  function patch(p: Partial<ImageEditorState>) {
-    onChange({ ...value, ...p })
+  function patch(p: Partial<VariantImageFields>) {
+    onChange(p)
   }
 
   // ── Debounced live preview ───────────────────────────
@@ -85,9 +81,10 @@ export function ImageEditor({
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewError, setPreviewError] = useState<string | null>(null)
   const lastUrlRef = useRef<string | null>(null)
+  const canPreview = enabled && !!previewGuildId && !!previewKind
 
   useEffect(() => {
-    if (!enabled) {
+    if (!canPreview || !previewGuildId || !previewKind) {
       setPreviewUrl((u) => {
         if (u) URL.revokeObjectURL(u)
         return null
@@ -101,7 +98,7 @@ export function ImageEditor({
     const t = setTimeout(async () => {
       try {
         const blob = await fetchWelcomePreviewImage(
-          guildId,
+          previewGuildId,
           {
             backgroundImageUrl: bgUrl,
             backgroundFill: bgFill,
@@ -109,7 +106,7 @@ export function ImageEditor({
             usernameConfig: username,
             imageTextConfig: text,
           },
-          kind,
+          previewKind,
         )
         if (cancelled) return
         const url = URL.createObjectURL(blob)
@@ -128,13 +125,10 @@ export function ImageEditor({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    enabled,
-    bgUrl,
-    bgFill,
+    canPreview, previewGuildId, previewKind, bgUrl, bgFill,
     avatar.enabled, avatar.x, avatar.y, avatar.radius, avatar.borderColor, avatar.borderWidth,
     username.enabled, username.x, username.y, username.fontSize, username.color, username.bold, username.align, username.strokeColor, username.strokeWidth,
     text.enabled, text.text, text.x, text.y, text.fontSize, text.color, text.bold, text.align, text.strokeColor, text.strokeWidth,
-    guildId, kind,
   ])
 
   useEffect(() => {
@@ -162,7 +156,7 @@ export function ImageEditor({
   }
 
   return (
-    <div className="rounded-2xl bg-[#11111c] border border-white/5 p-5 space-y-5">
+    <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-semibold text-white flex items-center gap-2">
@@ -170,7 +164,7 @@ export function ImageEditor({
             Картинка
           </p>
           <p className="text-xs text-white/50 mt-0.5">
-            Сгенерированный баннер с аватаром и текстом — прикрепляется к сообщению.
+            Сгенерированный баннер с аватаром и текстом — прикрепляется к сообщению этого варианта.
           </p>
         </div>
         <Toggle checked={enabled} onChange={(v) => patch({ imageEnabled: v })} />
@@ -178,28 +172,26 @@ export function ImageEditor({
 
       {enabled && (
         <>
-          {/* Live preview */}
-          <div className="space-y-2">
-            <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/40 aspect-[1024/400]">
-              {previewUrl ? (
-                <img src={previewUrl} alt="preview" className="w-full h-full object-contain" />
-              ) : (
-                <div className="absolute inset-0 grid place-items-center text-white/30 text-xs">
-                  Загрузка превью…
-                </div>
-              )}
-              {previewLoading && (
-                <div className="absolute top-2 right-2 rounded-full bg-black/60 p-1">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-white/70" />
-                </div>
-              )}
+          {canPreview && (
+            <div className="space-y-2">
+              <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/40 aspect-[1024/400]">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="preview" className="w-full h-full object-contain" />
+                ) : (
+                  <div className="absolute inset-0 grid place-items-center text-white/30 text-xs">
+                    Загрузка превью…
+                  </div>
+                )}
+                {previewLoading && (
+                  <div className="absolute top-2 right-2 rounded-full bg-black/60 p-1">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-white/70" />
+                  </div>
+                )}
+              </div>
+              {previewError && <p className="text-xs text-red-300">{previewError}</p>}
             </div>
-            {previewError && (
-              <p className="text-xs text-red-300">{previewError}</p>
-            )}
-          </div>
+          )}
 
-          {/* Send mode */}
           <div>
             <p className="text-xs font-semibold text-white/70 mb-2">Режим отправки</p>
             <div className="grid grid-cols-3 gap-2">
@@ -213,7 +205,7 @@ export function ImageEditor({
                 <button
                   key={opt.v}
                   type="button"
-                  onClick={() => patch({ imageSendMode: opt.v })}
+                  onClick={() => patch({ imageSendMode: opt.v as ImageSendMode })}
                   className={cn(
                     "px-3 py-2 rounded-lg text-xs font-medium border",
                     sendMode === opt.v
@@ -227,11 +219,10 @@ export function ImageEditor({
             </div>
           </div>
 
-          {/* Background */}
           <Section title="Фон">
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-start">
               <div className="space-y-2">
-                <label className="text-xs text-white/60 block">Цвет заливки (под картинкой фона)</label>
+                <label className="text-xs text-white/60 block">Цвет заливки</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -284,7 +275,6 @@ export function ImageEditor({
             </div>
           </Section>
 
-          {/* Avatar */}
           <Section
             title="Аватар"
             extra={<Toggle checked={avatar.enabled} onChange={(v) => patch({ avatarConfig: { ...avatar, enabled: v } })} />}
@@ -298,19 +288,17 @@ export function ImageEditor({
             <ColorRow label="Цвет обводки" value={avatar.borderColor} onChange={(v) => patch({ avatarConfig: { ...avatar, borderColor: v } })} />
           </Section>
 
-          {/* Username */}
           <Section
             title="Имя пользователя"
             extra={<Toggle checked={username.enabled} onChange={(v) => patch({ usernameConfig: { ...username, enabled: v } })} />}
           >
             <TextBlockControls
               value={username}
-              onChange={(next) => patch({ usernameConfig: next })}
+              onChange={(next) => patch({ usernameConfig: next as UsernameConfig })}
               hideContent
             />
           </Section>
 
-          {/* Welcome text block */}
           <Section
             title="Текстовый блок (на картинке)"
             extra={<Toggle checked={text.enabled} onChange={(v) => patch({ imageTextConfig: { ...text, enabled: v } })} />}
@@ -327,7 +315,7 @@ export function ImageEditor({
             </div>
             <TextBlockControls
               value={text}
-              onChange={(next) => patch({ imageTextConfig: { ...text, ...next } })}
+              onChange={(next) => patch({ imageTextConfig: { ...text, ...(next as ImageTextBlock) } })}
             />
           </Section>
         </>
@@ -335,8 +323,6 @@ export function ImageEditor({
     </div>
   )
 }
-
-// ── Sub-components ──────────────────────────────────────
 
 function Section({
   title,
@@ -348,7 +334,7 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-3">
+    <div className="rounded-xl border border-white/10 bg-black/30 p-3 space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">{title}</p>
         {extra}

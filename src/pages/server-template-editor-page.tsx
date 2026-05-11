@@ -76,6 +76,7 @@ import {
   LOG_TYPES,
 } from "@/lib/api"
 import { TemplateMessageSelfRoleCard } from "@/components/template-message-self-role-card"
+import { SectionWelcomeGoodbye } from "@/components/server-templates/section-welcome-goodbye"
 import { MessageSquare, ScrollText, Plus, Pencil, Trash2, Smile, Sticker, Upload } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
@@ -697,6 +698,12 @@ export function ServerTemplateEditorPage() {
           setFormError={setFormError}
           submitting={submitting}
           setSubmitting={setSubmitting}
+        />
+        <SectionWelcomeGoodbye
+          templateId={id}
+          template={template}
+          channels={template.channels ?? []}
+          onUpdate={load}
         />
       </main>
 
