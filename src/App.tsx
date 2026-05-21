@@ -12,6 +12,7 @@ import { GuildInstallTemplatePage } from "@/pages/guild/install-template-page"
 import { GuildServerMessagesPage } from "@/pages/guild/server-messages-page"
 import { GuildAutoRolesPage } from "@/pages/guild/auto-roles-page"
 import { WelcomePage } from "@/pages/guild/welcome-page"
+import { LevelingPage } from "@/pages/guild/leveling-page"
 import { ServerTemplatesListPage } from "@/pages/server-templates-list-page"
 import { ServerTemplateEditorPage } from "@/pages/server-template-editor-page"
 import { StorePage } from "@/pages/store-page"
@@ -91,6 +92,7 @@ function App() {
             <Route path="/my-purchases" element={<MyPurchasesPage />} />
             <Route path="/server-messages" element={<GuildServerMessagesPage />} />
             <Route path="/welcome" element={<WelcomePage />} />
+            <Route path="/leveling" element={<LevelingPage />} />
             <Route path="/reaction-roles" element={<GuildAutoRolesPage />} />
             <Route path="/server-logs" element={<ServerLogsPage />} />
           </Route>

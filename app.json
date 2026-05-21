@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "a201ec8f-e78c-425f-b275-2022db23c0d1"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.bioware73.botfront"
+    }
+  }
+}

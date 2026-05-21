@@ -1307,3 +1307,415 @@ export async function fetchWelcomePreviewImage(
   if (!res.ok) await throwApiError(res, "Failed to render preview")
   return res.blob()
 }
+
+// ─── Leveling ────────────────────────────────────────────
+
+export type LevelingSettings = {
+  serverId: string
+  enabled: boolean
+  levelupChannelId: string | null  // real channel id, 'dm', or null (disabled)
+  levelupMessageTemplate: string
+  notifyOnlyNewTier: boolean
+  chatXpEnabled: boolean
+  chatXpMin: number
+  chatXpMax: number
+  chatXpCooldown: number
+  chatXpMinLength: number
+  voiceXpEnabled: boolean
+  voiceXpPerMinute: number
+  voiceXpMinUsers: number
+  voiceXpAfkMinutes: number
+  roleRewardsMode: "stack" | "replace"
+  rankBgImageUrl: string | null
+  rankBgColor: string
+  rankOverlayOpacity: number
+  rankPrimaryTextColor: string
+  rankSecondaryTextColor: string
+  rankAccentColor: string
+  rankProgressColor: string
+  rankProgressBgColor: string
+}
+
+export type LevelingTier = {
+  id?: string
+  name: string
+  emoji: string | null
+  iconUrl: string | null
+  startLevel: number
+  endLevel: number
+  color: string
+  levelupMessage: string | null
+  sortOrder: number
+}
+
+export type RoleReward = { id?: string; level: number; roleId: string }
+export type NoXpRoleEntry = { id: string; roleId: string }
+export type NoXpChannelEntry = { id: string; channelId: string; channelType: "text" | "voice" }
+export type IgnoredUserEntry = { id: string; discordId: string }
+
+export type LevelingState = {
+  settings: LevelingSettings
+  tiers: LevelingTier[]
+  rewards: RoleReward[]
+  noXpRoles: NoXpRoleEntry[]
+  noXpChannels: NoXpChannelEntry[]
+  ignoredUsers: IgnoredUserEntry[]
+  limits: { roleRewards: number }
+  warnings: { roleHierarchy: string[] }
+}
+
+export async function getLeveling(guildId: string): Promise<LevelingState> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to load leveling state")
+  return res.json()
+}
+
+export async function updateLevelingSettings(
+  guildId: string,
+  body: Partial<LevelingSettings>,
+): Promise<LevelingSettings> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/settings`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save settings")
+  return res.json()
+}
+
+export async function replaceLevelingTiers(
+  guildId: string,
+  tiers: Partial<LevelingTier>[],
+): Promise<LevelingTier[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/tiers`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ tiers }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save tiers")
+  return res.json()
+}
+
+export async function resetLevelingTiers(guildId: string): Promise<LevelingTier[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/tiers/reset`, {
+    ...fetchOptions,
+    method: "PUT",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to reset tiers")
+  return res.json()
+}
+
+export async function replaceLevelingRoleRewards(
+  guildId: string,
+  rewards: RoleReward[],
+): Promise<RoleReward[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/role-rewards`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ rewards }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save role rewards")
+  return res.json()
+}
+
+export async function replaceNoXpRoles(
+  guildId: string,
+  roleIds: string[],
+): Promise<NoXpRoleEntry[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/no-xp-roles`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ roleIds }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save no-XP roles")
+  return res.json()
+}
+
+export async function replaceNoXpChannels(
+  guildId: string,
+  body: { text: string[]; voice: string[] },
+): Promise<NoXpChannelEntry[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/no-xp-channels`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save no-XP channels")
+  return res.json()
+}
+
+export async function removeIgnoredUser(guildId: string, discordId: string): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/guilds/${guildId}/leveling/ignored-users/${discordId}`,
+    { ...fetchOptions, method: "DELETE" },
+  )
+  if (!res.ok) await throwApiError(res, "Failed to remove ignored user")
+}
+
+export async function recalcLeveling(guildId: string): Promise<{ updated: number }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/recalc`, {
+    ...fetchOptions,
+    method: "PUT",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to recalc")
+  return res.json()
+}
+
+export async function wipeLeveling(guildId: string): Promise<{ ok: boolean; affected: number }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/xp-all`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to wipe XP")
+  return res.json()
+}
+
+/** Returns the canonical CSV download URL. The browser will navigate to it; cookies go along. */
+export function levelingCsvExportUrl(guildId: string): string {
+  return `${API_BASE}/guilds/${guildId}/leveling/xp-export.csv`
+}
+
+export type XpEventType =
+  | "chat"
+  | "voice"
+  | "admin_give"
+  | "admin_remove"
+  | "admin_set"
+  | "admin_reset"
+
+export type LevelingEvent = {
+  id: string
+  discordId: string
+  eventType: XpEventType
+  xpAmount: number
+  newTotal: string
+  newLevel: number
+  createdAt: string
+}
+
+export type LevelingEventsResponse = {
+  total: number
+  limit: number
+  offset: number
+  events: LevelingEvent[]
+}
+
+export async function getLevelingEvents(
+  guildId: string,
+  opts: { userId?: string; types?: XpEventType[]; limit?: number; offset?: number } = {},
+): Promise<LevelingEventsResponse> {
+  const params = new URLSearchParams()
+  if (opts.userId) params.set("userId", opts.userId)
+  if (opts.types?.length) params.set("type", opts.types.join(","))
+  if (opts.limit !== undefined) params.set("limit", String(opts.limit))
+  if (opts.offset !== undefined) params.set("offset", String(opts.offset))
+  const qs = params.toString() ? `?${params.toString()}` : ""
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/events${qs}`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to load audit log")
+  return res.json()
+}
+
+export type RankCardStyleOverride = Partial<{
+  rankBgImageUrl: string | null
+  rankBgColor: string
+  rankOverlayOpacity: number
+  rankPrimaryTextColor: string
+  rankSecondaryTextColor: string
+  rankAccentColor: string
+  rankProgressColor: string
+  rankProgressBgColor: string
+}>
+
+/** Fetch a live PNG preview of the rank card with the given style overrides. */
+export async function fetchRankCardPreview(
+  guildId: string,
+  style: RankCardStyleOverride,
+): Promise<Blob> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/preview-image`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(style),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to render rank card preview")
+  return res.blob()
+}
+
+/** Ask the bot to drop the current admin's real rank card into a channel. */
+export async function sendTestRankCard(guildId: string, channelId: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/test-card`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ channelId }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to send test rank card")
+  return res.json()
+}
+
+// ─── Template leveling (owner-admin) ─────────────────────
+// Backend mirror of the per-guild leveling endpoints, but keyed on template_id
+// and using role/channel NAMES (resolved to IDs at install). Reuses
+// LevelingTier / LevelingSettings shapes where possible — only the channel
+// representation differs (name+mode vs. id).
+
+export type TemplateLevelingSettings = {
+  templateId: string
+  enabled: boolean
+  levelupChannelName: string | null
+  levelupChannelMode: "channel" | "dm" | "disabled"
+  levelupMessageTemplate: string
+  notifyOnlyNewTier: boolean
+  chatXpEnabled: boolean
+  chatXpMin: number
+  chatXpMax: number
+  chatXpCooldown: number
+  chatXpMinLength: number
+  voiceXpEnabled: boolean
+  voiceXpPerMinute: number
+  voiceXpMinUsers: number
+  voiceXpAfkMinutes: number
+  roleRewardsMode: "stack" | "replace"
+  rankBgImageUrl: string | null
+  rankBgColor: string
+  rankOverlayOpacity: number
+  rankPrimaryTextColor: string
+  rankSecondaryTextColor: string
+  rankAccentColor: string
+  rankProgressColor: string
+  rankProgressBgColor: string
+}
+
+export type TemplateLevelingTier = {
+  id?: string
+  name: string
+  emoji: string | null
+  iconUrl: string | null
+  startLevel: number
+  endLevel: number
+  color: string
+  levelupMessage: string | null
+  sortOrder: number
+}
+
+export type TemplateRoleReward = { id?: string; level: number; roleName: string }
+export type TemplateNoXpRole = { id: string; roleName: string }
+export type TemplateNoXpChannel = { id: string; channelName: string; channelType: "text" | "voice" }
+
+export type TemplateLevelingState = {
+  enabled: boolean
+  settings: TemplateLevelingSettings
+  tiers: TemplateLevelingTier[]
+  rewards: TemplateRoleReward[]
+  noXpRoles: TemplateNoXpRole[]
+  noXpChannels: TemplateNoXpChannel[]
+}
+
+export async function getTemplateLeveling(templateId: string): Promise<TemplateLevelingState> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to load template leveling")
+  return res.json()
+}
+
+export async function toggleTemplateLevelingEnabled(
+  templateId: string,
+  enabled: boolean,
+): Promise<{ enabled: boolean }> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/enabled`, {
+    ...fetchOptions,
+    method: "PATCH",
+    body: JSON.stringify({ enabled }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to toggle leveling")
+  return res.json()
+}
+
+export async function updateTemplateLevelingSettings(
+  templateId: string,
+  body: Partial<TemplateLevelingSettings>,
+): Promise<TemplateLevelingSettings> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/settings`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save settings")
+  return res.json()
+}
+
+export async function replaceTemplateLevelingTiers(
+  templateId: string,
+  tiers: Partial<TemplateLevelingTier>[],
+): Promise<TemplateLevelingTier[]> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/tiers`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ tiers }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save tiers")
+  return res.json()
+}
+
+export async function resetTemplateLevelingTiers(templateId: string): Promise<TemplateLevelingTier[]> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/tiers/reset`, {
+    ...fetchOptions,
+    method: "PUT",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to reset tiers")
+  return res.json()
+}
+
+export async function replaceTemplateLevelingRoleRewards(
+  templateId: string,
+  rewards: TemplateRoleReward[],
+): Promise<TemplateRoleReward[]> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/role-rewards`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ rewards }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save role rewards")
+  return res.json()
+}
+
+export async function replaceTemplateNoXpRoles(
+  templateId: string,
+  roleNames: string[],
+): Promise<TemplateNoXpRole[]> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/no-xp-roles`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify({ roleNames }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save no-XP roles")
+  return res.json()
+}
+
+export async function replaceTemplateNoXpChannels(
+  templateId: string,
+  body: { text: string[]; voice: string[] },
+): Promise<TemplateNoXpChannel[]> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling/no-xp-channels`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save no-XP channels")
+  return res.json()
+}
+
+export async function wipeTemplateLeveling(templateId: string): Promise<{ ok: boolean }> {
+  const res = await fetch(`${API_BASE}/server-templates/${templateId}/leveling`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to wipe template leveling")
+  return res.json()
+}

@@ -77,6 +77,7 @@ import {
 } from "@/lib/api"
 import { TemplateMessageSelfRoleCard } from "@/components/template-message-self-role-card"
 import { SectionWelcomeGoodbye } from "@/components/server-templates/section-welcome-goodbye"
+import { SectionLeveling } from "@/components/server-templates/section-leveling"
 import { MessageSquare, ScrollText, Plus, Pencil, Trash2, Smile, Sticker, Upload } from "lucide-react"
 
 const LOG_TYPE_LABELS: Record<TemplateLogType, string> = {
@@ -705,6 +706,7 @@ export function ServerTemplateEditorPage() {
           channels={template.channels ?? []}
           onUpdate={load}
         />
+        <SectionLeveling templateId={id} liveRoles={liveRoles} liveChannels={liveChannels} />
       </main>
 
       <Dialog open={editMetaOpen} onOpenChange={setEditMetaOpen}>
