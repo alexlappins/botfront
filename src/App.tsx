@@ -2,6 +2,9 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import type { ReactElement } from "react"
 import { AuthProvider } from "@/contexts/auth-context"
 import { useAuth } from "@/contexts/auth-context"
+import { LandingPage } from "@/pages/landing-page"
+import { PublicShopPage } from "@/pages/public-shop-page"
+import { PublicProductPage } from "@/pages/public-product-page"
 import { LoginPage } from "@/pages/login-page"
 import { GuildPage } from "@/pages/guild-page"
 import { GuildLayout } from "@/components/guild-layout"
@@ -17,6 +20,7 @@ import { TwitchPage } from "@/pages/guild/twitch-page"
 import { ServerTemplatesListPage } from "@/pages/server-templates-list-page"
 import { ServerTemplateEditorPage } from "@/pages/server-template-editor-page"
 import { StorePage } from "@/pages/store-page"
+import { StoreProductPage } from "@/pages/store-product-page"
 import { MyPurchasesPage } from "@/pages/my-purchases-page"
 import { InstallWizardPage } from "@/pages/install-wizard-page"
 import { AdminStorePage } from "@/pages/admin-store-page"
@@ -24,6 +28,11 @@ import { AdminTemplateAccessPage } from "@/pages/admin-template-access-page"
 import { AdminLayout } from "@/components/admin-layout"
 import { ServerLogsPage } from "@/pages/server-logs-page"
 
+/**
+ * Role guard. On mismatch we send the user to `/` (the landing), where the
+ * "Open dashboard" CTA in the public nav routes them back to their real home.
+ * That's deliberate: it works for guests, customers, admins all the same.
+ */
 function RequireRole({ role, children }: { role: "admin" | "customer"; children: ReactElement }) {
   const { user, loading } = useAuth()
   if (loading) return null
@@ -32,21 +41,18 @@ function RequireRole({ role, children }: { role: "admin" | "customer"; children:
   return children
 }
 
-function HomeRedirect() {
-  const { user, loading } = useAuth()
-  if (loading) return null
-  if (!user) return <Navigate to="/login" replace />
-  if (user.role === "customer") return <Navigate to="/store" replace />
-  return <Navigate to="/server-templates" replace />
-}
-
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public surface — no login required. Lives outside the AdminLayout
+              so guests don't trigger /api/auth/me, the active-guild context,
+              or any other dashboard-shaped infrastructure. */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/shop" element={<PublicShopPage />} />
+          <Route path="/shop/:id" element={<PublicProductPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<HomeRedirect />} />
 
           <Route
             path="/server-templates"
@@ -90,6 +96,7 @@ function App() {
             }
           >
             <Route path="/store" element={<StorePage />} />
+            <Route path="/store/:id" element={<StoreProductPage />} />
             <Route path="/my-purchases" element={<MyPurchasesPage />} />
             <Route path="/server-messages" element={<GuildServerMessagesPage />} />
             <Route path="/welcome" element={<WelcomePage />} />

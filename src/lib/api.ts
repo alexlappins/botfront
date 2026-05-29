@@ -723,6 +723,16 @@ export async function installServerTemplate(
   }
 }
 
+export type StoreCategory =
+  | "gaming"
+  | "community"
+  | "anime"
+  | "crypto"
+  | "streaming"
+  | "other"
+
+export type StoreSort = "newest" | "popular" | "price_asc" | "price_desc"
+
 export type StoreTemplateProduct = {
   id?: string
   templateId: string
@@ -733,6 +743,13 @@ export type StoreTemplateProduct = {
   price: number
   currency: string
   isActive?: boolean
+  longDescription?: string | null
+  category?: StoreCategory | null
+  tags?: string[]
+  screenshots?: string[]
+  featured?: boolean
+  featuredOrder?: number
+  purchaseCount?: number
   template?: {
     id: string
     name: string
@@ -740,6 +757,41 @@ export type StoreTemplateProduct = {
     discordTemplateUrl: string | null
     iconUrl?: string | null
   } | null
+}
+
+export type StoreListResponse = {
+  total: number
+  items: StoreTemplateProduct[]
+}
+
+export type StoreContents = {
+  roles: number
+  categories: number
+  channels: number
+  messages: number
+  reactionRoles: number
+  emojis: number
+  stickers: number
+  welcomeVariants: number
+  goodbyeVariants: number
+  serverStatsEnabled: boolean
+  levelingEnabled: boolean
+  welcomeEnabled: boolean
+  goodbyeEnabled: boolean
+}
+
+export type StoreFacets = {
+  categories: { category: StoreCategory; count: number }[]
+  tags: { tag: string; count: number }[]
+}
+
+export type StoreFilters = {
+  q?: string
+  category?: StoreCategory
+  tags?: string[]
+  sort?: StoreSort
+  limit?: number
+  offset?: number
 }
 
 /** Per-user template access record (purchases history with usage tracking) */
@@ -784,40 +836,131 @@ export type InstallApplyResult = {
   warnings?: string[]
 }
 
-export async function getStoreTemplates(): Promise<StoreTemplateProduct[]> {
-  const res = await fetch(`${API_BASE}/store/templates`, { ...fetchOptions, method: "GET" })
+/**
+ * Normalise the backend StoreTemplate shape. The row pulls scalars from
+ * `store_templates`, but `name/description/iconUrl` live on the joined
+ * `ServerTemplate` (`item.template`). We surface both flat scalars and the
+ * nested `template` object so callers can pick whichever is convenient.
+ */
+function normaliseProduct(item: any): StoreTemplateProduct {
+  const nested = item?.template ?? null
+  return {
+    id: typeof item?.id === "string" ? item.id : undefined,
+    templateId:
+      typeof item?.templateId === "string" ? item.templateId : (nested?.id ?? ""),
+    name:
+      typeof nested?.name === "string"
+        ? nested.name
+        : typeof item?.name === "string"
+          ? item.name
+          : "Untitled",
+    description:
+      typeof nested?.description === "string"
+        ? nested.description
+        : typeof item?.description === "string"
+          ? item.description
+          : null,
+    discordTemplateUrl:
+      typeof nested?.discordTemplateUrl === "string"
+        ? nested.discordTemplateUrl
+        : typeof item?.discordTemplateUrl === "string"
+          ? item.discordTemplateUrl
+          : null,
+    iconUrl:
+      typeof nested?.iconUrl === "string" ? nested.iconUrl :
+      typeof item?.iconUrl === "string" ? item.iconUrl : null,
+    price: typeof item?.price === "number" ? item.price : 0,
+    currency: typeof item?.currency === "string" ? item.currency : "USD",
+    isActive: typeof item?.isActive === "boolean" ? item.isActive : undefined,
+    longDescription: typeof item?.longDescription === "string" ? item.longDescription : null,
+    category: item?.category ?? null,
+    tags: Array.isArray(item?.tags) ? item.tags : [],
+    screenshots: Array.isArray(item?.screenshots) ? item.screenshots : [],
+    featured: Boolean(item?.featured),
+    featuredOrder: typeof item?.featuredOrder === "number" ? item.featuredOrder : 0,
+    purchaseCount: typeof item?.purchaseCount === "number" ? item.purchaseCount : 0,
+    template: nested,
+  }
+}
+
+export async function getStoreTemplates(filters: StoreFilters = {}): Promise<StoreListResponse> {
+  const params = new URLSearchParams()
+  if (filters.q) params.set("q", filters.q)
+  if (filters.category) params.set("category", filters.category)
+  if (filters.tags?.length) params.set("tags", filters.tags.join(","))
+  if (filters.sort) params.set("sort", filters.sort)
+  if (filters.limit !== undefined) params.set("limit", String(filters.limit))
+  if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+  const qs = params.toString() ? `?${params.toString()}` : ""
+  const res = await fetch(`${API_BASE}/store/templates${qs}`, { ...fetchOptions, method: "GET" })
   if (!res.ok) await throwApiError(res, "Failed to fetch store templates")
   const raw = await res.json()
-  if (!Array.isArray(raw)) return []
-  return raw.map((item: any) => {
-    const nested = item?.template ?? null
-    return {
-      id: typeof item?.id === "string" ? item.id : undefined,
-      templateId: typeof item?.templateId === "string" ? item.templateId : (nested?.id ?? ""),
-      name:
-        typeof item?.name === "string"
-          ? item.name
-          : typeof nested?.name === "string"
-            ? nested.name
-            : "Untitled",
-      description:
-        typeof item?.description === "string"
-          ? item.description
-          : typeof nested?.description === "string"
-            ? nested.description
-            : null,
-      discordTemplateUrl:
-        typeof item?.discordTemplateUrl === "string"
-          ? item.discordTemplateUrl
-          : typeof nested?.discordTemplateUrl === "string"
-            ? nested.discordTemplateUrl
-            : null,
-      price: typeof item?.price === "number" ? item.price : 0,
-      currency: typeof item?.currency === "string" ? item.currency : "USD",
-      isActive: typeof item?.isActive === "boolean" ? item.isActive : undefined,
-      template: nested,
-    } as StoreTemplateProduct
+  const items = Array.isArray(raw?.items) ? raw.items.map(normaliseProduct) : []
+  const total = typeof raw?.total === "number" ? raw.total : items.length
+  return { total, items }
+}
+
+export async function getStoreFeatured(): Promise<StoreTemplateProduct[]> {
+  const res = await fetch(`${API_BASE}/store/templates/featured`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to fetch featured products")
+  const raw = await res.json()
+  return Array.isArray(raw) ? raw.map(normaliseProduct) : []
+}
+
+export async function getStoreFacets(): Promise<StoreFacets> {
+  const res = await fetch(`${API_BASE}/store/templates/facets`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to fetch facets")
+  const raw = await res.json()
+  return {
+    categories: Array.isArray(raw?.categories) ? raw.categories : [],
+    tags: Array.isArray(raw?.tags) ? raw.tags : [],
+  }
+}
+
+export async function getStoreProduct(storeTemplateId: string): Promise<{
+  product: StoreTemplateProduct
+  contents: StoreContents | null
+}> {
+  const res = await fetch(`${API_BASE}/store/templates/${storeTemplateId}`, {
+    ...fetchOptions,
+    method: "GET",
   })
+  if (!res.ok) await throwApiError(res, "Failed to fetch product")
+  const raw = await res.json()
+  return {
+    product: normaliseProduct(raw?.product ?? {}),
+    contents: raw?.contents ?? null,
+  }
+}
+
+// ── Admin ──
+
+export async function adminListStoreTemplates(): Promise<StoreTemplateProduct[]> {
+  const res = await fetch(`${API_BASE}/admin/store/templates`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load admin store list")
+  const raw = await res.json()
+  return Array.isArray(raw) ? raw.map(normaliseProduct) : []
+}
+
+export async function adminUpsertStoreTemplate(body: {
+  templateId: string
+  price?: number
+  currency?: string
+  isActive?: boolean
+  longDescription?: string | null
+  category?: StoreCategory | null
+  tags?: string[]
+  screenshots?: string[]
+  featured?: boolean
+  featuredOrder?: number
+}): Promise<StoreTemplateProduct> {
+  const res = await fetch(`${API_BASE}/admin/store/templates/upsert`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save store product")
+  return normaliseProduct(await res.json())
 }
 
 export async function checkoutTemplate(templateId: string): Promise<void> {
@@ -884,20 +1027,6 @@ export async function liftBotRole(
     return { ok: false, needsManual: true, message: (data as { message?: string })?.message ?? "Error" }
   }
   return data
-}
-
-export async function adminUpsertStoreTemplate(body: {
-  templateId: string
-  price: number
-  currency: string
-  isActive: boolean
-}): Promise<void> {
-  const res = await fetch(`${API_BASE}/admin/store/templates/upsert`, {
-    ...fetchOptions,
-    method: "POST",
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) await throwApiError(res, "Failed to upsert store card")
 }
 
 export async function adminGrantTemplateAccess(body: {
