@@ -14,6 +14,7 @@ import {
   Smile,
   Sparkles,
   TrendingUp,
+  Twitch,
 } from "lucide-react"
 import { LOGOUT_URL } from "@/lib/api"
 import { ActiveGuildProvider, useActiveGuild } from "@/contexts/active-guild-context"
@@ -33,6 +34,7 @@ const NAV: NavItem[] = [
   { to: "/server-messages", label: "Шаблоны сообщений", icon: MessageSquareText },
   { to: "/welcome", label: "Приветствия", icon: HandHeart },
   { to: "/leveling", label: "Система уровней", icon: TrendingUp },
+  { to: "/twitch", label: "Twitch Live", icon: Twitch },
   { to: "/reaction-roles", label: "Роли по реакции", icon: Smile },
   { to: "/server-logs", label: "Логи сервера", icon: ScrollText },
 ]

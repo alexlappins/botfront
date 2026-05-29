@@ -1521,6 +1521,105 @@ export async function getLevelingEvents(
   return res.json()
 }
 
+// ─── Twitch live notifications ──────────────────────────
+
+export type StreamPlatform = "twitch" | "youtube" | "kick" | "tiktok"
+
+export type TwitchEmbedConfig = {
+  color?: string
+  titleTemplate?: string
+  descriptionTemplate?: string
+  buttonLabel?: string
+  contentTemplate?: string
+  showGame?: boolean
+  showThumbnail?: boolean
+  showStreamerAvatar?: boolean
+}
+
+export type TwitchSubscription = {
+  id: string
+  platform: StreamPlatform
+  platformUserId: string
+  platformUsername: string
+  discordChannelId: string
+  enabled: boolean
+  isLive: boolean
+  currentStreamId: string | null
+  currentStreamStartedAt: string | null
+  contentTemplate: string | null
+  embedConfig: TwitchEmbedConfig
+  createdAt: string
+}
+
+export type TwitchListResponse = {
+  configured: boolean
+  limit: number
+  moduleEnabled: boolean
+  subscriptions: TwitchSubscription[]
+}
+
+export async function getTwitchSubscriptions(guildId: string): Promise<TwitchListResponse> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/twitch`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to load Twitch subscriptions")
+  return res.json()
+}
+
+export async function addTwitchSubscription(
+  guildId: string,
+  body: { username: string; discordChannelId: string },
+): Promise<TwitchSubscription> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/twitch`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to add Twitch channel")
+  return res.json()
+}
+
+export async function removeTwitchSubscription(guildId: string, subId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/twitch/${subId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to remove Twitch channel")
+}
+
+export async function updateTwitchSubscription(
+  guildId: string,
+  subId: string,
+  body: {
+    discordChannelId?: string
+    enabled?: boolean
+    contentTemplate?: string | null
+    embedConfig?: Partial<TwitchEmbedConfig>
+  },
+): Promise<TwitchSubscription> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/twitch/${subId}`, {
+    ...fetchOptions,
+    method: "PATCH",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update Twitch subscription")
+  return res.json()
+}
+
+export async function toggleTwitchModule(
+  guildId: string,
+  enabled: boolean,
+): Promise<{ ok: boolean; enabled: boolean }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/twitch/module/enabled`, {
+    ...fetchOptions,
+    method: "PATCH",
+    body: JSON.stringify({ enabled }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to toggle module")
+  return res.json()
+}
+
 export type RankCardStyleOverride = Partial<{
   rankBgImageUrl: string | null
   rankBgColor: string
