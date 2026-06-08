@@ -1,0 +1,499 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "remove": "Remove",
+    "add": "Add",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "close": "Close",
+    "search": "Search",
+    "error": "Error",
+    "noAccess": "No access to this server.",
+    "comingSoon": "Soon",
+    "openDashboard": "Open dashboard",
+    "signIn": "Sign in",
+    "signOut": "Sign out",
+    "addToDiscord": "Add to Discord",
+    "selectServer": "Pick a server in the selector on the left."
+  },
+  "language": {
+    "label": "Language",
+    "russian": "Русский",
+    "english": "English",
+    "ukrainian": "Українська"
+  },
+  "nav": {
+    "store": "Shop",
+    "purchases": "Purchases",
+    "serverMessages": "Message templates",
+    "welcome": "Welcome flow",
+    "leveling": "Leveling",
+    "twitch": "Twitch Live",
+    "reactionRoles": "Reaction roles",
+    "serverLogs": "Server logs",
+    "myServers": "My servers"
+  },
+  "guildSelector": {
+    "loading": "Loading servers…",
+    "noServers": "No servers with the bot.",
+    "noServersHint": "Install a template → the bot appears on the server → pick it here.",
+    "noneSelected": "No server selected",
+    "active": "Server active",
+    "comingSoonPremium": "Soon: premium"
+  },
+  "landing": {
+    "title": "Summon the bot that <em>levels up</em> your realm.",
+    "eyebrow": "The Streamer's Companion",
+    "sub": "Live alerts, guardian moderation, and ready-forged servers — one companion for streamers, VTubers, and the communities they raise.",
+    "ctaShop": "Enter the Shop",
+    "freeToBegin": "Free to begin · Twitch · YouTube · Kick · TikTok",
+    "freeToBeginShort": "Free to begin",
+    "alert": {
+      "streamer": "NyxStreams",
+      "wentLive": "went live on Twitch",
+      "liveBadge": "LIVE",
+      "preview": "Stream preview",
+      "title": "Ranked grind — road to top 100 …",
+      "watching": "<b>{{count}}</b> watching",
+      "category": "Just Chatting",
+      "watch": "Watch",
+      "xpLabel": "Chat reward",
+      "xpValue": "+500 XP",
+      "levelLabel": "Level up!",
+      "levelValue": "Lv. 42 reached"
+    },
+    "stats": {
+      "forgedDaily": "Forged daily",
+      "byStudio": "By a small studio",
+      "platforms": "4 platforms",
+      "platformsList": "Twitch · YT · Kick · TikTok",
+      "oneClick": "One-click",
+      "templates": "Server templates",
+      "verified": "Verified",
+      "byDiscord": "by Discord"
+    },
+    "features": {
+      "title": "The Companion",
+      "eyebrow": "Unique Features",
+      "ward": {
+        "cat": "Security",
+        "title": "The Ward"
+      },
+      "streamerSuite": {
+        "cat": "Legendary",
+        "title": "Streamer Suite",
+        "desc": "The signature power no rival bot wields — live alerts across Twitch, YouTube, Kick & TikTok, native VTuber tools and analytics."
+      },
+      "moderation": {
+        "cat": "Moderation",
+        "title": "Keep Order"
+      },
+      "fellowship": {
+        "cat": "Community",
+        "title": "Fellowship"
+      },
+      "tickets": {
+        "cat": "Support",
+        "title": "Tickets"
+      },
+      "giveaways": {
+        "cat": "Engage",
+        "title": "Giveaways"
+      },
+      "xp": {
+        "cat": "Reward",
+        "title": "XP & Levels"
+      },
+      "analytics": {
+        "cat": "Insight",
+        "title": "Analytics"
+      }
+    },
+    "shop": {
+      "eyebrow": "The Merchant",
+      "title": "Featured Realms",
+      "sub": "Ready-forged Discord servers — channels, roles, welcome flow, leveling and live alerts pre-wired. Install in one click after purchase.",
+      "empty": "The first templates land soon. Check back later.",
+      "openShop": "Enter the full Shop"
+    },
+    "final": {
+      "title": "Light the candle. <em>Go live.</em>",
+      "sub": "Plant the companion on your server. Forge channels, summon alerts, raise your guild."
+    }
+  },
+  "shop": {
+    "eyebrow": "The Merchant",
+    "title": "The Shop",
+    "sub": "Ready-forged Discord realms — channels, roles, welcome flow, leveling and live alerts. Browse without an account; install after sign-in.",
+    "featuredEyebrow": "Curated",
+    "featuredTitle": "Featured Realms",
+    "catalogueEyebrow": "Catalogue",
+    "catalogueTitle": "All Realms",
+    "searchPlaceholder": "Search realms…",
+    "reset": "Reset",
+    "all": "All",
+    "noResults": "Nothing matches those filters.",
+    "empty": "The shop is empty.",
+    "loadingRealms": "⌛ summoning realms…",
+    "summoning": "⌛ summoning realm…",
+    "notFound": "Product not found",
+    "page": "page",
+    "totalFound": "Found",
+    "realmsLeft": "realms",
+    "sort": {
+      "newest": "Newest",
+      "popular": "Popular",
+      "priceAsc": "Price ↑",
+      "priceDesc": "Price ↓"
+    }
+  },
+  "product": {
+    "backToShop": "Back to the Shop",
+    "purchased": "Purchased! Open the dashboard → My purchases to install.",
+    "perInstall": "per install",
+    "buy": "Begin install",
+    "signInToBuy": "Sign in to buy",
+    "processing": "Processing…",
+    "buyHintLoggedIn": "After purchase, go to the dashboard → My purchases → Install on a server.",
+    "buyHintGuest": "Sign in with Discord to purchase. You can browse all realms without an account.",
+    "whatsInside": "What's inside",
+    "stillFilling": "The realm is still being filled.",
+    "chronicleEyebrow": "The Chronicle",
+    "chronicleTitle": "About this realm",
+    "contentLabels": {
+      "channels": "Channels",
+      "roles": "Roles",
+      "messages": "Messages",
+      "reactionRoles": "Auto-roles",
+      "emojis": "Emojis",
+      "welcomeVariants": "Welcome variants",
+      "serverStats": "Server stats",
+      "welcome": "Welcome flow",
+      "goodbye": "Goodbye flow",
+      "leveling": "Leveling system"
+    }
+  },
+  "welcome": {
+    "title": "Welcome flow",
+    "sub": "Messages on member join and leave. Each variant is a full copy with its own text, image and buttons. The bot picks one at random when it fires.",
+    "loadError": "Loading error",
+    "saveError": "Save error",
+    "testFailed": "Failed to send",
+    "testSent": "Test message sent",
+    "tabs": {
+      "welcome": "Welcome",
+      "goodbye": "Goodbye"
+    },
+    "enabledTitle": "Enabled",
+    "enabledSubWelcome": "Send a welcome message when a new member joins",
+    "enabledSubGoodbye": "Post in a channel when a member leaves",
+    "sendTo": "Send to",
+    "sendMode": {
+      "channel": "Channel",
+      "dm": "Direct message"
+    },
+    "dmHint": "The bot will DM the new member. If they have DMs from strangers turned off, the message won't arrive.",
+    "channel": "Channel",
+    "channelPlaceholder": "Pick a channel",
+    "variants": {
+      "newWelcomeTitle": "Welcome for new members",
+      "goodbyeTitle": "Farewells",
+      "subtitle": "Up to 5 variants. The bot picks one at random."
+    },
+    "returning": {
+      "title": "Returning members",
+      "sub": "Separate pool of variants for members who were on the server before. Full settings, same as regular welcome."
+    },
+    "actions": {
+      "save": "Save",
+      "testRandom": "Random test",
+      "testDisabledHint": "Enable welcome flow to test"
+    },
+    "variables": {
+      "user": "User mention (@username)",
+      "userName": "Username without @",
+      "userTag": "Username with discriminator",
+      "userId": "User ID",
+      "serverName": "Server name",
+      "serverMemberCount": "Member count"
+    },
+    "variablesHeading": "Available variables"
+  },
+  "twitch": {
+    "title": "Twitch live notifications",
+    "sub": "The bot sends an embed when the selected Twitch channel goes live. Single source of truth — changes here and via the <code>/twitch</code> command write to the same DB.",
+    "loadError": "Loading error",
+    "notConfigured": "The bot isn't configured for Twitch — an administrator must set <code>TWITCH_CLIENT_ID</code> and <code>TWITCH_CLIENT_SECRET</code> in the bot's environment and restart. Adding channels won't work until then.",
+    "module": {
+      "title": "Twitch module",
+      "onSub": "Enabled — the bot tracks the channels in the list and sends notifications.",
+      "offSub": "Disabled — channels are saved but no notifications are sent. Flip the switch to resume.",
+      "emptySub": "Enabled by default. Add your first Twitch channel below.",
+      "addFirstTip": "Add a Twitch channel first",
+      "on": "Enabled",
+      "off": "Disabled"
+    },
+    "add": {
+      "title": "Add a Twitch channel",
+      "slots": "{{used}} / {{limit}} slots used",
+      "username": "Twitch username",
+      "usernamePlaceholder": "e.g. shroud",
+      "channel": "Notification channel",
+      "channelPlaceholder": "— pick a channel —",
+      "submit": "Add",
+      "errors": {
+        "username": "Enter a Twitch username",
+        "channel": "Pick a Discord channel",
+        "generic": "Failed to add",
+        "limitReached": "Limit reached. Remove a channel to free a slot."
+      }
+    },
+    "list": {
+      "empty": "No channels tracked yet — fill in the form above.",
+      "title": "Tracked channels",
+      "refresh": "Refresh",
+      "refreshTip": "Refresh live/offline status",
+      "live": "LIVE",
+      "offline": "offline",
+      "liveTip": "Currently live",
+      "offlineTip": "Not live",
+      "channelMissing": "(channel deleted: {{id}})",
+      "appearance": "Appearance",
+      "appearanceTip": "Configure the embed appearance",
+      "perRowOn": "ON",
+      "perRowOff": "OFF",
+      "enableTip": "Enable notifications",
+      "disableTip": "Disable notifications for this channel",
+      "removeTip": "Remove from list",
+      "confirmRemove": "Stop tracking {{name}}?"
+    },
+    "editor": {
+      "variables": "Available variables",
+      "color": "Embed strip colour",
+      "titleField": "Title",
+      "titleHint": "Default: {{tpl}}",
+      "description": "Description",
+      "descriptionHint": "Default: {{tpl}}. Markdown supported.",
+      "buttonLabel": "Button label",
+      "contentField": "Message above the embed (optional)",
+      "contentHint": "If it contains a URL, Discord's auto-preview is suppressed via SUPPRESS_EMBEDS.",
+      "contentPlaceholder": "@everyone {streamer} live!",
+      "showGame": "Category",
+      "showThumbnail": "Thumbnail",
+      "showAvatar": "Avatar",
+      "reset": "Reset",
+      "save": "Save",
+      "saved": "Saved",
+      "saveError": "Save error",
+      "previewLabel": "Preview (approximation of Discord view)"
+    },
+    "variables": {
+      "streamer": "Streamer name",
+      "title": "Stream title",
+      "game": "Category / game",
+      "url": "Channel URL",
+      "viewers": "Viewers (number)",
+      "started_at": "Start time (ISO)"
+    }
+  },
+  "serverLogs": {
+    "title": "Server logs",
+    "sub": "Pick a channel for each log type. These settings can also be changed via the <code>/logs set</code> command in Discord.",
+    "loadingError": "Loading error",
+    "saveError": "Save error",
+    "disable": "— Disable —",
+    "types": {
+      "joinLeave": "Join / Leave",
+      "messages": "Messages",
+      "moderation": "Moderation",
+      "channel": "Channel",
+      "banKick": "Ban / Kick"
+    }
+  },
+  "reactionRoles": {
+    "title": "Reaction roles",
+    "sub": "Manage reactions and buttons that grant roles to members.",
+    "selectServer": "Pick a server in the selector at the top left.",
+    "loadError": "Loading error",
+    "tabs": {
+      "buttons": "Buttons",
+      "reactions": "Reactions"
+    },
+    "reactions": {
+      "activeTitle": "Active bindings",
+      "activeDesc": "All emoji → role bindings on this server. Removing one also drops the bot's reaction from the message.",
+      "empty": "No bindings yet.",
+      "addTitle": "Add a binding",
+      "message": "Message",
+      "noMessages": "No messages — install a template first.",
+      "pickMessage": "Pick a message",
+      "notSelected": "Not selected",
+      "emoji": "Emoji",
+      "emojiPlaceholder": "✅ or custom emoji ID",
+      "role": "Role",
+      "pickRole": "Pick a role",
+      "missingFields": "Pick a message, emoji and role",
+      "addFailed": "Failed to add",
+      "confirmRemove": "Remove this binding?",
+      "adding": "Adding…",
+      "add": "Add",
+      "channelFallback": "(channel {{id}})"
+    },
+    "buttons": {
+      "empty": "No messages on this server yet. Install a template to populate it.",
+      "intro": "Each message has its own buttons — added and saved independently. Click a message to expand the editor.",
+      "countOne": "{{count}} button",
+      "countMany": "{{count}} buttons",
+      "hide": "▲ hide",
+      "edit": "▼ edit",
+      "saving": "Saving…",
+      "save": "Save buttons for this message",
+      "saveFailed": "Failed to save"
+    }
+  },
+  "leveling": {
+    "title": "Leveling system",
+    "sub": "XP for messages and voice chat, custom tiers, role rewards, exclusions. Notifications go to a channel or DM.",
+    "loadError": "Loading error",
+    "warning": {
+      "title": "Heads up: role hierarchy issues",
+      "hint": "Move the bot's role higher in your Discord server settings, otherwise it won't be able to assign these roles."
+    },
+    "placeholders": {
+      "user": "@user mention",
+      "userName": "Username without @",
+      "level": "New level",
+      "oldLevel": "Old level",
+      "tier": "Current tier",
+      "newTier": "New tier (for milestones)",
+      "oldTier": "Old tier (for milestones)",
+      "server": "Server name"
+    },
+    "general": {
+      "title": "General",
+      "description": "Master switch, level-up channel, message template",
+      "enable": "Enable leveling system",
+      "channelLabel": "Where to send level-up messages",
+      "modeChannel": "Channel",
+      "modeDm": "DM the user",
+      "modeDisabled": "Don't send",
+      "pickChannel": "— pick a channel —",
+      "templateLabel": "Standard level-up message template",
+      "placeholdersHint": "Placeholders: {{list}}",
+      "onlyTier": "Only notify on tier change (skip regular level-ups)"
+    },
+    "sources": {
+      "title": "XP sources",
+      "description": "How much XP is awarded and for what",
+      "chatEnable": "Chat XP — award for messages",
+      "chatMin": "Min XP per message",
+      "chatMax": "Max XP per message",
+      "chatCooldown": "Cooldown (sec)",
+      "chatMinLength": "Min message length",
+      "voiceEnable": "Voice XP — award per minute in voice",
+      "voicePerMin": "XP per minute",
+      "voiceMinUsers": "Min users in channel",
+      "voiceAfk": "AFK timeout (min)"
+    },
+    "tiers": {
+      "title": "Tiers (ranks)",
+      "description": "Custom names for level ranges. The tier shows next to the level on the rank card and leaderboard.",
+      "levels": "Levels {{start}}–{{end}}",
+      "deleteTip": "Delete tier",
+      "name": "Name",
+      "color": "Color",
+      "milestoneLabel": "Tier milestone message (optional)",
+      "milestoneHint": "If set, sent on transition into this tier instead of a regular level-up",
+      "add": "Add tier",
+      "resetDefault": "Reset to default",
+      "saveLabel": "Save tiers",
+      "confirmReset": "Reset tiers to defaults?"
+    },
+    "rewards": {
+      "title": "Role rewards",
+      "description": "Up to {{limit}} rules. The bot's role must rank higher than the assigned roles in the hierarchy.",
+      "mode": "Mode",
+      "stackTitle": "Stack",
+      "stackDesc": "Receives every role along the way (5, 10, 20…)",
+      "replaceTitle": "Replace",
+      "replaceDesc": "Only the role for the highest reached level",
+      "pickRole": "— pick a role —",
+      "add": "Add reward"
+    },
+    "noXp": {
+      "title": "Exclusions",
+      "description": "Where XP isn't awarded",
+      "rolesLabel": "Roles without XP",
+      "rolesHint": "Members with these roles don't earn XP",
+      "textLabel": "Text channels without XP",
+      "voiceLabel": "Voice channels without XP",
+      "voiceHint": "For example the AFK channel",
+      "ignoredTitle": "Ignored users",
+      "ignoredManaged": "(managed via /xp ignore)",
+      "listEmpty": "List is empty.",
+      "removeIgnoredTip": "Remove from ignore list",
+      "nothing": "Nothing here."
+    },
+    "card": {
+      "title": "Rank card (visual)",
+      "description": "Colors and background. The preview updates automatically.",
+      "bgImage": "Background image (URL)",
+      "bgImageHint": "Optional. If empty, the background color is used.",
+      "bgColor": "Background color",
+      "overlay": "Overlay darkness (%)",
+      "primaryText": "Primary text",
+      "secondaryText": "Secondary text",
+      "accent": "Accent (tier)",
+      "progress": "Progress bar",
+      "progressTrack": "Progress bar track",
+      "progressTrackHint": "rgba() supported",
+      "previewLabel": "Preview (live PNG render)",
+      "previewLoading": "Loading preview…",
+      "previewError": "Preview error",
+      "testTitle": "Test send to a channel",
+      "send": "Send",
+      "testSent": "Card sent to the channel ✓",
+      "sendError": "Send error"
+    },
+    "advanced": {
+      "title": "Advanced",
+      "description": "Danger zone + export",
+      "recalc": "Recalculate levels / tiers",
+      "exportCsv": "Export CSV",
+      "wipe": "Wipe XP of all members",
+      "recalcResult": "Records recalculated: {{n}}",
+      "wipeResult": "XP records deleted: {{n}}",
+      "confirmWipe1": "Wipe XP of all members on this server? This is irreversible.",
+      "confirmWipe2": "Really? This will erase all member progress."
+    },
+    "audit": {
+      "title": "XP audit log",
+      "description": "Feed of every XP event — chat, voice, manual commands. Helps diagnose 'my XP isn't growing' complaints.",
+      "userIdPlaceholder": "User Discord ID",
+      "refresh": "Refresh",
+      "colTime": "Time",
+      "colUser": "User",
+      "colType": "Type",
+      "noEvents": "No events",
+      "prev": "← Back",
+      "next": "Forward →",
+      "pageInfo": "Page {{current}} / {{total}} · {{n}} events total"
+    }
+  },
+  "footer": {
+    "tag": "A Discord companion forged for streamers — live alerts, guardian moderation, ready-made realms.",
+    "companion": "Companion",
+    "account": "Account",
+    "legal": "Legal",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "bottom": "© Level Up · forged by a small moonlit studio",
+    "verified": "✦ Verified by Discord"
+  }
+}

@@ -1,0 +1,499 @@
+{
+  "common": {
+    "loading": "Завантаження…",
+    "save": "Зберегти",
+    "saving": "Збереження…",
+    "saved": "Збережено",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "remove": "Прибрати",
+    "add": "Додати",
+    "edit": "Редагувати",
+    "back": "Назад",
+    "next": "Вперед",
+    "close": "Закрити",
+    "search": "Пошук",
+    "error": "Помилка",
+    "noAccess": "Немає доступу до сервера.",
+    "comingSoon": "Скоро",
+    "openDashboard": "Відкрити панель",
+    "signIn": "Увійти",
+    "signOut": "Вийти",
+    "addToDiscord": "Додати в Discord",
+    "selectServer": "Оберіть сервер у селекторі ліворуч."
+  },
+  "language": {
+    "label": "Мова",
+    "russian": "Русский",
+    "english": "English",
+    "ukrainian": "Українська"
+  },
+  "nav": {
+    "store": "Магазин",
+    "purchases": "Покупки",
+    "serverMessages": "Шаблони повідомлень",
+    "welcome": "Привітання",
+    "leveling": "Система рівнів",
+    "twitch": "Twitch Live",
+    "reactionRoles": "Ролі по реакції",
+    "serverLogs": "Логи сервера",
+    "myServers": "Мої сервери"
+  },
+  "guildSelector": {
+    "loading": "Завантаження серверів…",
+    "noServers": "Немає серверів з ботом.",
+    "noServersHint": "Встановіть шаблон → бот з'явиться на сервері → оберіть його тут.",
+    "noneSelected": "Сервер не обрано",
+    "active": "Сервер активний",
+    "comingSoonPremium": "Скоро: преміум"
+  },
+  "landing": {
+    "title": "Поклич бота, який <em>прокачає</em> твоє царство.",
+    "eyebrow": "Супутник стримера",
+    "sub": "Live-сповіщення, страж модерації та готові сервери — один супутник для стримерів, VTuber'ів і спільнот, які вони ростять.",
+    "ctaShop": "Увійти в магазин",
+    "freeToBegin": "Безкоштовно для старту · Twitch · YouTube · Kick · TikTok",
+    "freeToBeginShort": "Безкоштовно для старту",
+    "alert": {
+      "streamer": "NyxStreams",
+      "wentLive": "вийшов в ефір на Twitch",
+      "liveBadge": "LIVE",
+      "preview": "Прев'ю стріму",
+      "title": "Ранкед-грінд — шлях у топ 100 …",
+      "watching": "<b>{{count}}</b> дивляться",
+      "category": "Just Chatting",
+      "watch": "Дивитися",
+      "xpLabel": "Нагорода за чат",
+      "xpValue": "+500 XP",
+      "levelLabel": "Новий рівень!",
+      "levelValue": "Рівень 42 досягнуто"
+    },
+    "stats": {
+      "forgedDaily": "Кується щодня",
+      "byStudio": "Маленькою студією",
+      "platforms": "4 платформи",
+      "platformsList": "Twitch · YT · Kick · TikTok",
+      "oneClick": "В один клік",
+      "templates": "Серверні шаблони",
+      "verified": "Перевірено",
+      "byDiscord": "Discord-ом"
+    },
+    "features": {
+      "title": "Супутник",
+      "eyebrow": "Унікальні можливості",
+      "ward": {
+        "cat": "Безпека",
+        "title": "Страж"
+      },
+      "streamerSuite": {
+        "cat": "Легендарне",
+        "title": "Streamer Suite",
+        "desc": "Сила, якої немає в інших ботів — live-сповіщення для Twitch, YouTube, Kick і TikTok, VTuber-інструменти та аналітика."
+      },
+      "moderation": {
+        "cat": "Модерація",
+        "title": "Порядок"
+      },
+      "fellowship": {
+        "cat": "Спільнота",
+        "title": "Братство"
+      },
+      "tickets": {
+        "cat": "Підтримка",
+        "title": "Тікети"
+      },
+      "giveaways": {
+        "cat": "Залучення",
+        "title": "Розіграші"
+      },
+      "xp": {
+        "cat": "Нагороди",
+        "title": "XP та рівні"
+      },
+      "analytics": {
+        "cat": "Аналітика",
+        "title": "Метрики"
+      }
+    },
+    "shop": {
+      "eyebrow": "Крамниця торговця",
+      "title": "Обрані світи",
+      "sub": "Готові Discord-сервери — канали, ролі, привітання, рівні та live-сповіщення вже налаштовані. Встановлення в один клік після покупки.",
+      "empty": "Скоро тут з'являться перші шаблони. Загляньте пізніше.",
+      "openShop": "Відкрити весь магазин"
+    },
+    "final": {
+      "title": "Запали свічку. <em>Вийди в ефір.</em>",
+      "sub": "Поклич супутника на свій сервер. Куй канали, поклич сповіщення, рости своє братство."
+    }
+  },
+  "shop": {
+    "eyebrow": "Крамниця торговця",
+    "title": "Магазин",
+    "sub": "Готові Discord-світи — канали, ролі, привітання, рівні та live-сповіщення. Можна дивитися без акаунту; встановлення після входу.",
+    "featuredEyebrow": "Добірка",
+    "featuredTitle": "Обрані світи",
+    "catalogueEyebrow": "Каталог",
+    "catalogueTitle": "Усі світи",
+    "searchPlaceholder": "Пошук…",
+    "reset": "Скинути",
+    "all": "Усі",
+    "noResults": "За такими фільтрами нічого не знайшлося.",
+    "empty": "Магазин поки що порожній.",
+    "loadingRealms": "⌛ збираємо світи…",
+    "summoning": "⌛ завантажуємо світ…",
+    "notFound": "Товар не знайдено",
+    "page": "стор.",
+    "totalFound": "Знайдено",
+    "realmsLeft": "світів",
+    "sort": {
+      "newest": "Нові",
+      "popular": "Популярні",
+      "priceAsc": "Ціна ↑",
+      "priceDesc": "Ціна ↓"
+    }
+  },
+  "product": {
+    "backToShop": "Назад у магазин",
+    "purchased": "Куплено! Відкрийте «Покупки» у дашборді, щоб встановити.",
+    "perInstall": "за встановлення",
+    "buy": "Встановити",
+    "signInToBuy": "Увійдіть, щоб купити",
+    "processing": "Оформлення…",
+    "buyHintLoggedIn": "Після покупки відкрийте дашборд → «Покупки» → «Встановити» на сервері.",
+    "buyHintGuest": "Увійдіть через Discord, щоб купити. Переглядати світи можна без акаунту.",
+    "whatsInside": "Що всередині",
+    "stillFilling": "Світ ще наповнюється.",
+    "chronicleEyebrow": "Хроніка",
+    "chronicleTitle": "Про цей світ",
+    "contentLabels": {
+      "channels": "каналів",
+      "roles": "ролей",
+      "messages": "повідомлень",
+      "reactionRoles": "авто-ролей",
+      "emojis": "емодзі",
+      "welcomeVariants": "варіантів привітання",
+      "serverStats": "Статистика сервера",
+      "welcome": "Потік привітання",
+      "goodbye": "Потік прощання",
+      "leveling": "Система рівнів"
+    }
+  },
+  "welcome": {
+    "title": "Привітання",
+    "sub": "Повідомлення при вході та виході учасників. Кожен варіант — повноцінна копія зі своїм текстом, картинкою та кнопками. При спрацьовуванні бот обирає один варіант випадково.",
+    "loadError": "Помилка завантаження",
+    "saveError": "Помилка збереження",
+    "testFailed": "Не вдалося надіслати",
+    "testSent": "Тестове повідомлення надіслано",
+    "tabs": {
+      "welcome": "Привітання",
+      "goodbye": "Прощання"
+    },
+    "enabledTitle": "Увімкнено",
+    "enabledSubWelcome": "Надсилати привітання при вході нового учасника",
+    "enabledSubGoodbye": "Сповіщати в канал, коли учасник залишає сервер",
+    "sendTo": "Куди надсилати",
+    "sendMode": {
+      "channel": "У канал",
+      "dm": "В особисті повідомлення"
+    },
+    "dmHint": "Бот напише в ОП нового учасника. Якщо у користувача вимкнені ОП від незнайомців — повідомлення не дійде.",
+    "channel": "Канал",
+    "channelPlaceholder": "Оберіть канал",
+    "variants": {
+      "newWelcomeTitle": "Привітання нових учасників",
+      "goodbyeTitle": "Прощання",
+      "subtitle": "До 5 варіантів. Бот обере один випадково."
+    },
+    "returning": {
+      "title": "Учасники, що повертаються",
+      "sub": "Окремий пул варіантів для тих, хто вже був на сервері. Повний набір налаштувань, як у звичайного привітання."
+    },
+    "actions": {
+      "save": "Зберегти",
+      "testRandom": "Випадковий тест",
+      "testDisabledHint": "Увімкніть привітання, щоб тестувати"
+    },
+    "variables": {
+      "user": "Згадка користувача (@username)",
+      "userName": "Ім'я користувача без @",
+      "userTag": "Ім'я з дискримінатором",
+      "userId": "ID користувача",
+      "serverName": "Назва сервера",
+      "serverMemberCount": "Кількість учасників"
+    },
+    "variablesHeading": "Доступні змінні"
+  },
+  "twitch": {
+    "title": "Twitch live-сповіщення",
+    "sub": "Бот шле embed-сповіщення, коли обраний Twitch-канал виходить в ефір. Джерело правди одне — зміни тут і через <code>/twitch</code> команду пишуться в одну БД.",
+    "loadError": "Помилка завантаження",
+    "notConfigured": "Бот не сконфігурований для Twitch — адміністратор має прописати <code>TWITCH_CLIENT_ID</code> і <code>TWITCH_CLIENT_SECRET</code> в оточенні бота та перезапустити. До цього додавання каналів не працює.",
+    "module": {
+      "title": "Модуль Twitch",
+      "onSub": "Увімкнено — бот відстежує канали зі списку та шле сповіщення.",
+      "offSub": "Вимкнено — канали збережено, але сповіщення не надходять. Увімкніть тумблер, щоб відновити.",
+      "emptySub": "Увімкнено (за замовчуванням). Додайте перший Twitch-канал нижче.",
+      "addFirstTip": "Спочатку додайте Twitch-канал",
+      "on": "Увімкнено",
+      "off": "Вимкнено"
+    },
+    "add": {
+      "title": "Додати Twitch-канал",
+      "slots": "{{used}} / {{limit}} слотів використано",
+      "username": "Twitch username",
+      "usernamePlaceholder": "наприклад shroud",
+      "channel": "Канал для сповіщень",
+      "channelPlaceholder": "— оберіть канал —",
+      "submit": "Додати",
+      "errors": {
+        "username": "Введіть Twitch username",
+        "channel": "Оберіть Discord-канал",
+        "generic": "Помилка додавання",
+        "limitReached": "Ліміт досягнуто. Видаліть канал зі списку, щоб звільнити слот."
+      }
+    },
+    "list": {
+      "empty": "Канали ще не додані — заповніть форму вище.",
+      "title": "Відстежувані канали",
+      "refresh": "Оновити",
+      "refreshTip": "Оновити статус live/offline",
+      "live": "LIVE",
+      "offline": "offline",
+      "liveTip": "Зараз в ефірі",
+      "offlineTip": "Не в ефірі",
+      "channelMissing": "(канал видалено: {{id}})",
+      "appearance": "Зовнішній вигляд",
+      "appearanceTip": "Налаштувати зовнішній вигляд embed",
+      "perRowOn": "ON",
+      "perRowOff": "OFF",
+      "enableTip": "Увімкнути сповіщення",
+      "disableTip": "Вимкнути сповіщення для цього каналу",
+      "removeTip": "Видалити зі списку",
+      "confirmRemove": "Перестати відстежувати {{name}}?"
+    },
+    "editor": {
+      "variables": "Доступні змінні",
+      "color": "Колір смужки embed",
+      "titleField": "Заголовок (title)",
+      "titleHint": "За замовчуванням: {{tpl}}",
+      "description": "Опис (description)",
+      "descriptionHint": "За замовчуванням: {{tpl}}. Підтримує markdown.",
+      "buttonLabel": "Текст кнопки",
+      "contentField": "Повідомлення над embed (необов'язково)",
+      "contentHint": "Якщо містить URL, Discord-авто-прев'ю буде придушено прапором SUPPRESS_EMBEDS.",
+      "contentPlaceholder": "@everyone {streamer} live!",
+      "showGame": "Категорія",
+      "showThumbnail": "Прев'ю",
+      "showAvatar": "Аватар",
+      "reset": "Скинути",
+      "save": "Зберегти",
+      "saved": "Збережено",
+      "saveError": "Помилка збереження",
+      "previewLabel": "Прев'ю (приблизний вигляд у Discord)"
+    },
+    "variables": {
+      "streamer": "Ім'я стримера",
+      "title": "Назва стріму",
+      "game": "Категорія / гра",
+      "url": "Посилання на канал",
+      "viewers": "Глядачі (число)",
+      "started_at": "Час старту (ISO)"
+    }
+  },
+  "serverLogs": {
+    "title": "Логи сервера",
+    "sub": "Оберіть канал для кожного типу логів. Ці налаштування також можна змінити через команду <code>/logs set</code> в Discord.",
+    "loadingError": "Помилка завантаження",
+    "saveError": "Помилка збереження",
+    "disable": "— Вимкнути —",
+    "types": {
+      "joinLeave": "Вхід/Вихід",
+      "messages": "Повідомлення",
+      "moderation": "Модерація",
+      "channel": "Канали",
+      "banKick": "Бан/Кік"
+    }
+  },
+  "reactionRoles": {
+    "title": "Ролі по реакції",
+    "sub": "Керування реакціями та кнопками, що видають ролі учасникам.",
+    "selectServer": "Оберіть сервер у селекторі ліворуч угорі.",
+    "loadError": "Помилка завантаження",
+    "tabs": {
+      "buttons": "Кнопки",
+      "reactions": "Реакції"
+    },
+    "reactions": {
+      "activeTitle": "Активні прив'язки",
+      "activeDesc": "Усі прив'язки емодзі → роль на цьому сервері. Видалення знімає реакцію бота з повідомлення.",
+      "empty": "Прив'язок поки що немає.",
+      "addTitle": "Додати прив'язку",
+      "message": "Повідомлення",
+      "noMessages": "Немає повідомлень — встановіть шаблон.",
+      "pickMessage": "Оберіть повідомлення",
+      "notSelected": "Не обрано",
+      "emoji": "Емодзі",
+      "emojiPlaceholder": "✅ або ID кастомного емодзі",
+      "role": "Роль",
+      "pickRole": "Оберіть роль",
+      "missingFields": "Оберіть повідомлення, емодзі та роль",
+      "addFailed": "Не вдалося додати",
+      "confirmRemove": "Видалити цю прив'язку?",
+      "adding": "Додавання…",
+      "add": "Додати",
+      "channelFallback": "(канал {{id}})"
+    },
+    "buttons": {
+      "empty": "На цьому сервері ще немає повідомлень. Встановіть шаблон, щоб вони з'явилися.",
+      "intro": "У кожного повідомлення свої кнопки — додаються та зберігаються незалежно. Клік по повідомленню розкриває редактор.",
+      "countOne": "{{count}} кнопка",
+      "countMany": "{{count}} кнопок",
+      "hide": "▲ сховати",
+      "edit": "▼ редагувати",
+      "saving": "Збереження…",
+      "save": "Зберегти кнопки цього повідомлення",
+      "saveFailed": "Не вдалося зберегти"
+    }
+  },
+  "leveling": {
+    "title": "Система прокачки рівнів",
+    "sub": "XP за повідомлення та голосовий чат, кастомні tier'и, нагороди ролями, винятки. Сповіщення — в обраний канал або DM.",
+    "loadError": "Помилка завантаження",
+    "warning": {
+      "title": "Увага: проблеми з ієрархією ролей",
+      "hint": "Підніміть роль бота вище в налаштуваннях сервера Discord, інакше він не зможе видавати ці ролі."
+    },
+    "placeholders": {
+      "user": "Згадка @user",
+      "userName": "Ім'я без @",
+      "level": "Новий рівень",
+      "oldLevel": "Старий рівень",
+      "tier": "Поточний tier",
+      "newTier": "Новий tier (для milestone)",
+      "oldTier": "Старий tier (для milestone)",
+      "server": "Назва сервера"
+    },
+    "general": {
+      "title": "Загальне",
+      "description": "Master switch, канал level-up, шаблон повідомлення",
+      "enable": "Увімкнути систему рівнів",
+      "channelLabel": "Куди надсилати level-up повідомлення",
+      "modeChannel": "Канал",
+      "modeDm": "DM користувачу",
+      "modeDisabled": "Не надсилати",
+      "pickChannel": "— оберіть канал —",
+      "templateLabel": "Шаблон звичайного level-up повідомлення",
+      "placeholdersHint": "Плейсхолдери: {{list}}",
+      "onlyTier": "Сповіщати лише при переході в новий tier (без звичайних level-up)"
+    },
+    "sources": {
+      "title": "Джерела XP",
+      "description": "Скільки та за що нараховується",
+      "chatEnable": "Chat XP — нараховувати за повідомлення",
+      "chatMin": "Min XP за повідомлення",
+      "chatMax": "Max XP за повідомлення",
+      "chatCooldown": "Cooldown (сек)",
+      "chatMinLength": "Min довжина повідомлення",
+      "voiceEnable": "Voice XP — нараховувати за хвилини в голосовому каналі",
+      "voicePerMin": "XP за хвилину",
+      "voiceMinUsers": "Min людей у каналі",
+      "voiceAfk": "AFK таймаут (хв)"
+    },
+    "tiers": {
+      "title": "Tier'и (звання)",
+      "description": "Кастомні назви для діапазонів рівнів. Tier поруч з рівнем на rank card і в лідерборді.",
+      "levels": "Рівні {{start}}–{{end}}",
+      "deleteTip": "Видалити tier",
+      "name": "Назва",
+      "color": "Колір",
+      "milestoneLabel": "Tier milestone повідомлення (необов'язково)",
+      "milestoneHint": "Якщо задано — буде надіслано при переході саме в цей tier замість звичайного level-up",
+      "add": "Додати tier",
+      "resetDefault": "Скинути до дефолту",
+      "saveLabel": "Зберегти tier'и",
+      "confirmReset": "Скинути tier'и до дефолту?"
+    },
+    "rewards": {
+      "title": "Нагороди ролями",
+      "description": "До {{limit}} правил. Бот має бути вище виданих ролей в ієрархії.",
+      "mode": "Режим",
+      "stackTitle": "Stack",
+      "stackDesc": "Отримує всі ролі по дорозі (5, 10, 20...)",
+      "replaceTitle": "Replace",
+      "replaceDesc": "Лише роль найвищого досягнутого рівня",
+      "pickRole": "— оберіть роль —",
+      "add": "Додати нагороду"
+    },
+    "noXp": {
+      "title": "Винятки",
+      "description": "Де XP не нараховується",
+      "rolesLabel": "Ролі без XP",
+      "rolesHint": "Учасники з цими ролями не отримують XP",
+      "textLabel": "Текстові канали без XP",
+      "voiceLabel": "Голосові канали без XP",
+      "voiceHint": "Наприклад AFK-канал",
+      "ignoredTitle": "Ігноровані користувачі",
+      "ignoredManaged": "(керуються через /xp ignore)",
+      "listEmpty": "Список порожній.",
+      "removeIgnoredTip": "Прибрати з ignore-list",
+      "nothing": "Нічого немає."
+    },
+    "card": {
+      "title": "Rank card (візуал карти рангу)",
+      "description": "Кольори та фон. Прев'ю оновлюється автоматично.",
+      "bgImage": "Фонова картинка (URL)",
+      "bgImageHint": "Необов'язково. Якщо порожньо — використовується колір фону.",
+      "bgColor": "Колір фону",
+      "overlay": "Затемнення overlay (%)",
+      "primaryText": "Основний текст",
+      "secondaryText": "Другорядний текст",
+      "accent": "Акцентний (tier)",
+      "progress": "Прогрес-бар",
+      "progressTrack": "Трек прогрес-бара",
+      "progressTrackHint": "rgba() підтримується",
+      "previewLabel": "Прев'ю (живий PNG-рендер)",
+      "previewLoading": "Завантаження прев'ю…",
+      "previewError": "Помилка прев'ю",
+      "testTitle": "Тестове надсилання в канал",
+      "send": "Надіслати",
+      "testSent": "Карту надіслано в канал ✓",
+      "sendError": "Помилка надсилання"
+    },
+    "advanced": {
+      "title": "Додатково",
+      "description": "Небезпечна зона + експорт",
+      "recalc": "Перерахувати рівні / tier'и",
+      "exportCsv": "Експорт CSV",
+      "wipe": "Скинути XP всіх учасників",
+      "recalcResult": "Перераховано записів: {{n}}",
+      "wipeResult": "Видалено XP-записів: {{n}}",
+      "confirmWipe1": "Скинути XP всіх учасників сервера? Дія незворотна.",
+      "confirmWipe2": "Точно? Це видалить весь прогрес учасників."
+    },
+    "audit": {
+      "title": "Аудит-лог XP",
+      "description": "Стрічка всіх XP-подій — chat, voice, ручні команди. Допомагає діагностувати скарги 'у мене не росте XP'.",
+      "userIdPlaceholder": "Discord ID користувача",
+      "refresh": "Оновити",
+      "colTime": "Час",
+      "colUser": "User",
+      "colType": "Тип",
+      "noEvents": "Подій немає",
+      "prev": "← Назад",
+      "next": "Вперед →",
+      "pageInfo": "Стор. {{current}} / {{total}} · всього {{n}} подій"
+    }
+  },
+  "footer": {
+    "tag": "Discord-супутник для стримерів — live-сповіщення, страж модерації, готові світи.",
+    "companion": "Супутник",
+    "account": "Акаунт",
+    "legal": "Правове",
+    "terms": "Умови",
+    "privacy": "Конфіденційність",
+    "bottom": "© Level Up · кований маленькою місячною студією",
+    "verified": "✦ Перевірено Discord"
+  }
+}

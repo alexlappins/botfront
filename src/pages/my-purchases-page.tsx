@@ -41,11 +41,10 @@ export function MyPurchasesPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <ScrollText className="h-7 w-7 text-violet-400" />
-          Список покупок
+          My purchases
         </h1>
         <p className="text-sm text-white/50 mt-1">
-          Все товары, которые вы приобрели. Одноразовые товары после установки переходят в статус
-          «Установлено».
+          Everything you've bought. One-shot items flip to “Installed” once they've been used.
         </p>
       </div>
 
@@ -64,13 +63,13 @@ export function MyPurchasesPage() {
       {!loading && !error && items.length === 0 && (
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
           <Package className="h-10 w-10 mx-auto text-white/30 mb-3" />
-          <p className="text-white/55">У вас пока нет покупок.</p>
+          <p className="text-white/55">No purchases yet.</p>
           <button
             type="button"
             onClick={() => navigate("/store")}
             className="mt-4 px-4 h-9 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-medium hover:opacity-90"
           >
-            Перейти в магазин
+            Open the shop
           </button>
         </div>
       )}
@@ -121,10 +120,10 @@ function PurchaseRow({ row }: { row: MyTemplateRow }) {
       <div className="shrink-0">
         {lockedAfterInstall ? (
           <div className="text-right">
-            <p className="text-xs text-white/40">Установка использована</p>
+            <p className="text-xs text-white/40">Install used</p>
             <p className="text-sm font-medium text-emerald-400 inline-flex items-center gap-1.5">
               <CheckCircle2 className="h-4 w-4" />
-              Установлено
+              Installed
             </p>
           </div>
         ) : (
@@ -136,7 +135,7 @@ function PurchaseRow({ row }: { row: MyTemplateRow }) {
               "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:opacity-90",
             )}
           >
-            {isInstalled ? "Установить ещё раз" : "Начать установку"}
+            {isInstalled ? "Install again" : "Start install"}
           </button>
         )}
       </div>
@@ -148,13 +147,13 @@ function UsageBadge({ usageType }: { usageType: "oneShot" | "multi" }) {
   if (usageType === "multi") {
     return (
       <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
-        Многоразовый
+        Multi-use
       </span>
     )
   }
   return (
     <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-      Одноразовый
+      One-shot
     </span>
   )
 }
@@ -162,7 +161,7 @@ function UsageBadge({ usageType }: { usageType: "oneShot" | "multi" }) {
 function InstalledBadge() {
   return (
     <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-      Установлен
+      Installed
     </span>
   )
 }
@@ -176,23 +175,23 @@ function Meta({
 }) {
   const items: { k: string; v: string }[] = []
   if (access?.grantedAt) {
-    items.push({ k: "Куплен", v: fmt(access.grantedAt) })
+    items.push({ k: "Purchased", v: fmt(access.grantedAt) })
   } else if (createdAt) {
-    items.push({ k: "Создан", v: fmt(createdAt) })
+    items.push({ k: "Created", v: fmt(createdAt) })
   }
   if (access?.installedAt) {
-    items.push({ k: "Установлен", v: fmt(access.installedAt) })
+    items.push({ k: "Installed", v: fmt(access.installedAt) })
   }
   if (access?.pricePaid != null) {
     items.push({
-      k: "Цена",
+      k: "Price",
       v: access.currency === "USD"
         ? `$${access.pricePaid.toFixed(2)}`
         : `${access.pricePaid.toFixed(2)} ${access.currency ?? ""}`.trim(),
     })
   }
   if (access?.installedGuildId) {
-    items.push({ k: "Сервер", v: access.installedGuildId })
+    items.push({ k: "Server", v: access.installedGuildId })
   }
   if (items.length === 0) return null
 

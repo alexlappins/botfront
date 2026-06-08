@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react"
 import { Link, NavLink } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 /**
  * Public site shell — sticky nav with conditional auth CTA + scrollable content +
@@ -24,6 +26,7 @@ export function PublicShell({
   activeNav?: "home" | "shop"
 }) {
   const { user } = useAuth()
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   // Discord bot install URL — same env var the existing dashboard uses. Static
@@ -61,7 +64,7 @@ export function PublicShell({
                 "public-nav-link " + (isActive || activeNav === "home" ? "on" : "")
               }
             >
-              Companion
+              {t("landing.features.title")}
             </NavLink>
             <NavLink
               to="/shop"
@@ -70,31 +73,23 @@ export function PublicShell({
                 "public-nav-link public-nav-shop " + (isActive || activeNav === "shop" ? "on" : "")
               }
             >
-              Shop
+              {t("nav.store")}
             </NavLink>
-            <a href="#features" className="public-nav-link" onClick={() => setOpen(false)}>
-              Features
-            </a>
-            <a href="#packs" className="public-nav-link" onClick={() => setOpen(false)}>
-              Packs
-            </a>
-            <a href="#faq" className="public-nav-link" onClick={() => setOpen(false)}>
-              FAQ
-            </a>
           </div>
 
           <div className="public-nav-cta">
+            <LanguageSwitcher variant="publicNav" />
             {user ? (
               <Link to={dashboardHref} className="public-btn public-btn-sm public-btn-fill">
-                Open dashboard
+                {t("common.openDashboard")}
               </Link>
             ) : (
               <>
                 <a href={loginHref} className="public-ghost">
-                  Sign in
+                  {t("common.signIn")}
                 </a>
                 <a href={botInvite} target="_blank" rel="noopener noreferrer" className="public-btn public-btn-sm">
-                  Add to Discord
+                  {t("common.addToDiscord")}
                 </a>
               </>
             )}
@@ -122,37 +117,33 @@ export function PublicShell({
               </span>
               <span>Level Up</span>
             </Link>
-            <p className="public-footer-tag">
-              A Discord companion forged for streamers — live alerts, guardian moderation, ready-made realms.
-            </p>
+            <p className="public-footer-tag">{t("footer.tag")}</p>
           </div>
           <div className="public-footer-col">
-            <h5>Companion</h5>
-            <Link to="/">Features</Link>
-            <Link to="/shop">Shop</Link>
-            <a href="#packs">Packs</a>
-            <a href="#faq">FAQ</a>
+            <h5>{t("footer.companion")}</h5>
+            <Link to="/">{t("landing.features.title")}</Link>
+            <Link to="/shop">{t("nav.store")}</Link>
           </div>
           <div className="public-footer-col">
-            <h5>Account</h5>
+            <h5>{t("footer.account")}</h5>
             {user ? (
-              <Link to={dashboardHref}>Dashboard</Link>
+              <Link to={dashboardHref}>{t("common.openDashboard")}</Link>
             ) : (
-              <a href={loginHref}>Sign in</a>
+              <a href={loginHref}>{t("common.signIn")}</a>
             )}
             <a href={botInvite} target="_blank" rel="noopener noreferrer">
-              Add to Discord
+              {t("common.addToDiscord")}
             </a>
           </div>
           <div className="public-footer-col">
-            <h5>Legal</h5>
-            <a href="#">Terms</a>
-            <a href="#">Privacy</a>
+            <h5>{t("footer.legal")}</h5>
+            <a href="#">{t("footer.terms")}</a>
+            <a href="#">{t("footer.privacy")}</a>
           </div>
         </div>
         <div className="public-wrap public-footer-bottom">
-          <span>© Level Up · forged by a small moonlit studio</span>
-          <span>✦ Verified by Discord</span>
+          <span>{t("footer.bottom")}</span>
+          <span>{t("footer.verified")}</span>
         </div>
       </footer>
     </div>
@@ -163,38 +154,45 @@ export function PublicShell({
  * Single-file palette + base styles for the public surface. Loaded via a
  * <style> tag rather than imported CSS to avoid stepping on tailwind's reset
  * — these classes are namespaced under `public-*` so they never collide.
+ *
+ * Neon "gamer" aesthetic: near-black background, Discord blurple core with
+ * cyan accents, Space Grotesk display + Manrope body. The legacy --pub-gold
+ * tokens are kept as aliases so any leftover consumers keep rendering.
  */
 function PublicTheme() {
   return (
     <style>{`
       :root {
-        --pub-bg: #130e1d;
-        --pub-bg-2: #181222;
-        --pub-panel: #211934;
-        --pub-panel-2: #291f40;
-        --pub-panel-hi: #332650;
-        --pub-gold: #c9a44a;
-        --pub-gold-br: #edcd82;
-        --pub-gold-deep: #6f5a2a;
-        --pub-violet: #9b6bff;
-        --pub-violet-br: #c6a0ff;
-        --pub-violet-deep: #5a2db0;
-        --pub-rose: #e0708f;
-        --pub-blue: #5aa0ff;
-        --pub-ink: #ece6f5;
-        --pub-ink-soft: #bcb2cf;
-        --pub-ink-mut: #857c99;
-        --pub-ink-faint: #5c5570;
-        --pub-line: rgba(201,164,74,.16);
-        --pub-line-2: rgba(201,164,74,.34);
-        --pub-line-v: rgba(155,107,255,.18);
-        --pub-maxw: 1180px;
+        --pub-bg: #07070e;
+        --pub-bg-2: #0b0b17;
+        --pub-panel: #11111f;
+        --pub-panel-2: #14142a;
+        --pub-panel-hi: #1a1a30;
+        --pub-blurple: #5865f2;
+        --pub-blurple-br: #8b92ff;
+        --pub-blurple-deep: #3a3da0;
+        --pub-cyan: #56e6ff;
+        --pub-ink: #ededf7;
+        --pub-ink-soft: #b9b9d3;
+        --pub-ink-mut: #9596b8;
+        --pub-ink-faint: #6f6f92;
+        --pub-line: rgba(124,132,255,0.14);
+        --pub-line-2: rgba(124,132,255,0.30);
+        --pub-line-v: rgba(124,132,255,0.18);
+        /* Legacy aliases — preserved so any older selectors keep resolving. */
+        --pub-gold: var(--pub-cyan);
+        --pub-gold-br: var(--pub-blurple-br);
+        --pub-gold-deep: var(--pub-blurple-deep);
+        --pub-violet: var(--pub-blurple);
+        --pub-violet-br: var(--pub-blurple-br);
+        --pub-violet-deep: var(--pub-blurple-deep);
+        --pub-maxw: 1240px;
       }
 
       .public-shell {
         background: var(--pub-bg);
         color: var(--pub-ink);
-        font-family: 'Hanken Grotesk', system-ui, sans-serif;
+        font-family: 'Manrope', system-ui, sans-serif;
         font-size: 17px;
         line-height: 1.65;
         min-height: 100vh;
@@ -202,97 +200,126 @@ function PublicTheme() {
         -webkit-font-smoothing: antialiased;
         position: relative;
       }
+      /* Ambient neon background: faint grid + three drifting glow blobs + noise.
+         Calmer than the hero's bg so it reads as page-wide atmosphere, not focal. */
       .public-shell::before {
         content: "";
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-          radial-gradient(1100px 700px at 70% -10%, rgba(155,107,255,.2), transparent 60%),
-          radial-gradient(900px 600px at 10% 20%, rgba(90,45,176,.14), transparent 55%),
-          radial-gradient(1000px 700px at 90% 70%, rgba(155,107,255,.1), transparent 55%),
-          radial-gradient(1200px 700px at 50% 116%, rgba(201,164,74,.08), transparent 60%),
-          radial-gradient(1.3px 1.3px at 16% 22%, rgba(237,205,130,.45), transparent),
-          radial-gradient(1.3px 1.3px at 38% 64%, rgba(198,160,255,.4), transparent),
-          radial-gradient(1px 1px at 60% 18%, rgba(237,205,130,.4), transparent),
-          radial-gradient(1.3px 1.3px at 84% 46%, rgba(198,160,255,.4), transparent),
-          radial-gradient(1px 1px at 90% 72%, rgba(237,205,130,.35), transparent);
+          linear-gradient(to right, rgba(124,132,255,0.045) 1px, transparent 1px) 0 0 / 64px 64px,
+          linear-gradient(to bottom, rgba(124,132,255,0.045) 1px, transparent 1px) 0 0 / 64px 64px,
+          radial-gradient(900px 600px at 85% -5%, rgba(88,101,242,0.18), transparent 60%),
+          radial-gradient(800px 500px at 5% 80%, rgba(86,230,255,0.10), transparent 55%),
+          radial-gradient(1000px 700px at 50% 50%, rgba(124,132,255,0.05), transparent 60%);
       }
       .public-shell main { position: relative; z-index: 2; }
 
-      .public-wrap { max-width: var(--pub-maxw); margin: 0 auto; padding: 0 28px; position: relative; z-index: 2; }
+      .public-wrap { max-width: var(--pub-maxw); margin: 0 auto; padding: 0 40px; position: relative; z-index: 2; }
       .public-shell h1, .public-shell h2, .public-shell h3, .public-shell h4 {
-        font-family: 'Cinzel', serif; font-weight: 700; line-height: 1.16; letter-spacing: .03em; color: #fff;
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+        line-height: 1.1; letter-spacing: -0.01em; color: #fff;
+        text-transform: uppercase;
       }
       .public-shell a { color: inherit; text-decoration: none; }
 
-      /* Pill buttons */
+      /* Pill buttons — ghost is default, "-fill" is the blurple primary. */
       .public-btn {
-        font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
-        cursor: pointer; border: 1px solid var(--pub-gold-deep); border-radius: 40px;
-        background: linear-gradient(180deg, rgba(51,38,80,.7), rgba(20,15,30,.7));
-        color: var(--pub-gold-br); padding: 14px 34px; transition: .22s;
-        position: relative; display: inline-flex; align-items: center; gap: 9px; text-align: center;
-      }
-      .public-btn::before {
-        content: ""; position: absolute; inset: 3px; border: 1px solid rgba(201,164,74,.2);
-        border-radius: 40px; pointer-events: none;
+        font-family: 'Manrope', sans-serif; font-weight: 700;
+        letter-spacing: 0.04em; text-transform: uppercase;
+        cursor: pointer;
+        border: 1px solid var(--pub-line-2);
+        border-radius: 999px;
+        background: rgba(255,255,255,0.03);
+        color: var(--pub-ink);
+        padding: 12px 22px; font-size: 13.5px;
+        transition: transform .15s ease, box-shadow .25s ease, background .2s, border-color .2s, color .2s;
+        position: relative; display: inline-flex; align-items: center; gap: 10px;
+        text-align: center; white-space: nowrap;
       }
       .public-btn:hover {
-        border-color: var(--pub-gold); color: #fff; box-shadow: 0 0 24px rgba(201,164,74,.3); transform: translateY(-2px);
+        background: rgba(124,132,255,0.10);
+        border-color: var(--pub-blurple-br);
+        transform: translateY(-2px);
       }
-      .public-btn-lg { padding: 17px 46px; font-size: 15px; }
-      .public-btn-sm { padding: 9px 22px; font-size: 11px; border-radius: 30px; }
-      .public-btn-sm::before { border-radius: 30px; }
+      .public-btn:active { transform: translateY(1px); }
+      .public-btn-lg { padding: 16px 28px; font-size: 14px; }
+      .public-btn-sm { padding: 9px 18px; font-size: 12px; }
       .public-btn-fill {
-        background: linear-gradient(180deg, var(--pub-violet), var(--pub-violet-deep));
-        border-color: var(--pub-violet-br); color: #fff;
+        background: linear-gradient(180deg, var(--pub-blurple-br), var(--pub-blurple));
+        color: #fff;
+        border-color: transparent;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.14) inset, 0 10px 28px rgba(88,101,242,0.5);
       }
-      .public-btn-fill:hover { box-shadow: 0 0 26px rgba(155,107,255,.45); }
+      .public-btn-fill:hover {
+        background: linear-gradient(180deg, var(--pub-blurple-br), var(--pub-blurple));
+        border-color: transparent;
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.2) inset, 0 14px 40px rgba(88,101,242,0.72);
+      }
 
       /* Nav */
       .public-nav {
-        position: sticky; top: 0; z-index: 50; backdrop-filter: blur(14px);
-        background: linear-gradient(180deg, rgba(19,14,29,.94), rgba(19,14,29,.5));
+        position: sticky; top: 0; z-index: 50; backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, rgba(7,7,14,0.92), rgba(7,7,14,0.55));
         border-bottom: 1px solid var(--pub-line);
       }
-      .public-nav-in { display: flex; align-items: center; justify-content: space-between; height: 70px; }
+      .public-nav-in {
+        display: flex; align-items: center; justify-content: space-between; height: 76px;
+      }
       .public-logo {
-        display: flex; align-items: center; gap: 12px; font-family: 'Cinzel';
-        font-size: 21px; font-weight: 700; letter-spacing: .06em; color: #fff;
+        display: flex; align-items: center; gap: 12px;
+        font-family: 'Space Grotesk', sans-serif;
+        font-size: 19px; font-weight: 700; letter-spacing: 0.06em;
+        text-transform: uppercase; color: #fff; white-space: nowrap;
       }
+      /* Brand mark — rounded square blurple gradient with a white diamond glyph.
+         The existing markup wraps a <span>✦</span>; we hide the glyph and draw
+         the diamond as a clip-path on the span so we don't touch the markup. */
       .public-crest {
-        width: 34px; height: 34px; transform: rotate(45deg); display: grid; place-items: center;
-        border: 1px solid var(--pub-gold);
-        background: radial-gradient(circle at 38% 30%, var(--pub-violet-br), var(--pub-violet) 55%, var(--pub-violet-deep));
-        box-shadow: 0 0 16px rgba(155,107,255,.5);
+        width: 34px; height: 34px; transform: none;
+        border: 0; border-radius: 9px;
+        background: linear-gradient(150deg, var(--pub-blurple-br), var(--pub-blurple));
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 8px 24px rgba(88,101,242,0.45);
+        display: grid; place-items: center;
       }
-      .public-crest span { transform: rotate(-45deg); font-size: 14px; color: #fff; }
+      .public-crest span {
+        display: block; transform: none; font-size: 0; color: transparent;
+        width: 12px; height: 12px; background: #fff;
+        clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      }
       .public-nav-links {
-        display: flex; align-items: center; gap: 24px; font-family: 'Cinzel';
-        font-size: 12px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase;
-        color: var(--pub-ink-mut);
+        display: flex; align-items: center; gap: 30px;
+        font-family: 'Manrope', sans-serif;
+        font-size: 13.5px; font-weight: 600; letter-spacing: 0.04em;
+        text-transform: uppercase; color: var(--pub-ink-mut);
       }
-      .public-nav-link { transition: color .2s; }
-      .public-nav-link:hover, .public-nav-link.on { color: var(--pub-gold-br); }
-      .public-nav-link.public-nav-shop { color: var(--pub-gold-br); }
-      .public-nav-link.public-nav-shop::before {
-        content: "✦"; font-size: 8px; margin-right: 7px; color: var(--pub-gold);
-      }
+      .public-nav-link { transition: color .2s; white-space: nowrap; }
+      .public-nav-link:hover, .public-nav-link.on { color: var(--pub-ink); }
+      /* Drop the legacy gold dagger before "Shop" — neon nav doesn't need an icon. */
+      .public-nav-link.public-nav-shop { color: var(--pub-ink-mut); }
+      .public-nav-link.public-nav-shop::before { content: none; }
+      .public-nav-link.public-nav-shop:hover,
+      .public-nav-link.public-nav-shop.on { color: var(--pub-ink); }
+
       .public-nav-cta { display: flex; align-items: center; gap: 14px; }
       .public-ghost {
-        font-family: 'Cinzel'; font-size: 12px; letter-spacing: .1em; text-transform: uppercase;
-        color: var(--pub-ink-mut); cursor: pointer;
+        font-family: 'Manrope', sans-serif; font-size: 13px;
+        letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600;
+        color: var(--pub-ink-mut); cursor: pointer; transition: color .2s;
       }
-      .public-ghost:hover { color: #fff; }
+      .public-ghost:hover { color: var(--pub-ink); }
       .public-nav-toggle {
-        display: none; background: rgba(155,107,255,.07); border: 1px solid var(--pub-line-2);
-        width: 44px; height: 38px; cursor: pointer; color: var(--pub-ink);
-        align-items: center; justify-content: center; border-radius: 6px;
+        display: none; background: rgba(124,132,255,0.06);
+        border: 1px solid var(--pub-line-2);
+        width: 42px; height: 42px; cursor: pointer; color: var(--pub-ink);
+        align-items: center; justify-content: center; border-radius: 11px;
       }
       .public-nav-toggle span {
-        position: relative; display: block; width: 18px; height: 2px; background: currentColor; transition: .25s;
+        position: relative; display: block; width: 18px; height: 2px;
+        background: currentColor; transition: .25s;
       }
       .public-nav-toggle span::before, .public-nav-toggle span::after {
-        content: ""; position: absolute; left: 0; width: 18px; height: 2px; background: currentColor; transition: .25s;
+        content: ""; position: absolute; left: 0; width: 18px; height: 2px;
+        background: currentColor; transition: .25s;
       }
       .public-nav-toggle span::before { transform: translateY(-6px); }
       .public-nav-toggle span::after { transform: translateY(6px); }
@@ -300,70 +327,86 @@ function PublicTheme() {
       .public-nav.open .public-nav-toggle span::before { transform: rotate(45deg); }
       .public-nav.open .public-nav-toggle span::after { transform: rotate(-45deg); }
 
+      /* Lang switcher (publicNav variant) — palette retuned to neon via tokens
+         in language-switcher.tsx (uses --pub-line, --pub-ink-mut, --pub-gold-br
+         which now alias to blurple values). */
+
       /* Section headers */
       .public-section { padding: 100px 0; position: relative; }
       .public-head { margin-bottom: 46px; }
       .public-head .eyebrow {
-        font-family: 'Cinzel'; font-size: 11px; letter-spacing: .32em;
-        text-transform: uppercase; color: var(--pub-gold); opacity: .85;
+        font-family: 'Manrope', sans-serif; font-weight: 700;
+        font-size: 12px; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--pub-blurple-br); opacity: .9;
       }
-      .public-head .row { display: flex; align-items: center; gap: 22px; margin-top: 8px; }
+      .public-head .row { display: flex; align-items: center; gap: 22px; margin-top: 10px; }
       .public-head h2 {
         font-size: clamp(28px, 3.7vw, 44px); white-space: nowrap;
-        text-shadow: 0 0 28px rgba(155,107,255,.2);
+        text-shadow: 0 0 28px rgba(88,101,242,0.25);
       }
-      .public-head .fl { flex: 1; height: 1px; background: linear-gradient(90deg, var(--pub-gold-deep), transparent); }
-      .public-head .fl-end { color: var(--pub-gold); font-size: 13px; }
+      .public-head .fl {
+        flex: 1; height: 1px;
+        background: linear-gradient(90deg, var(--pub-line-2), transparent);
+      }
+      /* The "✦" sparkle in markup reads as a tiny chevron in the neon palette. */
+      .public-head .fl-end { color: var(--pub-blurple-br); font-size: 13px; opacity: .7; }
       .public-head.center { text-align: center; }
       .public-head.center .row { justify-content: center; }
-      .public-head.center .fl:first-of-type { background: linear-gradient(90deg, transparent, var(--pub-gold-deep)); }
-      .public-divider { height: 1px; background: var(--pub-line); position: relative; max-width: var(--pub-maxw); margin: 0 auto; }
-      .public-divider::after {
-        content: "✦"; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
-        background: var(--pub-bg); padding: 0 16px; color: var(--pub-gold); font-size: 12px;
+      .public-head.center .fl:first-of-type {
+        background: linear-gradient(90deg, transparent, var(--pub-line-2));
       }
+      .public-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--pub-line-2), transparent);
+        position: relative; max-width: var(--pub-maxw); margin: 0 auto;
+      }
+      .public-divider::after { content: none; }
 
       /* Footer */
       .public-footer {
         position: relative; z-index: 2; padding: 60px 0 24px; margin-top: 80px;
         border-top: 1px solid var(--pub-line);
-        background: linear-gradient(180deg, transparent, rgba(19,14,29,.6));
+        background: linear-gradient(180deg, transparent, rgba(11,11,23,0.7));
       }
       .public-footer-in {
         display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; padding-bottom: 32px;
       }
       .public-footer-brand .public-footer-tag {
-        color: var(--pub-ink-mut); font-size: 14px; line-height: 1.55; margin-top: 12px; max-width: 36ch;
+        color: var(--pub-ink-mut); font-size: 14px; line-height: 1.55;
+        margin-top: 12px; max-width: 36ch; font-family: 'Manrope', sans-serif;
       }
       .public-footer-col h5 {
-        font-family: 'Cinzel'; font-size: 11px; letter-spacing: .24em;
-        text-transform: uppercase; color: var(--pub-gold); margin-bottom: 14px;
+        font-family: 'Space Grotesk', sans-serif; font-size: 12px;
+        font-weight: 600; letter-spacing: 0.18em;
+        text-transform: uppercase; color: var(--pub-blurple-br); margin-bottom: 14px;
       }
       .public-footer-col a {
         display: block; font-size: 14px; color: var(--pub-ink-soft); padding: 4px 0;
-        transition: color .2s; font-family: 'Hanken Grotesk', sans-serif;
+        transition: color .2s; font-family: 'Manrope', sans-serif;
       }
       .public-footer-col a:hover { color: #fff; }
       .public-footer-bottom {
         display: flex; justify-content: space-between; padding-top: 24px;
-        border-top: 1px solid var(--pub-line); font-size: 12px; color: var(--pub-ink-faint);
-        font-family: 'Cinzel'; letter-spacing: .1em;
+        border-top: 1px solid var(--pub-line);
+        font-size: 12px; color: var(--pub-ink-faint);
+        font-family: 'Manrope', sans-serif; letter-spacing: 0.06em;
       }
 
-      /* Cards / grids — shared by landing + shop */
+      /* Glass cards — shared by landing features grid + /shop product cards. */
       .public-card {
         background: linear-gradient(180deg, var(--pub-panel), var(--pub-bg-2));
-        border: 1px solid var(--pub-line); border-radius: 12px;
+        border: 1px solid var(--pub-line); border-radius: 16px;
         overflow: hidden; transition: .25s; position: relative;
       }
       .public-card:hover {
         border-color: var(--pub-line-2);
-        box-shadow: 0 12px 40px rgba(155,107,255,.12), 0 0 24px rgba(201,164,74,.08);
+        box-shadow: 0 12px 40px rgba(88,101,242,0.15);
         transform: translateY(-3px);
       }
 
       /* Responsive */
-      @media (max-width: 900px) {
+      @media (max-width: 940px) {
+        .public-nav-in { height: 70px; }
         .public-footer-in { grid-template-columns: 1fr 1fr; }
       }
       @media (max-width: 720px) {
@@ -371,7 +414,7 @@ function PublicTheme() {
         .public-nav-links {
           position: absolute; top: 70px; left: 0; right: 0; z-index: 40;
           flex-direction: column; align-items: stretch; gap: 0;
-          background: linear-gradient(180deg, rgba(19,14,29,.98), rgba(19,14,29,.92));
+          background: linear-gradient(180deg, rgba(7,7,14,0.98), rgba(7,7,14,0.94));
           border-bottom: 1px solid var(--pub-line); max-height: 0; overflow: hidden;
           opacity: 0; pointer-events: none; transition: .25s;
         }
@@ -380,11 +423,12 @@ function PublicTheme() {
         }
         .public-nav-links .public-nav-link {
           padding: 15px 28px; border-bottom: 1px solid var(--pub-line);
+          font-size: 14px;
         }
         .public-nav-links .public-nav-link:last-child { border-bottom: 0; }
         .public-nav-cta .public-ghost { display: none; }
         .public-section { padding: 72px 0; }
-        .public-wrap { padding: 0 18px; }
+        .public-wrap { padding: 0 20px; }
         .public-head h2 { white-space: normal; }
         .public-head .row { flex-wrap: wrap; }
         .public-footer-in { grid-template-columns: 1fr 1fr; gap: 24px; }

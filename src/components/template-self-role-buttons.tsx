@@ -445,9 +445,10 @@ export function TemplateSelfRoleButtonsEditor({
                 />
               </div>
             </div>
-            <p className="text-[10px] text-[hsl(var(--muted-foreground))] font-mono break-all">
-              customId: {buildCustomId(b.mode, b.roleName || "…")}
-            </p>
+            {/* The raw customId preview ("rr/give/{{id}}") was useful for
+                debugging template substitution but confuses end users —
+                they don't care about Discord wire format. Kept the
+                buildCustomId() call alive on save so behaviour is unchanged. */}
           </div>
         ))}
       </div>

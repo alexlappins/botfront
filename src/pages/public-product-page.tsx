@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { PublicShell } from "@/components/public-shell"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -21,6 +22,7 @@ export function PublicProductPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { t } = useTranslation()
 
   const [product, setProduct] = useState<StoreTemplateProduct | null>(null)
   const [contents, setContents] = useState<StoreContents | null>(null)
@@ -72,7 +74,7 @@ export function PublicProductPage() {
     setSuccess(null)
     try {
       await checkoutTemplate(product.templateId)
-      setSuccess("Purchased! Open the dashboard → My purchases to install.")
+      setSuccess(t("product.purchased"))
     } catch (e) {
       setError(e instanceof Error ? e.message : "Checkout error")
     } finally {
@@ -86,13 +88,13 @@ export function PublicProductPage() {
 
       <div className="public-wrap product-wrap">
         <Link to="/shop" className="back-link">
-          ← Back to the Shop
+          ← {t("product.backToShop")}
         </Link>
 
         {loading ? (
-          <div className="shop-loading">⌛ summoning realm…</div>
+          <div className="shop-loading">{t("shop.summoning")}</div>
         ) : error || !product ? (
-          <div className="shop-error">{error ?? "Product not found"}</div>
+          <div className="shop-error">{error ?? t("shop.notFound")}</div>
         ) : (
           <article className="product-grid">
             {/* Gallery */}
@@ -108,9 +110,9 @@ export function PublicProductPage() {
 
               {(product.tags?.length ?? 0) > 0 && (
                 <div className="product-tags">
-                  {product.tags!.map((t) => (
-                    <span key={t} className="prod-tag">
-                      {t}
+                  {product.tags!.map((tg) => (
+                    <span key={tg} className="prod-tag">
+                      {tg}
                     </span>
                   ))}
                 </div>
@@ -121,7 +123,7 @@ export function PublicProductPage() {
               <div className="buy-block">
                 <div className="buy-price">
                   <span className="big">{priceLabel(product)}</span>
-                  <span className="hint">per install</span>
+                  <span className="hint">{t("product.perInstall")}</span>
                 </div>
                 <button
                   type="button"
@@ -129,12 +131,10 @@ export function PublicProductPage() {
                   onClick={handleBuy}
                   disabled={busy}
                 >
-                  {busy ? "Processing…" : user ? "Begin install" : "Sign in to buy"}
+                  {busy ? t("product.processing") : user ? t("product.buy") : t("product.signInToBuy")}
                 </button>
                 <p className="buy-hint">
-                  {user
-                    ? "After purchase, go to the dashboard → My purchases → Install on a server."
-                    : "Sign in with Discord to purchase. You can browse all realms without an account."}
+                  {user ? t("product.buyHintLoggedIn") : t("product.buyHintGuest")}
                 </p>
               </div>
 
@@ -146,9 +146,9 @@ export function PublicProductPage() {
         {product?.longDescription && (
           <section className="long-desc">
             <div className="public-head">
-              <span className="eyebrow">The Chronicle</span>
+              <span className="eyebrow">{t("product.chronicleEyebrow")}</span>
               <div className="row">
-                <h2>About this realm</h2>
+                <h2>{t("product.chronicleTitle")}</h2>
                 <span className="fl" />
                 <span className="fl-end">✦</span>
               </div>
@@ -233,33 +233,34 @@ function ProductGallery({
 }
 
 function WhatsInside({ contents }: { contents: StoreContents }) {
-  const counts: { label: string; count: number; icon: string }[] = [
-    { icon: "#", label: "Channels", count: contents.channels },
-    { icon: "◈", label: "Roles", count: contents.roles },
-    { icon: "📜", label: "Messages", count: contents.messages },
-    { icon: "🎟", label: "Auto-roles", count: contents.reactionRoles },
-    { icon: "😺", label: "Emojis", count: contents.emojis },
-    { icon: "✦", label: "Welcome variants", count: contents.welcomeVariants },
+  const { t } = useTranslation()
+  const counts: { i18nKey: string; count: number; icon: string }[] = [
+    { icon: "#", i18nKey: "channels", count: contents.channels },
+    { icon: "◈", i18nKey: "roles", count: contents.roles },
+    { icon: "📜", i18nKey: "messages", count: contents.messages },
+    { icon: "🎟", i18nKey: "reactionRoles", count: contents.reactionRoles },
+    { icon: "😺", i18nKey: "emojis", count: contents.emojis },
+    { icon: "✦", i18nKey: "welcomeVariants", count: contents.welcomeVariants },
   ].filter((c) => c.count > 0)
-  const modules: { label: string; on: boolean }[] = [
-    { label: "Server stats", on: contents.serverStatsEnabled },
-    { label: "Welcome flow", on: contents.welcomeEnabled },
-    { label: "Goodbye flow", on: contents.goodbyeEnabled },
-    { label: "Leveling system", on: contents.levelingEnabled },
+  const modules: { i18nKey: string; on: boolean }[] = [
+    { i18nKey: "serverStats", on: contents.serverStatsEnabled },
+    { i18nKey: "welcome", on: contents.welcomeEnabled },
+    { i18nKey: "goodbye", on: contents.goodbyeEnabled },
+    { i18nKey: "leveling", on: contents.levelingEnabled },
   ].filter((m) => m.on)
 
   return (
     <div className="inside-block">
-      <h3>What's inside</h3>
+      <h3>{t("product.whatsInside")}</h3>
       {counts.length === 0 ? (
-        <p className="inside-empty">The realm is still being filled.</p>
+        <p className="inside-empty">{t("product.stillFilling")}</p>
       ) : (
         <ul className="inside-list">
           {counts.map((c) => (
-            <li key={c.label}>
+            <li key={c.i18nKey}>
               <span className="inside-ic">{c.icon}</span>
               <span>
-                <b>{c.count}</b> {c.label}
+                <b>{c.count}</b> {t(`product.contentLabels.${c.i18nKey}`)}
               </span>
             </li>
           ))}
@@ -268,8 +269,8 @@ function WhatsInside({ contents }: { contents: StoreContents }) {
       {modules.length > 0 && (
         <div className="inside-modules">
           {modules.map((m) => (
-            <span key={m.label} className="inside-mod">
-              ✓ {m.label}
+            <span key={m.i18nKey} className="inside-mod">
+              ✓ {t(`product.contentLabels.${m.i18nKey}`)}
             </span>
           ))}
         </div>

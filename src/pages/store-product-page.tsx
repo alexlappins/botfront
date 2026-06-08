@@ -78,10 +78,10 @@ export function StoreProductPage() {
     setSuccess(null)
     try {
       await checkoutTemplate(product.templateId)
-      setSuccess("Куплено! Установить можно в разделе «Список покупок».")
+      setSuccess("Purchased! Install from the My Purchases page.")
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
-      setError(e instanceof Error ? e.message : "Ошибка покупки")
+      setError(e instanceof Error ? e.message : "Checkout error")
     } finally {
       setBusy(false)
     }
@@ -98,10 +98,10 @@ export function StoreProductPage() {
     return (
       <div className="space-y-3">
         <Link to="/store" className="inline-flex items-center gap-1 text-sm text-white/60 hover:text-white">
-          <ArrowLeft className="h-4 w-4" /> К магазину
+          <ArrowLeft className="h-4 w-4" /> Back to shop
         </Link>
         <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-          {error ?? "Товар не найден"}
+          {error ?? "Product not found"}
         </div>
       </div>
     )
@@ -119,7 +119,7 @@ export function StoreProductPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center gap-2 text-sm text-white/50">
         <Link to="/store" className="inline-flex items-center gap-1 hover:text-white">
-          <ArrowLeft className="h-4 w-4" /> Магазин
+          <ArrowLeft className="h-4 w-4" /> Shop
         </Link>
         <span className="text-white/30">/</span>
         <span className="text-white/70 truncate">{product.name}</span>
@@ -158,7 +158,7 @@ export function StoreProductPage() {
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-white">{priceLabel}</span>
-              <span className="text-xs text-white/40">за установку</span>
+              <span className="text-xs text-white/40">per install</span>
             </div>
             <button
               type="button"
@@ -167,7 +167,7 @@ export function StoreProductPage() {
               className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-60"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {busy ? "Оформление…" : "Купить"}
+              {busy ? "Processing…" : "Buy"}
             </button>
             <p className="text-[11px] text-white/40 text-center">
               После покупки откройте «Список покупок» и нажмите «Установить» на нужном сервере.
@@ -180,7 +180,7 @@ export function StoreProductPage() {
 
       {product.longDescription && (
         <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          <h2 className="text-sm font-semibold text-white mb-2">Описание</h2>
+          <h2 className="text-sm font-semibold text-white mb-2">Description</h2>
           <div
             className="text-sm text-white/75 leading-relaxed whitespace-pre-wrap"
             dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(product.longDescription) }}
@@ -261,25 +261,25 @@ function Gallery({
 
 function WhatsInside({ contents }: { contents: StoreContents }) {
   const features: { icon: typeof Hash; label: string; on: boolean }[] = [
-    { icon: Sparkles, label: "Server Stats каналы", on: contents.serverStatsEnabled },
-    { icon: HandHeart, label: "Приветственные сообщения", on: contents.welcomeEnabled },
-    { icon: HandHeart, label: "Прощальные сообщения", on: contents.goodbyeEnabled },
-    { icon: TrendingUp, label: "Система уровней", on: contents.levelingEnabled },
+    { icon: Sparkles, label: "Server stats channels", on: contents.serverStatsEnabled },
+    { icon: HandHeart, label: "Welcome messages", on: contents.welcomeEnabled },
+    { icon: HandHeart, label: "Goodbye messages", on: contents.goodbyeEnabled },
+    { icon: TrendingUp, label: "Leveling system", on: contents.levelingEnabled },
   ]
   const counts: { icon: typeof Hash; label: string; count: number }[] = [
-    { icon: Hash, label: "Каналов", count: contents.channels },
-    { icon: Users, label: "Ролей", count: contents.roles },
-    { icon: MessageSquare, label: "Сообщений", count: contents.messages },
-    { icon: UserCog, label: "Авто-ролей", count: contents.reactionRoles },
-    { icon: Smile, label: "Эмодзи", count: contents.emojis },
-    { icon: Sticker, label: "Стикеров", count: contents.stickers },
-    { icon: HandHeart, label: "Welcome-вариантов", count: contents.welcomeVariants },
-    { icon: HandHeart, label: "Goodbye-вариантов", count: contents.goodbyeVariants },
+    { icon: Hash, label: "Channels", count: contents.channels },
+    { icon: Users, label: "Roles", count: contents.roles },
+    { icon: MessageSquare, label: "Messages", count: contents.messages },
+    { icon: UserCog, label: "Auto-roles", count: contents.reactionRoles },
+    { icon: Smile, label: "Emojis", count: contents.emojis },
+    { icon: Sticker, label: "Stickers", count: contents.stickers },
+    { icon: HandHeart, label: "Welcome variants", count: contents.welcomeVariants },
+    { icon: HandHeart, label: "Goodbye variants", count: contents.goodbyeVariants },
   ].filter((c) => c.count > 0)
 
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
-      <h3 className="text-xs font-semibold text-white/75 uppercase tracking-wide">Что внутри</h3>
+      <h3 className="text-xs font-semibold text-white/75 uppercase tracking-wide">What's inside</h3>
       {counts.length > 0 ? (
         <div className="grid grid-cols-2 gap-2">
           {counts.map((c, i) => (
@@ -293,7 +293,7 @@ function WhatsInside({ contents }: { contents: StoreContents }) {
         </div>
       ) : (
         <p className="text-xs text-white/40 flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" /> Пока пусто — автор шаблона ещё не заполнил содержимое.
+          <AlertTriangle className="h-3 w-3" /> Empty for now — the template author hasn't filled it yet.
         </p>
       )}
       {features.some((f) => f.on) && (

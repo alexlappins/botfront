@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import { PublicShell } from "@/components/public-shell"
 import {
   getStoreFacets,
@@ -20,12 +21,14 @@ const CATEGORY_LABELS: Record<StoreCategory, string> = {
   other: "Other",
 }
 
-const SORT_OPTIONS: { key: StoreSort; label: string }[] = [
-  { key: "newest", label: "Newest" },
-  { key: "popular", label: "Popular" },
-  { key: "price_asc", label: "Price ↑" },
-  { key: "price_desc", label: "Price ↓" },
-]
+const SORT_KEYS: StoreSort[] = ["newest", "popular", "price_asc", "price_desc"]
+/** Map sort key → i18n leaf for the label. */
+const SORT_I18N: Record<StoreSort, string> = {
+  newest: "shop.sort.newest",
+  popular: "shop.sort.popular",
+  price_asc: "shop.sort.priceAsc",
+  price_desc: "shop.sort.priceDesc",
+}
 
 const PAGE_SIZE = 24
 
@@ -41,6 +44,7 @@ export function PublicShopPage() {
   const [facets, setFacets] = useState<StoreFacets>({ categories: [], tags: [] })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const [query, setQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
@@ -114,12 +118,9 @@ export function PublicShopPage() {
       {/* Heading band */}
       <header className="shop-hero">
         <div className="public-wrap shop-hero-in">
-          <span className="shop-eyebrow">The Merchant</span>
-          <h1>The Shop</h1>
-          <p className="shop-sub">
-            Ready-forged Discord realms — channels, roles, welcome flow, leveling and live alerts.
-            Browse without an account; install after sign-in.
-          </p>
+          <span className="shop-eyebrow">{t("shop.eyebrow")}</span>
+          <h1>{t("shop.title")}</h1>
+          <p className="shop-sub">{t("shop.sub")}</p>
         </div>
       </header>
 
@@ -128,9 +129,9 @@ export function PublicShopPage() {
         <section className="public-section" style={{ paddingTop: 40, paddingBottom: 40 }}>
           <div className="public-wrap">
             <div className="public-head">
-              <span className="eyebrow">Curated</span>
+              <span className="eyebrow">{t("shop.featuredEyebrow")}</span>
               <div className="row">
-                <h2>Featured Realms</h2>
+                <h2>{t("shop.featuredTitle")}</h2>
                 <span className="fl" />
                 <span className="fl-end">✦</span>
               </div>
@@ -148,7 +149,10 @@ export function PublicShopPage() {
                   </div>
                   <div className="ft-body">
                     <h4>{p.name}</h4>
-                    <p>{p.description ?? "Без описания"}</p>
+                    {/* `description` is admin-authored — not part of the
+                        UI string set we translate. Empty placeholder uses
+                        the i18n key. */}
+                    <p>{p.description ?? "—"}</p>
                     <div className="ft-foot">
                       <span className="ft-price">{priceLabel(p)}</span>
                       <span className="ft-cat">{p.category ? CATEGORY_LABELS[p.category] : ""}</span>
@@ -165,9 +169,9 @@ export function PublicShopPage() {
       <section className="public-section" style={{ paddingTop: 20 }}>
         <div className="public-wrap">
           <div className="public-head">
-            <span className="eyebrow">Catalogue</span>
+            <span className="eyebrow">{t("shop.catalogueEyebrow")}</span>
             <div className="row">
-              <h2>All Realms</h2>
+              <h2>{t("shop.catalogueTitle")}</h2>
               <span className="fl" />
               <span className="fl-end">✦</span>
             </div>
@@ -181,7 +185,7 @@ export function PublicShopPage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search realms…"
+                placeholder={t("shop.searchPlaceholder")}
               />
             </div>
             <select
@@ -189,9 +193,9 @@ export function PublicShopPage() {
               onChange={(e) => setSort(e.target.value as StoreSort)}
               className="shop-select"
             >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.label}
+              {SORT_KEYS.map((k) => (
+                <option key={k} value={k}>
+                  {t(SORT_I18N[k])}
                 </option>
               ))}
             </select>
@@ -206,7 +210,7 @@ export function PublicShopPage() {
                   setSelectedTags(new Set())
                 }}
               >
-                ✕ Reset
+                ✕ {t("shop.reset")}
               </button>
             )}
           </div>
@@ -218,7 +222,7 @@ export function PublicShopPage() {
                 className={"shop-chip " + (category === undefined ? "on" : "")}
                 onClick={() => setCategory(undefined)}
               >
-                All
+                {t("shop.all")}
               </button>
               {facets.categories.map((c) => (
                 <button
@@ -236,21 +240,23 @@ export function PublicShopPage() {
 
           {topTags.length > 0 && (
             <div className="shop-chips shop-chips-tags">
-              {topTags.map((t) => {
-                const on = selectedTags.has(t.tag)
+              {/* Renamed `t` callback param → `tg` to avoid shadowing
+                  the useTranslation()'s `t` function. */}
+              {topTags.map((tg) => {
+                const on = selectedTags.has(tg.tag)
                 return (
                   <button
-                    key={t.tag}
+                    key={tg.tag}
                     type="button"
                     className={"shop-chip shop-chip-sm " + (on ? "on" : "")}
                     onClick={() => {
                       const next = new Set(selectedTags)
-                      on ? next.delete(t.tag) : next.add(t.tag)
+                      on ? next.delete(tg.tag) : next.add(tg.tag)
                       setSelectedTags(next)
                     }}
                   >
-                    {t.tag}
-                    <span className="shop-chip-count"> ({t.count})</span>
+                    {tg.tag}
+                    <span className="shop-chip-count"> ({tg.count})</span>
                   </button>
                 )
               })}
@@ -262,10 +268,10 @@ export function PublicShopPage() {
             <div className="shop-error">{error}</div>
           )}
           {loading ? (
-            <div className="shop-loading">⌛ summoning realms…</div>
+            <div className="shop-loading">{t("shop.loadingRealms")}</div>
           ) : items.length === 0 ? (
             <div className="empty-state" style={{ marginTop: 32 }}>
-              {filtersActive ? "По таким фильтрам ничего не нашлось." : "Магазин пока пуст."}
+              {filtersActive ? t("shop.noResults") : t("shop.empty")}
             </div>
           ) : (
             <>
@@ -286,19 +292,19 @@ export function PublicShopPage() {
                     </div>
                     <div className="prod-body">
                       <h4>{p.name}</h4>
-                      <p>{p.description ?? "Без описания"}</p>
+                      <p>{p.description ?? "—"}</p>
                       {(p.tags?.length ?? 0) > 0 && (
                         <div className="prod-tags">
-                          {p.tags!.slice(0, 3).map((t) => (
-                            <span key={t} className="prod-tag">
-                              {t}
+                          {p.tags!.slice(0, 3).map((tg) => (
+                            <span key={tg} className="prod-tag">
+                              {tg}
                             </span>
                           ))}
                         </div>
                       )}
                       <div className="prod-foot">
                         <span className="prod-price">{priceLabel(p)}</span>
-                        <span className="prod-cta">View →</span>
+                        <span className="prod-cta">{t("common.next")} →</span>
                       </div>
                     </div>
                   </Link>
@@ -308,7 +314,7 @@ export function PublicShopPage() {
               {totalPages > 1 && (
                 <div className="shop-pager">
                   <span>
-                    {total.toLocaleString("en-US")} realms · page {page + 1} / {totalPages}
+                    {total.toLocaleString("en-US")} {t("shop.realmsLeft")} · {t("shop.page")} {page + 1} / {totalPages}
                   </span>
                   <div className="pager-buttons">
                     <button
@@ -316,14 +322,14 @@ export function PublicShopPage() {
                       onClick={() => setPage(Math.max(0, page - 1))}
                       disabled={page === 0}
                     >
-                      ← Prev
+                      ← {t("common.back")}
                     </button>
                     <button
                       type="button"
                       onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                       disabled={page >= totalPages - 1}
                     >
-                      Next →
+                      {t("common.next")} →
                     </button>
                   </div>
                 </div>

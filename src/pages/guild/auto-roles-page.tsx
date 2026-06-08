@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils"
  *               buttons editor mirroring real Discord component edits.
  */
 export function GuildAutoRolesPage() {
+  const { t } = useTranslation()
   const guildId = useCurrentGuildId()
   // Buttons is the most-used sub-section, so it's the default tab.
   const [tab, setTab] = useState<"reactions" | "buttons">("buttons")
@@ -63,7 +65,7 @@ export function GuildAutoRolesPage() {
       setBindings(b)
       setRoles(r)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Loading error")
+      setError(e instanceof Error ? e.message : t("reactionRoles.loadError"))
     } finally {
       setLoading(false)
     }
@@ -77,7 +79,7 @@ export function GuildAutoRolesPage() {
   if (!guildId) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-        <p className="text-white/60">Выберите сервер в селекторе слева вверху.</p>
+        <p className="text-white/60">{t("reactionRoles.selectServer")}</p>
       </div>
     )
   }
@@ -95,22 +97,20 @@ export function GuildAutoRolesPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Smile className="h-7 w-7 text-violet-400" />
-          Роли по реакции
+          {t("reactionRoles.title")}
         </h1>
-        <p className="text-sm text-white/50 mt-1">
-          Управление реакциями и кнопками, которые выдают роли участникам.
-        </p>
+        <p className="text-sm text-white/50 mt-1">{t("reactionRoles.sub")}</p>
       </div>
 
       <div className="flex gap-2 border-b border-white/5">
         <TabBtn active={tab === "buttons"} onClick={() => setTab("buttons")}>
-          Кнопки
+          {t("reactionRoles.tabs.buttons")}
           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
             {messages.length}
           </span>
         </TabBtn>
         <TabBtn active={tab === "reactions"} onClick={() => setTab("reactions")}>
-          Реакции
+          {t("reactionRoles.tabs.reactions")}
           <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60">
             {bindings.length}
           </span>
@@ -180,6 +180,7 @@ function ReactionsTab({
   roles: GuildRole[]
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   const [msgId, setMsgId] = useState("")
   const [emoji, setEmoji] = useState("")
   const [roleId, setRoleId] = useState("")
@@ -194,12 +195,12 @@ function ReactionsTab({
     const m = messages.find(
       (x) => x.discordMessageId === b.discordMessageId && x.discordChannelId === b.discordChannelId,
     )
-    return m ? `#${m.channelName}` : `(channel ${b.discordChannelId})`
+    return m ? `#${m.channelName}` : t("reactionRoles.reactions.channelFallback", { id: b.discordChannelId })
   }
 
   async function handleAdd() {
     if (!msgId || !emoji.trim() || !roleId) {
-      setAddErr("Pick message, emoji and role")
+      setAddErr(t("reactionRoles.reactions.missingFields"))
       return
     }
     const msg = messages.find((m) => m.id === msgId)
@@ -217,14 +218,14 @@ function ReactionsTab({
       setRoleId("")
       onChanged()
     } catch (e) {
-      setAddErr(e instanceof Error ? e.message : "Failed to add")
+      setAddErr(e instanceof Error ? e.message : t("reactionRoles.reactions.addFailed"))
     } finally {
       setAdding(false)
     }
   }
 
   async function handleRemove(rrId: string) {
-    if (!confirm("Remove this binding?")) return
+    if (!confirm(t("reactionRoles.reactions.confirmRemove"))) return
     try {
       await deleteGuildReactionRole(guildId, rrId)
       onChanged()
@@ -237,14 +238,12 @@ function ReactionsTab({
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Активные привязки</CardTitle>
-          <CardDescription>
-            Все привязки эмодзи → роль на этом сервере. Удаление снимает реакцию бота с сообщения.
-          </CardDescription>
+          <CardTitle>{t("reactionRoles.reactions.activeTitle")}</CardTitle>
+          <CardDescription>{t("reactionRoles.reactions.activeDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           {bindings.length === 0 ? (
-            <p className="text-sm text-white/50">Привязок пока нет.</p>
+            <p className="text-sm text-white/50">{t("reactionRoles.reactions.empty")}</p>
           ) : (
             <div className="space-y-2">
               {bindings.map((b) => (
@@ -275,25 +274,25 @@ function ReactionsTab({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Добавить привязку
+            {t("reactionRoles.reactions.addTitle")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid gap-3 md:grid-cols-3">
             <div className="grid gap-1">
-              <Label className="text-xs">Сообщение</Label>
+              <Label className="text-xs">{t("reactionRoles.reactions.message")}</Label>
               {messages.length === 0 ? (
-                <p className="text-xs text-white/50">Нет сообщений — установите шаблон.</p>
+                <p className="text-xs text-white/50">{t("reactionRoles.reactions.noMessages")}</p>
               ) : (
                 <Select
                   value={msgId || "__none__"}
                   onValueChange={(v) => setMsgId(v === "__none__" ? "" : v)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите сообщение" />
+                    <SelectValue placeholder={t("reactionRoles.reactions.pickMessage")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">Не выбрано</SelectItem>
+                    <SelectItem value="__none__">{t("reactionRoles.reactions.notSelected")}</SelectItem>
                     {messages.map((m) => (
                       <SelectItem key={m.id} value={m.id}>
                         #{m.channelName} · {m.content?.slice(0, 30) || "(embed)"}
@@ -304,24 +303,24 @@ function ReactionsTab({
               )}
             </div>
             <div className="grid gap-1">
-              <Label className="text-xs">Эмодзи</Label>
+              <Label className="text-xs">{t("reactionRoles.reactions.emoji")}</Label>
               <Input
                 value={emoji}
                 onChange={(e) => setEmoji(e.target.value)}
-                placeholder="✅ или ID кастомного эмодзи"
+                placeholder={t("reactionRoles.reactions.emojiPlaceholder")}
               />
             </div>
             <div className="grid gap-1">
-              <Label className="text-xs">Роль</Label>
+              <Label className="text-xs">{t("reactionRoles.reactions.role")}</Label>
               <Select
                 value={roleId || "__none__"}
                 onValueChange={(v) => setRoleId(v === "__none__" ? "" : v)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Выберите роль" />
+                  <SelectValue placeholder={t("reactionRoles.reactions.pickRole")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__none__">Не выбрано</SelectItem>
+                  <SelectItem value="__none__">{t("reactionRoles.reactions.notSelected")}</SelectItem>
                   {roles.map((r) => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.name}
@@ -339,7 +338,7 @@ function ReactionsTab({
             onClick={() => void handleAdd()}
             disabled={adding || !msgId || !emoji.trim() || !roleId}
           >
-            {adding ? "Добавление…" : "Добавить"}
+            {adding ? t("reactionRoles.reactions.adding") : t("reactionRoles.reactions.add")}
           </Button>
         </CardContent>
       </Card>
@@ -360,6 +359,7 @@ function ButtonsTab({
   roles: GuildRole[]
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   // Local per-message buttons state — like in admin template editor
   const [buttonsByMsg, setButtonsByMsg] = useState<Record<string, SelfRoleButtonDraft[]>>(() => {
     const initial: Record<string, SelfRoleButtonDraft[]> = {}
@@ -408,7 +408,7 @@ function ButtonsTab({
     } catch (e) {
       setErrByMsg((p) => ({
         ...p,
-        [msgId]: e instanceof Error ? e.message : "Failed to save",
+        [msgId]: e instanceof Error ? e.message : t("reactionRoles.buttons.saveFailed"),
       }))
     } finally {
       setSavingMsgId(null)
@@ -419,7 +419,7 @@ function ButtonsTab({
     return (
       <Card>
         <CardContent className="py-12 text-center text-white/50">
-          Нет сообщений на этом сервере. Установите шаблон, чтобы здесь появились сообщения.
+          {t("reactionRoles.buttons.empty")}
         </CardContent>
       </Card>
     )
@@ -427,10 +427,7 @@ function ButtonsTab({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-white/50">
-        У каждого сообщения свои кнопки — добавляются и сохраняются независимо. Клик по сообщению
-        раскрывает редактор.
-      </p>
+      <p className="text-xs text-white/50">{t("reactionRoles.buttons.intro")}</p>
       {messages.map((m) => {
         const btns = buttonsByMsg[m.id] ?? []
         const isOpen = expandedMsgs.has(m.id)
@@ -447,20 +444,25 @@ function ButtonsTab({
               className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.05]"
             >
               <div className="flex items-center gap-2 min-w-0">
+                {/* Lead with the embed title (or content preview if no embed)
+                    — same reasoning as on the Server Messages page: every
+                    message looked identical when only the channel name showed. */}
                 <span className="text-sm font-medium text-white truncate">
-                  #{m.channelName}
+                  {pickAutoRoleHeader(m)}
                 </span>
                 <span className="text-xs text-white/40 truncate">
-                  {m.content?.slice(0, 50) || "(embed)"}
+                  #{m.channelName}
                 </span>
                 {btns.length > 0 && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 ml-2">
-                    {btns.length} {btns.length === 1 ? "кнопка" : "кнопок"}
+                    {btns.length === 1
+                      ? t("reactionRoles.buttons.countOne", { count: btns.length })
+                      : t("reactionRoles.buttons.countMany", { count: btns.length })}
                   </span>
                 )}
               </div>
               <span className="text-xs text-white/40 shrink-0">
-                {isOpen ? "▲ скрыть" : "▼ редактировать"}
+                {isOpen ? t("reactionRoles.buttons.hide") : t("reactionRoles.buttons.edit")}
               </span>
             </button>
             {isOpen && (
@@ -472,7 +474,7 @@ function ButtonsTab({
                 />
                 {err && <p className="text-sm text-red-400">{err}</p>}
                 <Button size="sm" onClick={() => void handleSave(m.id)} disabled={isSaving}>
-                  {isSaving ? "Сохранение…" : "Сохранить кнопки этого сообщения"}
+                  {isSaving ? t("reactionRoles.buttons.saving") : t("reactionRoles.buttons.save")}
                 </Button>
               </div>
             )}
@@ -481,4 +483,19 @@ function ButtonsTab({
       })}
     </div>
   )
+}
+
+/**
+ * Pick the most informative single-line label for the collapsed row.
+ * Order: embed.title → content preview → channel name (last resort).
+ * The embed JSON is stored as plain object; we read .title without typing
+ * the whole Discord embed shape here.
+ */
+function pickAutoRoleHeader(m: GuildMessage): string {
+  const embed = m.embedJson as { title?: unknown } | null
+  const title = typeof embed?.title === "string" ? embed.title.trim() : ""
+  if (title) return title
+  const content = m.content?.trim()
+  if (content) return content.slice(0, 60)
+  return `#${m.channelName}`
 }

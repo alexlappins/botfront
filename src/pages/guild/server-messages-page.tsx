@@ -217,7 +217,14 @@ function ServerMessageCard({
   // Collapsed by default — compact list, expand a single card for editing.
   const [open, setOpen] = useState(false)
 
+  // Collapsed header: lead with the embed title (what the user authored), so
+  // a list of 10 messages is scannable. Channel name was useless — most users
+  // post everything in one channel and saw the same "#announcements" ten times.
   const previewText = (content || message.content || "").trim().slice(0, 60)
+  const collapsedLabel =
+    embedForm.title?.trim() ||
+    previewText ||
+    `#${message.channelName}`
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
@@ -227,8 +234,8 @@ function ServerMessageCard({
         className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.05]"
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-sm font-medium text-white truncate">#{message.channelName}</span>
-          <span className="text-xs text-white/40 truncate">{previewText || "(embed)"}</span>
+          <span className="text-sm font-medium text-white truncate">{collapsedLabel}</span>
+          <span className="text-xs text-white/40 truncate">#{message.channelName}</span>
         </div>
         <span className="text-xs text-white/40 shrink-0">
           {open ? "▲ скрыть" : "▼ редактировать"}
@@ -395,7 +402,7 @@ function CreateMessageModal({
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
-      <div className="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+      <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
           <h2 className="text-base font-semibold text-white">Новое сообщение</h2>
           <button
@@ -414,11 +421,17 @@ function CreateMessageModal({
             <select
               value={channelId}
               onChange={(e) => setChannelId(e.target.value)}
-              className="rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
             >
-              <option value="">Выберите канал</option>
+              {/* Native <option> dropdowns are OS-rendered and ignore most
+                  CSS, but browsers do honour explicit background/colour set
+                  on the option itself — so the open list matches the panel
+                  instead of flashing default white. */}
+              <option value="" style={{ background: "#15151f", color: "#fff" }}>
+                Выберите канал
+              </option>
               {textChannels.map((c) => (
-                <option key={c.id} value={c.id}>
+                <option key={c.id} value={c.id} style={{ background: "#15151f", color: "#fff" }}>
                   # {c.name}
                 </option>
               ))}

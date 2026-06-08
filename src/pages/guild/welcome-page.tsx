@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { HandHeart, Loader2, Plus, Send, Wand2 } from "lucide-react"
 import {
   ApiError,
@@ -26,13 +27,16 @@ import {
 
 type Tab = "welcome" | "goodbye"
 
-const VARIABLES: { key: string; desc: string }[] = [
-  { key: "{user}", desc: "Упоминание пользователя (@username)" },
-  { key: "{user.name}", desc: "Имя пользователя без @" },
-  { key: "{user.tag}", desc: "Имя с дискриминатором" },
-  { key: "{user.id}", desc: "ID пользователя" },
-  { key: "{server.name}", desc: "Название сервера" },
-  { key: "{server.memberCount}", desc: "Кол-во участников" },
+/** Variable keys are placeholders the bot substitutes at runtime — they are
+ *  user-visible code, not translatable. The human-readable description IS
+ *  translated (see welcome.variables.* in the locale files). */
+const VARIABLES: { key: string; i18nKey: string }[] = [
+  { key: "{user}", i18nKey: "user" },
+  { key: "{user.name}", i18nKey: "userName" },
+  { key: "{user.tag}", i18nKey: "userTag" },
+  { key: "{user.id}", i18nKey: "userId" },
+  { key: "{server.name}", i18nKey: "serverName" },
+  { key: "{server.memberCount}", i18nKey: "serverMemberCount" },
 ]
 
 const DEFAULT_WELCOME_TEXT = "Привет, {user}! Добро пожаловать на **{server.name}** 🎉"
@@ -42,6 +46,7 @@ const DEFAULT_GOODBYE_TEXT =
 
 export function WelcomePage() {
   const guildId = useCurrentGuildId()
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>("welcome")
   const [channels, setChannels] = useState<Channel[]>([])
   const [welcome, setWelcome] = useState<WelcomeConfig | null>(null)
@@ -64,9 +69,9 @@ export function WelcomePage() {
       .catch((e) => {
         if (!alive) return
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-          setError("Нет доступа к серверу.")
+          setError(t("common.noAccess"))
         } else {
-          setError(e instanceof Error ? e.message : "Ошибка загрузки")
+          setError(e instanceof Error ? e.message : t("welcome.loadError"))
         }
       })
       .finally(() => {
@@ -80,7 +85,7 @@ export function WelcomePage() {
   if (!guildId) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-        <p className="text-white/60">Выберите сервер в селекторе слева вверху.</p>
+        <p className="text-white/60">{t("common.selectServer")}</p>
       </div>
     )
   }
@@ -90,28 +95,26 @@ export function WelcomePage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <HandHeart className="h-7 w-7 text-violet-400" />
-          Приветствия
+          {t("welcome.title")}
         </h1>
-        <p className="text-sm text-white/50 mt-1">
-          Сообщения при входе и выходе участников. Каждый вариант — полноценная копия со своим
-          текстом, картинкой и кнопками. При срабатывании бот выбирает один вариант случайно.
-        </p>
+        <p className="text-sm text-white/50 mt-1">{t("welcome.sub")}</p>
       </div>
 
       <div className="flex items-center gap-2 border-b border-white/5">
-        {(["welcome", "goodbye"] as Tab[]).map((t) => (
+        {/* Renamed callback param `t` → `tk` to avoid shadowing useTranslation's t. */}
+        {(["welcome", "goodbye"] as Tab[]).map((tk) => (
           <button
-            key={t}
+            key={tk}
             type="button"
-            onClick={() => setTab(t)}
+            onClick={() => setTab(tk)}
             className={cn(
               "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-              tab === t
+              tab === tk
                 ? "border-violet-500 text-white"
                 : "border-transparent text-white/50 hover:text-white/80",
             )}
           >
-            {t === "welcome" ? "Welcome" : "Goodbye"}
+            {t(`welcome.tabs.${tk}`)}
           </button>
         ))}
       </div>
@@ -182,6 +185,7 @@ function WelcomeTab({
   value: WelcomeConfig
   onChange: (next: WelcomeConfig) => void
 }) {
+  const { t } = useTranslation()
   const [enabled, setEnabled] = useState(value.enabled)
   const [sendMode, setSendMode] = useState<"channel" | "dm">(value.sendMode)
   const [channelId, setChannelId] = useState<string | null>(value.channelId)
@@ -237,9 +241,9 @@ function WelcomeTab({
           .sort((a, b) => a.orderIndex - b.orderIndex)
           .map(welcomeVariantToState),
       )
-      setFlashAuto("ok", "Сохранено")
+      setFlashAuto("ok", t("common.saved"))
     } catch (e) {
-      setFlashAuto("err", e instanceof Error ? e.message : "Ошибка сохранения")
+      setFlashAuto("err", e instanceof Error ? e.message : t("welcome.saveError"))
     } finally {
       setSaving(false)
     }
@@ -249,9 +253,9 @@ function WelcomeTab({
     setTesting(variantId ?? "any")
     try {
       await testWelcomeMessage(guildId, { variantId, returning })
-      setFlashAuto("ok", "Тестовое сообщение отправлено")
+      setFlashAuto("ok", t("welcome.testSent"))
     } catch (e) {
-      setFlashAuto("err", e instanceof Error ? e.message : "Не удалось отправить")
+      setFlashAuto("err", e instanceof Error ? e.message : t("welcome.testFailed"))
     } finally {
       setTesting(null)
     }
@@ -263,17 +267,15 @@ function WelcomeTab({
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-white">Включено</p>
-              <p className="text-xs text-white/50 mt-0.5">
-                Отправлять приветствие при входе нового участника
-              </p>
+              <p className="text-sm font-semibold text-white">{t("welcome.enabledTitle")}</p>
+              <p className="text-xs text-white/50 mt-0.5">{t("welcome.enabledSubWelcome")}</p>
             </div>
             <Toggle checked={enabled} onChange={setEnabled} />
           </div>
         </Card>
 
         <Card>
-          <p className="text-sm font-semibold text-white mb-3">Куда отправлять</p>
+          <p className="text-sm font-semibold text-white mb-3">{t("welcome.sendTo")}</p>
           <div className="flex gap-2 mb-4">
             {(["channel", "dm"] as const).map((m) => (
               <button
@@ -287,7 +289,7 @@ function WelcomeTab({
                     : "border-white/10 text-white/60 hover:bg-white/5",
                 )}
               >
-                {m === "channel" ? "В канал" : "В личные сообщения"}
+                {t(`welcome.sendMode.${m}`)}
               </button>
             ))}
           </div>
@@ -296,20 +298,17 @@ function WelcomeTab({
               channels={channels}
               value={channelId}
               onChange={setChannelId}
-              placeholder="Выберите канал"
+              placeholder={t("welcome.channelPlaceholder")}
             />
           )}
           {sendMode === "dm" && (
-            <p className="text-xs text-white/50">
-              Бот напишет в ЛС нового участника. Если у пользователя выключены ЛС от незнакомцев —
-              сообщение не дойдёт.
-            </p>
+            <p className="text-xs text-white/50">{t("welcome.dmHint")}</p>
           )}
         </Card>
 
         <VariantsList
-          title="Приветствие новых участников"
-          subtitle="До 5 вариантов. Бот выберет один случайно."
+          title={t("welcome.variants.newWelcomeTitle")}
+          subtitle={t("welcome.variants.subtitle")}
           variants={newVariants}
           onChange={setNewVariants}
           defaultText={DEFAULT_WELCOME_TEXT}
@@ -322,13 +321,8 @@ function WelcomeTab({
         <Card>
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-sm font-semibold text-white">
-                Возвращающиеся участники
-              </p>
-              <p className="text-xs text-white/50 mt-0.5">
-                Отдельный пул вариантов для тех, кто уже был на сервере. Полный набор настроек как
-                у обычного приветствия.
-              </p>
+              <p className="text-sm font-semibold text-white">{t("welcome.returning.title")}</p>
+              <p className="text-xs text-white/50 mt-0.5">{t("welcome.returning.sub")}</p>
             </div>
             <Toggle checked={returningEnabled} onChange={setReturningEnabled} />
           </div>
@@ -360,17 +354,17 @@ function WelcomeTab({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            Сохранить
+            {t("welcome.actions.save")}
           </button>
           <button
             type="button"
             onClick={() => handleTest()}
             disabled={!!testing || !enabled}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-sm font-medium disabled:opacity-50"
-            title={!enabled ? "Включите приветствие, чтобы тестировать" : ""}
+            title={!enabled ? t("welcome.actions.testDisabledHint") : ""}
           >
             {testing === "any" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Случайный тест
+            {t("welcome.actions.testRandom")}
           </button>
         </div>
 
@@ -395,6 +389,7 @@ function GoodbyeTab({
   value: GoodbyeConfig
   onChange: (next: GoodbyeConfig) => void
 }) {
+  const { t } = useTranslation()
   const [enabled, setEnabled] = useState(value.enabled)
   const [channelId, setChannelId] = useState<string | null>(value.channelId)
   const [variants, setVariants] = useState<VariantState[]>(() => {
@@ -425,9 +420,9 @@ function GoodbyeTab({
       setVariants(
         next.templates.sort((a, b) => a.orderIndex - b.orderIndex).map(goodbyeVariantToState),
       )
-      setFlashAuto("ok", "Сохранено")
+      setFlashAuto("ok", t("common.saved"))
     } catch (e) {
-      setFlashAuto("err", e instanceof Error ? e.message : "Ошибка сохранения")
+      setFlashAuto("err", e instanceof Error ? e.message : t("welcome.saveError"))
     } finally {
       setSaving(false)
     }
@@ -437,9 +432,9 @@ function GoodbyeTab({
     setTesting(variantId ?? "any")
     try {
       await testGoodbyeMessage(guildId, { variantId })
-      setFlashAuto("ok", "Тестовое сообщение отправлено")
+      setFlashAuto("ok", t("welcome.testSent"))
     } catch (e) {
-      setFlashAuto("err", e instanceof Error ? e.message : "Не удалось отправить")
+      setFlashAuto("err", e instanceof Error ? e.message : t("welcome.testFailed"))
     } finally {
       setTesting(null)
     }
@@ -451,28 +446,26 @@ function GoodbyeTab({
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-white">Включено</p>
-              <p className="text-xs text-white/50 mt-0.5">
-                Сообщать в канал, когда участник покидает сервер
-              </p>
+              <p className="text-sm font-semibold text-white">{t("welcome.enabledTitle")}</p>
+              <p className="text-xs text-white/50 mt-0.5">{t("welcome.enabledSubGoodbye")}</p>
             </div>
             <Toggle checked={enabled} onChange={setEnabled} />
           </div>
         </Card>
 
         <Card>
-          <p className="text-sm font-semibold text-white mb-3">Канал</p>
+          <p className="text-sm font-semibold text-white mb-3">{t("welcome.channel")}</p>
           <ChannelPicker
             channels={channels}
             value={channelId}
             onChange={setChannelId}
-            placeholder="Выберите канал"
+            placeholder={t("welcome.channelPlaceholder")}
           />
         </Card>
 
         <VariantsList
-          title="Прощания"
-          subtitle="До 5 вариантов. Бот выберет один случайно."
+          title={t("welcome.variants.goodbyeTitle")}
+          subtitle={t("welcome.variants.subtitle")}
           variants={variants}
           onChange={setVariants}
           defaultText={DEFAULT_GOODBYE_TEXT}
@@ -495,7 +488,7 @@ function GoodbyeTab({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-            Сохранить
+            {t("welcome.actions.save")}
           </button>
           <button
             type="button"
@@ -504,7 +497,7 @@ function GoodbyeTab({
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-sm font-medium disabled:opacity-50"
           >
             {testing === "any" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Случайный тест
+            {t("welcome.actions.testRandom")}
           </button>
         </div>
 
@@ -669,6 +662,7 @@ function ChannelPicker({
 }
 
 function VariablesList() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   return (
     <div className="rounded-2xl bg-[#11111c] border border-white/5 overflow-hidden">
@@ -677,7 +671,7 @@ function VariablesList() {
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-white"
       >
-        <span>Переменные</span>
+        <span>{t("welcome.variablesHeading")}</span>
         <span className="text-white/40">{open ? "−" : "+"}</span>
       </button>
       {open && (
@@ -685,7 +679,7 @@ function VariablesList() {
           {VARIABLES.map((v) => (
             <li key={v.key} className="flex items-baseline gap-2">
               <code className="text-violet-300">{v.key}</code>
-              <span className="text-white/50">— {v.desc}</span>
+              <span className="text-white/50">— {t(`welcome.variables.${v.i18nKey}`)}</span>
             </li>
           ))}
         </ul>

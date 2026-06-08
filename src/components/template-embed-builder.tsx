@@ -600,37 +600,9 @@ export function TemplateEmbedBuilder({ form, onChange }: { form: EmbedFormState;
           </p>
         ) : null}
 
-        <div className="border-t border-[hsl(var(--border))] pt-4 space-y-3">
-          <Label className="text-[11px] font-semibold uppercase tracking-wide text-[hsl(var(--muted-foreground))]">
-            Footer
-          </Label>
-          <div className="flex flex-wrap items-start gap-3">
-            <div
-              className={cn(
-                dashedMediaBox,
-                "h-12 w-12 min-h-0 shrink-0 rounded-full p-0"
-              )}
-            >
-              {form.footerIconUrl.trim() ? (
-                <img src={form.footerIconUrl.trim()} alt="" className="h-10 w-10 rounded-full object-cover" />
-              ) : (
-                <ImageIcon className="h-5 w-5 opacity-40" />
-              )}
-            </div>
-            <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-              <Input
-                value={form.footerIconUrl}
-                onChange={(e) => patch({ footerIconUrl: e.target.value })}
-                placeholder="Footer icon (URL)"
-              />
-              <Input
-                value={form.footerText}
-                onChange={(e) => patch({ footerText: e.target.value })}
-                placeholder="Footer text"
-              />
-            </div>
-          </div>
-        </div>
+        {/* Footer block intentionally not rendered — kept in the form state
+            and serialiser so already-saved messages with a footer survive
+            roundtrip, but admins can't add one in the UI per spec. */}
 
       </div>
 

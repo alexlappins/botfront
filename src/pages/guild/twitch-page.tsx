@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import {
   AlertCircle,
   ChevronDown,
@@ -37,13 +38,15 @@ const PREVIEW_VARS: Record<string, string> = {
   started_at: new Date().toISOString(),
 }
 
-const VARIABLE_HINTS: { key: string; desc: string }[] = [
-  { key: "{streamer}", desc: "Имя стримера" },
-  { key: "{title}", desc: "Название стрима" },
-  { key: "{game}", desc: "Категория / игра" },
-  { key: "{url}", desc: "Ссылка на канал" },
-  { key: "{viewers}", desc: "Зрители (число)" },
-  { key: "{started_at}", desc: "Время старта (ISO)" },
+/** Variable placeholders are bot-runtime constants; only the description
+ *  (looked up via i18n key) is translatable. */
+const VARIABLE_HINTS: { key: string; i18nKey: string }[] = [
+  { key: "{streamer}", i18nKey: "streamer" },
+  { key: "{title}", i18nKey: "title" },
+  { key: "{game}", i18nKey: "game" },
+  { key: "{url}", i18nKey: "url" },
+  { key: "{viewers}", i18nKey: "viewers" },
+  { key: "{started_at}", i18nKey: "started_at" },
 ]
 
 const DEFAULT_TITLE_TPL = "{streamer} is live on Twitch!"
@@ -63,6 +66,7 @@ function isTextChannel(c: Channel): boolean {
 
 export function TwitchPage() {
   const guildId = useCurrentGuildId()
+  const { t } = useTranslation()
   const [state, setState] = useState<TwitchListResponse | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
   const [loading, setLoading] = useState(true)
@@ -73,14 +77,14 @@ export function TwitchPage() {
     setLoading(true)
     setError(null)
     try {
-      const [t, ch] = await Promise.all([getTwitchSubscriptions(guildId), getChannels(guildId)])
-      setState(t)
+      const [resp, ch] = await Promise.all([getTwitchSubscriptions(guildId), getChannels(guildId)])
+      setState(resp)
       setChannels(ch)
     } catch (e) {
       if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-        setError("Нет доступа к серверу.")
+        setError(t("common.noAccess"))
       } else {
-        setError(e instanceof Error ? e.message : "Ошибка загрузки")
+        setError(e instanceof Error ? e.message : t("twitch.loadError"))
       }
     } finally {
       setLoading(false)
@@ -95,7 +99,7 @@ export function TwitchPage() {
   if (!guildId) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-        <p className="text-white/60">Выберите сервер в селекторе слева.</p>
+        <p className="text-white/60">{t("common.selectServer")}</p>
       </div>
     )
   }
@@ -105,10 +109,10 @@ export function TwitchPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Twitch className="h-7 w-7 text-violet-400" />
-          Twitch live-уведомления
+          {t("twitch.title")}
         </h1>
         <p className="text-sm text-white/50 mt-1">
-          Бот шлёт embed-уведомление, когда выбранный Twitch-канал выходит в эфир. Источник правды один — изменения здесь и через <code className="text-white/70">/twitch</code> команду пишутся в одну БД.
+          <Trans i18nKey="twitch.sub" components={{ code: <code className="text-white/70" /> }} />
         </p>
       </div>
 
@@ -128,7 +132,7 @@ export function TwitchPage() {
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 flex items-start gap-2">
               <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
               <span>
-                Бот не сконфигурирован для Twitch — администратор должен прописать <code>TWITCH_CLIENT_ID</code> и <code>TWITCH_CLIENT_SECRET</code> в окружении бота и перезапустить. До этого добавление каналов не работает.
+                <Trans i18nKey="twitch.notConfigured" components={{ code: <code /> }} />
               </span>
             </div>
           )}
@@ -174,6 +178,7 @@ function ModuleToggle({
   hasAny: boolean
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   async function toggle() {
     setBusy(true)
@@ -187,20 +192,20 @@ function ModuleToggle({
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 flex items-center justify-between">
       <div>
-        <p className="text-sm font-semibold text-white">Модуль Twitch</p>
+        <p className="text-sm font-semibold text-white">{t("twitch.module.title")}</p>
         <p className="text-xs text-white/50 mt-0.5">
           {enabled
-            ? "Включён — бот отслеживает каналы из списка и шлёт уведомления."
+            ? t("twitch.module.onSub")
             : hasAny
-              ? "Выключен — каналы сохранены, но уведомления не приходят. Включите тумблер чтобы возобновить."
-              : "Включён (по умолчанию). Добавьте первый Twitch-канал ниже."}
+              ? t("twitch.module.offSub")
+              : t("twitch.module.emptySub")}
         </p>
       </div>
       <button
         type="button"
         disabled={busy || !hasAny}
         onClick={toggle}
-        title={!hasAny ? "Сначала добавьте Twitch-канал" : ""}
+        title={!hasAny ? t("twitch.module.addFirstTip") : ""}
         className={cn(
           "shrink-0 inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium",
           enabled
@@ -212,7 +217,7 @@ function ModuleToggle({
         <span className={cn("relative inline-flex w-7 h-4 rounded-full transition-colors", enabled ? "bg-violet-500" : "bg-white/20")}>
           <span className={cn("absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-transform", enabled && "translate-x-3")} />
         </span>
-        {busy ? "…" : enabled ? "Включён" : "Выключен"}
+        {busy ? "…" : enabled ? t("twitch.module.on") : t("twitch.module.off")}
       </button>
     </div>
   )
@@ -235,6 +240,7 @@ function AddForm({
   disabled: boolean
   onAdded: () => void
 }) {
+  const { t } = useTranslation()
   const [username, setUsername] = useState("")
   const [channelId, setChannelId] = useState<string>("")
   const [adding, setAdding] = useState(false)
@@ -246,11 +252,11 @@ function AddForm({
   async function submit() {
     setErr(null)
     if (!username.trim()) {
-      setErr("Введите Twitch username")
+      setErr(t("twitch.add.errors.username"))
       return
     }
     if (!channelId) {
-      setErr("Выберите Discord-канал")
+      setErr(t("twitch.add.errors.channel"))
       return
     }
     setAdding(true)
@@ -263,10 +269,9 @@ function AddForm({
       setChannelId("")
       onAdded()
     } catch (e) {
-      // The backend returns { message, reason } inside ApiError — for known
-      // reasons we'd ideally show a localised string, but the server message
-      // is already user-friendly.
-      setErr(e instanceof Error ? e.message : "Ошибка добавления")
+      // The backend returns user-friendly messages already; we fall back to a
+      // generic localised string only if the error isn't a typed ApiError.
+      setErr(e instanceof Error ? e.message : t("twitch.add.errors.generic"))
     } finally {
       setAdding(false)
     }
@@ -275,18 +280,18 @@ function AddForm({
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white">Добавить Twitch-канал</h2>
+        <h2 className="text-sm font-semibold text-white">{t("twitch.add.title")}</h2>
         <span className={cn("text-[11px]", limitReached ? "text-amber-400" : "text-white/40")}>
-          {used} / {limit} слотов использовано
+          {t("twitch.add.slots", { used, limit })}
         </span>
       </div>
       <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
         <div>
-          <label className="text-[11px] text-white/60 block mb-1">Twitch username</label>
+          <label className="text-[11px] text-white/60 block mb-1">{t("twitch.add.username")}</label>
           <input
             type="text"
             value={username}
-            placeholder="например shroud"
+            placeholder={t("twitch.add.usernamePlaceholder")}
             disabled={disabled || limitReached || adding}
             onChange={(e) => setUsername(e.target.value)}
             onKeyDown={(e) => {
@@ -296,14 +301,14 @@ function AddForm({
           />
         </div>
         <div>
-          <label className="text-[11px] text-white/60 block mb-1">Канал для уведомлений</label>
+          <label className="text-[11px] text-white/60 block mb-1">{t("twitch.add.channel")}</label>
           <select
             value={channelId}
             disabled={disabled || limitReached || adding}
             onChange={(e) => setChannelId(e.target.value)}
             className="w-full rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60 disabled:opacity-50"
           >
-            <option value="">— выберите канал —</option>
+            <option value="">{t("twitch.add.channelPlaceholder")}</option>
             {textChannels.map((c) => (
               <option key={c.id} value={c.id}>
                 #{c.name}
@@ -319,13 +324,13 @@ function AddForm({
             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 h-[38px]"
           >
             {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Добавить
+            {t("twitch.add.submit")}
           </button>
         </div>
       </div>
       {err && <p className="text-xs text-red-400">{err}</p>}
       {limitReached && !err && (
-        <p className="text-xs text-amber-400">Лимит достигнут. Удалите канал из списка, чтобы освободить слот.</p>
+        <p className="text-xs text-amber-400">{t("twitch.add.errors.limitReached")}</p>
       )}
     </section>
   )
@@ -344,24 +349,25 @@ function SubscriptionList({
   channels: Channel[]
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   if (subscriptions.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-8 text-center">
-        <p className="text-sm text-white/50">Каналы ещё не добавлены — заполните форму выше.</p>
+        <p className="text-sm text-white/50">{t("twitch.list.empty")}</p>
       </div>
     )
   }
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 space-y-2">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white">Отслеживаемые каналы</h2>
+        <h2 className="text-sm font-semibold text-white">{t("twitch.list.title")}</h2>
         <button
           type="button"
           onClick={onChanged}
           className="inline-flex items-center gap-1 text-[11px] text-white/50 hover:text-white"
-          title="Обновить статус live/offline"
+          title={t("twitch.list.refreshTip")}
         >
-          <RefreshCw className="h-3 w-3" /> Обновить
+          <RefreshCw className="h-3 w-3" /> {t("twitch.list.refresh")}
         </button>
       </div>
       <div className="space-y-2">
@@ -390,6 +396,7 @@ function SubscriptionRow({
   channels: Channel[]
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   const [busy, setBusy] = useState<"enable" | "channel" | "remove" | null>(null)
   const [editorOpen, setEditorOpen] = useState(false)
   const textChannels = useMemo(() => channels.filter(isTextChannel), [channels])
@@ -414,7 +421,7 @@ function SubscriptionRow({
     }
   }
   async function remove() {
-    if (!confirm(`Перестать отслеживать ${sub.platformUsername}?`)) return
+    if (!confirm(t("twitch.list.confirmRemove", { name: sub.platformUsername }))) return
     setBusy("remove")
     try {
       await removeTwitchSubscription(guildId, sub.id)
@@ -434,10 +441,10 @@ function SubscriptionRow({
               "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium",
               live ? "bg-red-500/20 text-red-300" : "bg-white/5 text-white/50",
             )}
-            title={live ? "Сейчас в эфире" : "Не в эфире"}
+            title={live ? t("twitch.list.liveTip") : t("twitch.list.offlineTip")}
           >
             <span className={cn("w-1.5 h-1.5 rounded-full", live ? "bg-red-400 animate-pulse" : "bg-white/30")} />
-            {live ? "LIVE" : "offline"}
+            {live ? t("twitch.list.live") : t("twitch.list.offline")}
           </span>
           <a
             href={`https://twitch.tv/${sub.platformUsername.toLowerCase()}`}
@@ -457,7 +464,7 @@ function SubscriptionRow({
             className="w-full rounded-md border border-white/10 bg-[#15151f] px-2.5 py-1.5 text-xs text-white outline-none focus:border-violet-500/60"
           >
             {!textChannels.some((c) => c.id === sub.discordChannelId) && (
-              <option value={sub.discordChannelId}>(канал удалён: {sub.discordChannelId})</option>
+              <option value={sub.discordChannelId}>{t("twitch.list.channelMissing", { id: sub.discordChannelId })}</option>
             )}
             {textChannels.map((c) => (
               <option key={c.id} value={c.id}>
@@ -471,10 +478,10 @@ function SubscriptionRow({
           type="button"
           onClick={() => setEditorOpen((v) => !v)}
           className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] px-2.5 py-1 text-[11px] text-white/70"
-          title="Настроить внешний вид embed"
+          title={t("twitch.list.appearanceTip")}
         >
           <Paintbrush className="h-3 w-3" />
-          Внешний вид
+          {t("twitch.list.appearance")}
           <ChevronDown className={cn("h-3 w-3 transition-transform", editorOpen && "rotate-180")} />
         </button>
 
@@ -488,12 +495,12 @@ function SubscriptionRow({
               ? "border-violet-500/40 bg-violet-500/10 text-violet-200"
               : "border-white/10 bg-white/[0.03] text-white/60",
           )}
-          title={sub.enabled ? "Выключить уведомления для этого канала" : "Включить уведомления"}
+          title={sub.enabled ? t("twitch.list.disableTip") : t("twitch.list.enableTip")}
         >
           <span className={cn("relative inline-flex w-6 h-3.5 rounded-full transition-colors", sub.enabled ? "bg-violet-500" : "bg-white/20")}>
             <span className={cn("absolute top-0.5 left-0.5 w-2.5 h-2.5 rounded-full bg-white transition-transform", sub.enabled && "translate-x-2.5")} />
           </span>
-          {busy === "enable" ? "…" : sub.enabled ? "ON" : "OFF"}
+          {busy === "enable" ? "…" : sub.enabled ? t("twitch.list.perRowOn") : t("twitch.list.perRowOff")}
         </button>
 
         <button
@@ -501,7 +508,7 @@ function SubscriptionRow({
           onClick={remove}
           disabled={busy !== null}
           className="inline-flex items-center gap-1 text-white/40 hover:text-red-400 disabled:opacity-50"
-          title="Удалить из списка"
+          title={t("twitch.list.removeTip")}
         >
           {busy === "remove" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
         </button>
@@ -552,6 +559,7 @@ function EmbedEditor({
   sub: TwitchSubscription
   onSaved: () => void
 }) {
+  const { t } = useTranslation()
   const initial = useMemo(() => configToState(sub), [sub])
   const [s, setS] = useState<EditorState>(initial)
   const [saving, setSaving] = useState(false)
@@ -587,10 +595,10 @@ function EmbedEditor({
           showStreamerAvatar: s.showStreamerAvatar,
         },
       })
-      setFlashAuto("ok", "Сохранено")
+      setFlashAuto("ok", t("twitch.editor.saved"))
       onSaved()
     } catch (e) {
-      setFlashAuto("err", e instanceof Error ? e.message : "Ошибка сохранения")
+      setFlashAuto("err", e instanceof Error ? e.message : t("twitch.editor.saveError"))
     } finally {
       setSaving(false)
     }
@@ -614,12 +622,12 @@ function EmbedEditor({
       {/* Form */}
       <div className="space-y-3">
         <div>
-          <p className="text-[11px] font-medium text-white/65 mb-1">Доступные переменные</p>
+          <p className="text-[11px] font-medium text-white/65 mb-1">{t("twitch.editor.variables")}</p>
           <div className="flex flex-wrap gap-1">
             {VARIABLE_HINTS.map((v) => (
               <span
                 key={v.key}
-                title={v.desc}
+                title={t(`twitch.variables.${v.i18nKey}`)}
                 className="px-1.5 py-0.5 rounded bg-white/5 text-[10px] font-mono text-white/65"
               >
                 {v.key}
@@ -628,7 +636,7 @@ function EmbedEditor({
           </div>
         </div>
 
-        <Field label="Цвет полоски embed">
+        <Field label={t("twitch.editor.color")}>
           <div className="flex gap-2">
             <input
               type="color"
@@ -646,7 +654,7 @@ function EmbedEditor({
           </div>
         </Field>
 
-        <Field label="Заголовок (title)" hint={`По умолчанию: ${DEFAULT_TITLE_TPL}`}>
+        <Field label={t("twitch.editor.titleField")} hint={t("twitch.editor.titleHint", { tpl: DEFAULT_TITLE_TPL })}>
           <input
             type="text"
             value={s.titleTemplate}
@@ -657,7 +665,7 @@ function EmbedEditor({
           />
         </Field>
 
-        <Field label="Описание (description)" hint={`По умолчанию: ${DEFAULT_DESC_TPL}. Поддерживает markdown.`}>
+        <Field label={t("twitch.editor.description")} hint={t("twitch.editor.descriptionHint", { tpl: DEFAULT_DESC_TPL })}>
           <textarea
             value={s.descriptionTemplate}
             rows={3}
@@ -668,7 +676,7 @@ function EmbedEditor({
           />
         </Field>
 
-        <Field label="Текст кнопки">
+        <Field label={t("twitch.editor.buttonLabel")}>
           <input
             type="text"
             value={s.buttonLabel}
@@ -680,13 +688,13 @@ function EmbedEditor({
         </Field>
 
         <Field
-          label="Сообщение над embed (опционально)"
-          hint="Если содержит URL, Discord-авто-превью будет подавлено флагом SUPPRESS_EMBEDS."
+          label={t("twitch.editor.contentField")}
+          hint={t("twitch.editor.contentHint")}
         >
           <textarea
             value={s.contentTemplate}
             rows={2}
-            placeholder="@everyone {streamer} live!"
+            placeholder={t("twitch.editor.contentPlaceholder")}
             maxLength={2000}
             onChange={(e) => setS({ ...s, contentTemplate: e.target.value })}
             className="w-full rounded-md border border-white/10 bg-[#0e0e18] px-2.5 py-1.5 text-xs text-white outline-none focus:border-violet-500/60 resize-y"
@@ -694,9 +702,9 @@ function EmbedEditor({
         </Field>
 
         <div className="grid grid-cols-3 gap-2">
-          <SmallToggle label="Категория" checked={s.showGame} onChange={(v) => setS({ ...s, showGame: v })} />
-          <SmallToggle label="Превью" checked={s.showThumbnail} onChange={(v) => setS({ ...s, showThumbnail: v })} />
-          <SmallToggle label="Аватар" checked={s.showStreamerAvatar} onChange={(v) => setS({ ...s, showStreamerAvatar: v })} />
+          <SmallToggle label={t("twitch.editor.showGame")} checked={s.showGame} onChange={(v) => setS({ ...s, showGame: v })} />
+          <SmallToggle label={t("twitch.editor.showThumbnail")} checked={s.showThumbnail} onChange={(v) => setS({ ...s, showThumbnail: v })} />
+          <SmallToggle label={t("twitch.editor.showAvatar")} checked={s.showStreamerAvatar} onChange={(v) => setS({ ...s, showStreamerAvatar: v })} />
         </div>
 
         <div className="flex items-center gap-2 pt-1">
@@ -705,7 +713,7 @@ function EmbedEditor({
             onClick={resetToDefaults}
             className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs text-white/70 hover:bg-white/[0.06]"
           >
-            <RotateCcw className="h-3 w-3" /> Сбросить
+            <RotateCcw className="h-3 w-3" /> {t("twitch.editor.reset")}
           </button>
           <div className="flex-1" />
           {flash && (
@@ -725,14 +733,14 @@ function EmbedEditor({
             )}
           >
             {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-            Сохранить
+            {t("twitch.editor.save")}
           </button>
         </div>
       </div>
 
       {/* Preview */}
       <div>
-        <p className="text-[11px] text-white/45 mb-2">Превью (приблизительный вид в Discord)</p>
+        <p className="text-[11px] text-white/45 mb-2">{t("twitch.editor.previewLabel")}</p>
         <EmbedPreview state={s} />
       </div>
     </div>

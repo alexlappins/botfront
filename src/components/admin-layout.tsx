@@ -1,13 +1,12 @@
 import { useState, type ReactNode } from "react"
 import { Link, NavLink, Outlet } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 import {
-  Bell,
   ChevronDown,
   HandHeart,
   Loader2,
   LogOut,
   MessageSquareText,
-  Search,
   ShoppingBag,
   ScrollText,
   Server,
@@ -19,24 +18,37 @@ import {
 import { LOGOUT_URL } from "@/lib/api"
 import { ActiveGuildProvider, useActiveGuild } from "@/contexts/active-guild-context"
 import { useAuth } from "@/contexts/auth-context"
+import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
 
 type NavItem = {
   to: string
-  label: string
+  /** i18n leaf under `nav.*` — resolved at render time so language switching
+   *  doesn't need a re-import. Icons stay static. */
+  labelKey: string
   icon: typeof ShoppingBag
   end?: boolean
 }
 
+// Storefront is hidden until the real shop (payments, catalogue, refunds) ships.
+// Flip this to `true` (or wire it to VITE_ENABLE_STORE) when ready — the
+// underlying /store and /my-purchases pages still exist, they're just gone
+// from the sidebar.
+const STORE_ENABLED = import.meta.env.VITE_ENABLE_STORE === "true"
+
 const NAV: NavItem[] = [
-  { to: "/store", label: "Магазин", icon: ShoppingBag },
-  { to: "/my-purchases", label: "Список покупок", icon: ScrollText },
-  { to: "/server-messages", label: "Шаблоны сообщений", icon: MessageSquareText },
-  { to: "/welcome", label: "Приветствия", icon: HandHeart },
-  { to: "/leveling", label: "Система уровней", icon: TrendingUp },
-  { to: "/twitch", label: "Twitch Live", icon: Twitch },
-  { to: "/reaction-roles", label: "Роли по реакции", icon: Smile },
-  { to: "/server-logs", label: "Логи сервера", icon: ScrollText },
+  ...(STORE_ENABLED
+    ? ([
+        { to: "/store", labelKey: "nav.store", icon: ShoppingBag },
+        { to: "/my-purchases", labelKey: "nav.purchases", icon: ScrollText },
+      ] satisfies NavItem[])
+    : []),
+  { to: "/server-messages", labelKey: "nav.serverMessages", icon: MessageSquareText },
+  { to: "/welcome", labelKey: "nav.welcome", icon: HandHeart },
+  { to: "/leveling", labelKey: "nav.leveling", icon: TrendingUp },
+  { to: "/twitch", labelKey: "nav.twitch", icon: Twitch },
+  { to: "/reaction-roles", labelKey: "nav.reactionRoles", icon: Smile },
+  { to: "/server-logs", labelKey: "nav.serverLogs", icon: ScrollText },
 ]
 
 export function AdminLayout({ children }: { children?: ReactNode }) {
@@ -68,11 +80,12 @@ function AdminLayoutInner({ children }: { children?: ReactNode }) {
 function Sidebar() {
   // Full-height column. Top: server selector (sticky-feel because column is fixed height).
   // Middle: scrollable nav. Bottom: pinned premium block via mt-auto wrapper.
+  const { t } = useTranslation()
   return (
     <aside className="w-[260px] shrink-0 border-r border-white/5 bg-[#0e0e18] flex flex-col h-screen sticky top-0">
       <div className="px-5 pt-6 pb-3 shrink-0">
         <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
-          Мои сервера
+          {t("nav.myServers")}
         </p>
         <div className="mt-2">
           <ServerSelector />
@@ -95,10 +108,17 @@ function Sidebar() {
             }
           >
             <item.icon className="h-5 w-5" />
-            <span>{item.label}</span>
+            <span>{t(item.labelKey)}</span>
           </NavLink>
         ))}
       </nav>
+
+      <div className="px-5 py-3 border-t border-white/5 shrink-0 flex items-center justify-between gap-2">
+        <span className="text-[11px] font-semibold tracking-[0.16em] text-white/35 uppercase">
+          {t("language.label")}
+        </span>
+        <LanguageSwitcher />
+      </div>
 
       <div className="px-5 py-4 border-t border-white/5 shrink-0">
         <Link
@@ -107,7 +127,7 @@ function Sidebar() {
         >
           <span className="inline-flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            Скоро: премиум
+            {t("guildSelector.comingSoonPremium")}
           </span>
         </Link>
       </div>
@@ -157,6 +177,7 @@ function GuildAvatar({
 }
 
 function ServerSelector() {
+  const { t } = useTranslation()
   const { guilds, activeGuild, activeGuildId, setActiveGuildId, loading } = useActiveGuild()
   const [open, setOpen] = useState(false)
 
@@ -164,7 +185,7 @@ function ServerSelector() {
     return (
       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3">
         <Loader2 className="h-4 w-4 animate-spin text-white/40" />
-        <span className="text-sm text-white/50">Загрузка серверов…</span>
+        <span className="text-sm text-white/50">{t("guildSelector.loading")}</span>
       </div>
     )
   }
@@ -172,9 +193,9 @@ function ServerSelector() {
   if (guilds.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.02] px-3 py-3 text-xs text-white/50 leading-tight">
-        Нет серверов с ботом.
+        {t("guildSelector.noServers")}
         <br />
-        Установите шаблон → бот появится на сервере → выберите его здесь.
+        {t("guildSelector.noServersHint")}
       </div>
     )
   }
@@ -195,11 +216,11 @@ function ServerSelector() {
         )}
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white truncate">
-            {activeGuild?.name ?? "Сервер не выбран"}
+            {activeGuild?.name ?? t("guildSelector.noneSelected")}
           </p>
           <p className="text-[11px] text-emerald-400 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            Сервер активен
+            {t("guildSelector.active")}
           </p>
         </div>
         <ChevronDown className={cn("h-4 w-4 text-white/40 transition-transform", open && "rotate-180")} />
@@ -240,32 +261,12 @@ function ServerSelector() {
 
 function TopBar() {
   const { user } = useAuth()
+  // Search input and notification bell are intentionally not rendered until
+  // they actually do something. Both are coming back as real working features
+  // (store search + news feed). Stub UI now would just confuse users.
   return (
-    <header className="flex items-center gap-4 px-8 h-16 border-b border-white/5 bg-[#0b0b14]/60 backdrop-blur">
-      {/* Search — takes available space but capped, then flex-spacer pushes the right cluster to the edge */}
-      <div className="flex-1 max-w-2xl relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
-        <input
-          type="text"
-          placeholder="Поиск шаблонов, категорий, функций…"
-          className="w-full pl-11 pr-4 h-10 rounded-full bg-white/[0.04] border border-white/10 text-sm placeholder:text-white/30 outline-none focus:border-violet-500/60"
-          disabled
-        />
-      </div>
-
-      {/* Right cluster: notifications + user — pinned to the right edge */}
-      <div className="ml-auto flex items-center gap-4">
-        <button
-          type="button"
-          className="relative w-10 h-10 grid place-items-center rounded-full bg-white/[0.04] border border-white/10 text-white/60 hover:text-white"
-          title="Notifications (placeholder)"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 grid place-items-center text-[10px] font-bold rounded-full bg-red-500 text-white">
-            3
-          </span>
-        </button>
-        <div className="flex items-center gap-3">
+    <header className="flex items-center justify-end gap-4 px-8 h-16 border-b border-white/5 bg-[#0b0b14]/60 backdrop-blur">
+      <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-sm font-semibold">
             {user?.username?.[0]?.toUpperCase() ?? "U"}
           </div>
@@ -273,14 +274,13 @@ function TopBar() {
             <p className="text-sm font-semibold text-white">{user?.username ?? "User"}</p>
             {user?.role && <p className="text-[11px] text-white/40">{user.role}</p>}
           </div>
-          <a
-            href={LOGOUT_URL}
-            title="Sign out"
-            className="ml-2 grid place-items-center w-9 h-9 rounded-full hover:bg-white/5 text-white/50 hover:text-white"
-          >
-            <LogOut className="h-4 w-4" />
-          </a>
-        </div>
+        <a
+          href={LOGOUT_URL}
+          title="Sign out"
+          className="ml-2 grid place-items-center w-9 h-9 rounded-full hover:bg-white/5 text-white/50 hover:text-white"
+        >
+          <LogOut className="h-4 w-4" />
+        </a>
       </div>
     </header>
   )

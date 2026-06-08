@@ -302,7 +302,7 @@ function FeaturedStrip({ items }: { items: StoreTemplateProduct[] }) {
                 <span className="text-[10px] uppercase tracking-wide text-amber-300/80">Featured</span>
               </div>
               <p className="text-sm font-semibold text-white truncate">{p.name}</p>
-              <p className="text-[11px] text-white/55 line-clamp-2">{p.description ?? "Без описания"}</p>
+              <p className="text-[11px] text-white/55 line-clamp-2">{p.description ?? "No description"}</p>
               <p className="text-sm font-semibold text-white pt-1">{priceLabel(p)}</p>
             </div>
           </Link>
@@ -519,7 +519,7 @@ function ProductCard({
           {product.name}
         </Link>
         <p className="text-[11px] text-white/55 leading-snug line-clamp-2 flex-1">
-          {product.description ?? "Без описания"}
+          {product.description ?? "No description"}
         </p>
         {(product.tags?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-1">

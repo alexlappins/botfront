@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
-import { Loader2, Save, Trash2, RefreshCw, Plus, X, Sparkles, Download, AlertTriangle, ChevronDown, Send, History } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import { Loader2, Save, Trash2, RefreshCw, Plus, X, Sparkles, Download, AlertTriangle, ChevronDown, Send } from "lucide-react"
 import {
   ApiError,
   fetchRankCardPreview,
@@ -30,18 +31,19 @@ import {
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { cn } from "@/lib/utils"
 
-const PLACEHOLDERS = [
-  { key: "{user}", desc: "Упоминание @user" },
-  { key: "{user_name}", desc: "Имя без @" },
-  { key: "{level}", desc: "Новый уровень" },
-  { key: "{old_level}", desc: "Старый уровень" },
-  { key: "{tier}", desc: "Текущий tier" },
-  { key: "{new_tier}", desc: "Новый tier (для milestone)" },
-  { key: "{old_tier}", desc: "Старый tier (для milestone)" },
-  { key: "{server}", desc: "Название сервера" },
-]
+const PLACEHOLDER_KEYS = [
+  { key: "{user}", descKey: "user" },
+  { key: "{user_name}", descKey: "userName" },
+  { key: "{level}", descKey: "level" },
+  { key: "{old_level}", descKey: "oldLevel" },
+  { key: "{tier}", descKey: "tier" },
+  { key: "{new_tier}", descKey: "newTier" },
+  { key: "{old_tier}", descKey: "oldTier" },
+  { key: "{server}", descKey: "server" },
+] as const
 
 export function LevelingPage() {
+  const { t } = useTranslation()
   const guildId = useCurrentGuildId()
   const [state, setState] = useState<LevelingState | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
@@ -64,21 +66,21 @@ export function LevelingPage() {
       .catch((e) => {
         if (!alive) return
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-          setError("Нет доступа к серверу.")
+          setError(t("common.noAccess"))
         } else {
-          setError(e instanceof Error ? e.message : "Ошибка загрузки")
+          setError(e instanceof Error ? e.message : t("leveling.loadError"))
         }
       })
       .finally(() => alive && setLoading(false))
     return () => {
       alive = false
     }
-  }, [guildId])
+  }, [guildId, t])
 
   if (!guildId) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-        <p className="text-white/60">Выберите сервер в селекторе слева.</p>
+        <p className="text-white/60">{t("common.selectServer")}</p>
       </div>
     )
   }
@@ -88,11 +90,9 @@ export function LevelingPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Sparkles className="h-7 w-7 text-violet-400" />
-          Система прокачки уровней
+          {t("leveling.title")}
         </h1>
-        <p className="text-sm text-white/50 mt-1">
-          XP за сообщения и голосовой чат, кастомные tier'ы, награды ролями, исключения. Уведомления — в выбранный канал или DM.
-        </p>
+        <p className="text-sm text-white/50 mt-1">{t("leveling.sub")}</p>
       </div>
 
       {loading && (
@@ -111,16 +111,14 @@ export function LevelingPage() {
             <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 space-y-1">
               <div className="flex items-center gap-2 font-semibold">
                 <AlertTriangle className="h-4 w-4" />
-                Внимание: проблемы с иерархией ролей
+                {t("leveling.warning.title")}
               </div>
               {state.warnings.roleHierarchy.map((w, i) => (
                 <p key={i} className="text-xs text-amber-200/80">
                   • {w}
                 </p>
               ))}
-              <p className="text-xs text-amber-200/60 pt-1">
-                Поднимите роль бота выше в настройках сервера Discord, иначе он не сможет выдавать эти роли.
-              </p>
+              <p className="text-xs text-amber-200/60 pt-1">{t("leveling.warning.hint")}</p>
             </div>
           )}
 
@@ -346,6 +344,7 @@ function SaveButton({
   onClick: () => void
   label?: string
 }) {
+  const { t } = useTranslation()
   return (
     <button
       type="button"
@@ -359,7 +358,7 @@ function SaveButton({
       )}
     >
       {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-      {label ?? "Сохранить"}
+      {label ?? t("common.save")}
     </button>
   )
 }
@@ -377,6 +376,7 @@ function GeneralBlock({
   channels: Channel[]
   initial: LevelingSettings
 }) {
+  const { t } = useTranslation()
   const [enabled, setEnabled] = useState(initial.enabled)
   const [channelMode, setChannelMode] = useState<"channel" | "dm" | "disabled">(() =>
     initial.levelupChannelId === null
@@ -417,19 +417,19 @@ function GeneralBlock({
   }
 
   return (
-    <Block title="Общее" description="Master switch, канал level-up, шаблон сообщения">
-      <Toggle checked={enabled} onChange={setEnabled} label="Включить систему уровней" />
+    <Block title={t("leveling.general.title")} description={t("leveling.general.description")}>
+      <Toggle checked={enabled} onChange={setEnabled} label={t("leveling.general.enable")} />
 
-      <Field label="Куда отправлять level-up сообщения">
+      <Field label={t("leveling.general.channelLabel")}>
         <div className="flex gap-2">
           <select
             value={channelMode}
             onChange={(e) => setChannelMode(e.target.value as "channel" | "dm" | "disabled")}
             className="rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
           >
-            <option value="channel">Канал</option>
-            <option value="dm">DM пользователю</option>
-            <option value="disabled">Не отправлять</option>
+            <option value="channel">{t("leveling.general.modeChannel")}</option>
+            <option value="dm">{t("leveling.general.modeDm")}</option>
+            <option value="disabled">{t("leveling.general.modeDisabled")}</option>
           </select>
           {channelMode === "channel" && (
             <select
@@ -437,7 +437,7 @@ function GeneralBlock({
               onChange={(e) => setChannelId(e.target.value || null)}
               className="flex-1 rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
             >
-              <option value="">— выберите канал —</option>
+              <option value="">{t("leveling.general.pickChannel")}</option>
               {textChannels.map((c) => (
                 <option key={c.id} value={c.id}>
                   #{c.name}
@@ -448,19 +448,18 @@ function GeneralBlock({
         </div>
       </Field>
 
-      <Field label="Шаблон обычного level-up сообщения" hint={`Плейсхолдеры: ${PLACEHOLDERS.map((p) => p.key).join(", ")}`}>
+      <Field
+        label={t("leveling.general.templateLabel")}
+        hint={t("leveling.general.placeholdersHint", { list: PLACEHOLDER_KEYS.map((p) => p.key).join(", ") })}
+      >
         <Textarea value={template} onChange={setTemplate} rows={2} />
       </Field>
 
-      <Toggle
-        checked={onlyTier}
-        onChange={setOnlyTier}
-        label="Уведомлять только при переходе в новый tier (без обычных level-up)"
-      />
+      <Toggle checked={onlyTier} onChange={setOnlyTier} label={t("leveling.general.onlyTier")} />
 
       <div className="flex items-center gap-3 pt-2">
         <SaveButton dirty={dirty} saving={saving} onClick={save} />
-        {savedAt && !dirty && <span className="text-xs text-emerald-400">Сохранено</span>}
+        {savedAt && !dirty && <span className="text-xs text-emerald-400">{t("common.saved")}</span>}
       </div>
     </Block>
   )
@@ -477,6 +476,7 @@ function computeChannelValue(mode: "channel" | "dm" | "disabled", id: string | n
 // ────────────────────────────────────────────────────────────
 
 function XpSourcesBlock({ guildId, initial }: { guildId: string; initial: LevelingSettings }) {
+  const { t } = useTranslation()
   const [s, setS] = useState({
     chatXpEnabled: initial.chatXpEnabled,
     chatXpMin: initial.chatXpMin,
@@ -510,23 +510,23 @@ function XpSourcesBlock({ guildId, initial }: { guildId: string; initial: Leveli
   }
 
   return (
-    <Block title="Источники XP" description="Сколько и за что начисляется">
+    <Block title={t("leveling.sources.title")} description={t("leveling.sources.description")}>
       <Toggle
         checked={s.chatXpEnabled}
         onChange={(v) => setS({ ...s, chatXpEnabled: v })}
-        label="Chat XP — начислять за сообщения"
+        label={t("leveling.sources.chatEnable")}
       />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Field label="Min XP за сообщение">
+        <Field label={t("leveling.sources.chatMin")}>
           <NumberInput min={0} max={1000} value={s.chatXpMin} onChange={(v) => setS({ ...s, chatXpMin: v })} />
         </Field>
-        <Field label="Max XP за сообщение">
+        <Field label={t("leveling.sources.chatMax")}>
           <NumberInput min={0} max={1000} value={s.chatXpMax} onChange={(v) => setS({ ...s, chatXpMax: v })} />
         </Field>
-        <Field label="Cooldown (сек)">
+        <Field label={t("leveling.sources.chatCooldown")}>
           <NumberInput min={0} value={s.chatXpCooldown} onChange={(v) => setS({ ...s, chatXpCooldown: v })} />
         </Field>
-        <Field label="Min длина сообщения">
+        <Field label={t("leveling.sources.chatMinLength")}>
           <NumberInput min={0} value={s.chatXpMinLength} onChange={(v) => setS({ ...s, chatXpMinLength: v })} />
         </Field>
       </div>
@@ -534,16 +534,16 @@ function XpSourcesBlock({ guildId, initial }: { guildId: string; initial: Leveli
       <Toggle
         checked={s.voiceXpEnabled}
         onChange={(v) => setS({ ...s, voiceXpEnabled: v })}
-        label="Voice XP — начислять за минуты в голосовом канале"
+        label={t("leveling.sources.voiceEnable")}
       />
       <div className="grid grid-cols-3 gap-3">
-        <Field label="XP за минуту">
+        <Field label={t("leveling.sources.voicePerMin")}>
           <NumberInput min={0} max={1000} value={s.voiceXpPerMinute} onChange={(v) => setS({ ...s, voiceXpPerMinute: v })} />
         </Field>
-        <Field label="Min людей в канале">
+        <Field label={t("leveling.sources.voiceMinUsers")}>
           <NumberInput min={1} max={99} value={s.voiceXpMinUsers} onChange={(v) => setS({ ...s, voiceXpMinUsers: v })} />
         </Field>
-        <Field label="AFK таймаут (мин)">
+        <Field label={t("leveling.sources.voiceAfk")}>
           <NumberInput min={1} value={s.voiceXpAfkMinutes} onChange={(v) => setS({ ...s, voiceXpAfkMinutes: v })} />
         </Field>
       </div>
@@ -558,6 +558,7 @@ function XpSourcesBlock({ guildId, initial }: { guildId: string; initial: Leveli
 // ────────────────────────────────────────────────────────────
 
 function TiersBlock({ guildId, initial }: { guildId: string; initial: LevelingTier[] }) {
+  const { t } = useTranslation()
   const [tiers, setTiers] = useState<LevelingTier[]>(initial)
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
@@ -598,7 +599,7 @@ function TiersBlock({ guildId, initial }: { guildId: string; initial: LevelingTi
   }
 
   async function reset() {
-    if (!confirm("Сбросить tier'ы к дефолту?")) return
+    if (!confirm(t("leveling.tiers.confirmReset"))) return
     setSaving(true)
     try {
       const saved = await resetLevelingTiers(guildId)
@@ -609,12 +610,9 @@ function TiersBlock({ guildId, initial }: { guildId: string; initial: LevelingTi
   }
 
   return (
-    <Block
-      title="Tier'ы (звания)"
-      description="Кастомные названия для диапазонов уровней. Tier рядом с уровнем на rank card и в лидерборде."
-    >
+    <Block title={t("leveling.tiers.title")} description={t("leveling.tiers.description")}>
       <div className="space-y-2">
-        {tiers.map((t, i) => {
+        {tiers.map((tier, i) => {
           const open = expanded.has(i)
           return (
             <div key={i} className="rounded-lg border border-white/10 bg-white/[0.02]">
@@ -632,20 +630,20 @@ function TiersBlock({ guildId, initial }: { guildId: string; initial: LevelingTi
                 >
                   <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
                 </button>
-                <span className="w-8 h-8 grid place-items-center rounded-md border border-white/10" style={{ backgroundColor: t.color + "30" }}>
-                  {t.emoji ?? "✦"}
+                <span className="w-8 h-8 grid place-items-center rounded-md border border-white/10" style={{ backgroundColor: tier.color + "30" }}>
+                  {tier.emoji ?? "✦"}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{t.name}</p>
+                  <p className="text-sm font-medium text-white truncate">{tier.name}</p>
                   <p className="text-[11px] text-white/40">
-                    Уровни {t.startLevel}–{t.endLevel}
+                    {t("leveling.tiers.levels", { start: tier.startLevel, end: tier.endLevel })}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => remove(i)}
                   className="text-white/40 hover:text-red-400"
-                  title="Удалить tier"
+                  title={t("leveling.tiers.deleteTip")}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -653,28 +651,28 @@ function TiersBlock({ guildId, initial }: { guildId: string; initial: LevelingTi
               {open && (
                 <div className="border-t border-white/5 p-3 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <Field label="Название">
-                      <TextInput value={t.name} onChange={(v) => update(i, { name: v })} />
+                    <Field label={t("leveling.tiers.name")}>
+                      <TextInput value={tier.name} onChange={(v) => update(i, { name: v })} />
                     </Field>
                     <Field label="Emoji">
-                      <TextInput value={t.emoji ?? ""} onChange={(v) => update(i, { emoji: v || null })} />
+                      <TextInput value={tier.emoji ?? ""} onChange={(v) => update(i, { emoji: v || null })} />
                     </Field>
                     <Field label="Start level">
-                      <NumberInput min={1} max={9999} value={t.startLevel} onChange={(v) => update(i, { startLevel: v })} />
+                      <NumberInput min={1} max={9999} value={tier.startLevel} onChange={(v) => update(i, { startLevel: v })} />
                     </Field>
                     <Field label="End level">
-                      <NumberInput min={1} max={9999} value={t.endLevel} onChange={(v) => update(i, { endLevel: v })} />
+                      <NumberInput min={1} max={9999} value={tier.endLevel} onChange={(v) => update(i, { endLevel: v })} />
                     </Field>
-                    <Field label="Цвет">
-                      <ColorInput value={t.color} onChange={(v) => update(i, { color: v })} />
+                    <Field label={t("leveling.tiers.color")}>
+                      <ColorInput value={tier.color} onChange={(v) => update(i, { color: v })} />
                     </Field>
                   </div>
                   <Field
-                    label="Tier milestone сообщение (опционально)"
-                    hint="Если задано — будет отправлено при переходе именно в этот tier вместо обычного level-up"
+                    label={t("leveling.tiers.milestoneLabel")}
+                    hint={t("leveling.tiers.milestoneHint")}
                   >
                     <Textarea
-                      value={t.levelupMessage ?? ""}
+                      value={tier.levelupMessage ?? ""}
                       onChange={(v) => update(i, { levelupMessage: v || null })}
                     />
                   </Field>
@@ -691,17 +689,17 @@ function TiersBlock({ guildId, initial }: { guildId: string; initial: LevelingTi
           onClick={add}
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm hover:bg-white/[0.06]"
         >
-          <Plus className="h-4 w-4" /> Добавить tier
+          <Plus className="h-4 w-4" /> {t("leveling.tiers.add")}
         </button>
         <button
           type="button"
           onClick={reset}
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 hover:bg-white/[0.06]"
         >
-          <RefreshCw className="h-4 w-4" /> Сбросить к дефолту
+          <RefreshCw className="h-4 w-4" /> {t("leveling.tiers.resetDefault")}
         </button>
         <div className="flex-1" />
-        <SaveButton dirty={dirty} saving={saving} onClick={save} label="Сохранить tier'ы" />
+        <SaveButton dirty={dirty} saving={saving} onClick={save} label={t("leveling.tiers.saveLabel")} />
       </div>
     </Block>
   )
@@ -726,6 +724,7 @@ function RoleRewardsBlock({
   mode: "stack" | "replace"
   onModeChange: (m: "stack" | "replace") => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [rewards, setRewards] = useState<RoleReward[]>(initial)
   const [saving, setSaving] = useState(false)
   const dirty = JSON.stringify(rewards) !== JSON.stringify(initial)
@@ -755,8 +754,8 @@ function RoleRewardsBlock({
   }
 
   return (
-    <Block title="Награды ролями" description={`До ${limit} правил. Бот должен быть выше выданных ролей в иерархии.`}>
-      <Field label="Режим">
+    <Block title={t("leveling.rewards.title")} description={t("leveling.rewards.description", { limit })}>
+      <Field label={t("leveling.rewards.mode")}>
         <div className="flex gap-2">
           <button
             type="button"
@@ -766,8 +765,8 @@ function RoleRewardsBlock({
               mode === "stack" ? "border-violet-500 bg-violet-500/10 text-white" : "border-white/10 text-white/60 hover:bg-white/[0.04]",
             )}
           >
-            <p className="font-medium">Stack</p>
-            <p className="text-[11px] text-white/50">Получает все роли по дороге (5, 10, 20...)</p>
+            <p className="font-medium">{t("leveling.rewards.stackTitle")}</p>
+            <p className="text-[11px] text-white/50">{t("leveling.rewards.stackDesc")}</p>
           </button>
           <button
             type="button"
@@ -777,8 +776,8 @@ function RoleRewardsBlock({
               mode === "replace" ? "border-violet-500 bg-violet-500/10 text-white" : "border-white/10 text-white/60 hover:bg-white/[0.04]",
             )}
           >
-            <p className="font-medium">Replace</p>
-            <p className="text-[11px] text-white/50">Только роль наивысшего достигнутого уровня</p>
+            <p className="font-medium">{t("leveling.rewards.replaceTitle")}</p>
+            <p className="text-[11px] text-white/50">{t("leveling.rewards.replaceDesc")}</p>
           </button>
         </div>
       </Field>
@@ -793,7 +792,7 @@ function RoleRewardsBlock({
               onChange={(e) => update(i, { roleId: e.target.value })}
               className="flex-[2] rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
             >
-              <option value="">— выберите роль —</option>
+              <option value="">{t("leveling.rewards.pickRole")}</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.name}
@@ -814,7 +813,7 @@ function RoleRewardsBlock({
           disabled={rewards.length >= limit}
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm hover:bg-white/[0.06] disabled:opacity-40"
         >
-          <Plus className="h-4 w-4" /> Добавить награду
+          <Plus className="h-4 w-4" /> {t("leveling.rewards.add")}
         </button>
         <div className="flex-1" />
         <SaveButton dirty={dirty} saving={saving} onClick={save} />
@@ -846,6 +845,7 @@ function NoXpZonesBlock({
   ignored: { id: string; discordId: string }[]
   onUnignore: (discordId: string) => Promise<void>
 }) {
+  const { t } = useTranslation()
   const [selRoles, setSelRoles] = useState(new Set(initialRoles))
   const [selText, setSelText] = useState(new Set(initialTextChannels))
   const [selVoice, setSelVoice] = useState(new Set(initialVoiceChannels))
@@ -870,23 +870,23 @@ function NoXpZonesBlock({
   }
 
   return (
-    <Block title="Исключения" description="Где XP не начисляется">
+    <Block title={t("leveling.noXp.title")} description={t("leveling.noXp.description")}>
       <div className="grid sm:grid-cols-2 gap-4">
-        <Field label="Роли без XP" hint="Участники с этими ролями не получают XP">
+        <Field label={t("leveling.noXp.rolesLabel")} hint={t("leveling.noXp.rolesHint")}>
           <MultiPicker items={roles.map((r) => ({ id: r.id, label: r.name }))} selected={selRoles} onChange={setSelRoles} />
         </Field>
-        <Field label="Текстовые каналы без XP">
+        <Field label={t("leveling.noXp.textLabel")}>
           <MultiPicker items={textChannels.map((c) => ({ id: c.id, label: "#" + c.name }))} selected={selText} onChange={setSelText} />
         </Field>
-        <Field label="Голосовые каналы без XP" hint="Например AFK-канал">
+        <Field label={t("leveling.noXp.voiceLabel")} hint={t("leveling.noXp.voiceHint")}>
           <MultiPicker items={voiceChannels.map((c) => ({ id: c.id, label: "🔊 " + c.name }))} selected={selVoice} onChange={setSelVoice} />
         </Field>
         <div>
           <p className="text-xs font-medium text-white/70 mb-1.5">
-            Игнорируемые пользователи <span className="text-white/40">(управляются через /xp ignore)</span>
+            {t("leveling.noXp.ignoredTitle")} <span className="text-white/40">{t("leveling.noXp.ignoredManaged")}</span>
           </p>
           <div className="rounded-lg border border-white/10 bg-[#0e0e18] p-2 min-h-[100px] max-h-[200px] overflow-y-auto space-y-1">
-            {ignored.length === 0 && <p className="text-xs text-white/40 px-1 py-2">Список пуст.</p>}
+            {ignored.length === 0 && <p className="text-xs text-white/40 px-1 py-2">{t("leveling.noXp.listEmpty")}</p>}
             {ignored.map((u) => (
               <div key={u.id} className="flex items-center justify-between text-xs text-white/80 px-2 py-1">
                 <span className="font-mono">{u.discordId}</span>
@@ -894,7 +894,7 @@ function NoXpZonesBlock({
                   type="button"
                   onClick={() => onUnignore(u.discordId)}
                   className="text-white/40 hover:text-red-400"
-                  title="Убрать из ignore-list"
+                  title={t("leveling.noXp.removeIgnoredTip")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -918,9 +918,10 @@ function MultiPicker({
   selected: Set<string>
   onChange: (next: Set<string>) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="rounded-lg border border-white/10 bg-[#0e0e18] p-2 max-h-[160px] overflow-y-auto space-y-0.5">
-      {items.length === 0 && <p className="text-xs text-white/40 px-1 py-2">Ничего нет.</p>}
+      {items.length === 0 && <p className="text-xs text-white/40 px-1 py-2">{t("leveling.noXp.nothing")}</p>}
       {items.map((it) => {
         const checked = selected.has(it.id)
         return (
@@ -968,6 +969,7 @@ function RankCardBlock({
   initial: LevelingSettings
   channels: Channel[]
 }) {
+  const { t } = useTranslation()
   const [s, setS] = useState({
     rankBgImageUrl: initial.rankBgImageUrl,
     rankBgColor: initial.rankBgColor,
@@ -1006,7 +1008,7 @@ function RankCardBlock({
         })
         .catch((e) => {
           if (!alive) return
-          setPreviewError(e instanceof Error ? e.message : "Ошибка превью")
+          setPreviewError(e instanceof Error ? e.message : t("leveling.card.previewError"))
         })
         .finally(() => {
           if (alive) setPreviewLoading(false)
@@ -1022,7 +1024,7 @@ function RankCardBlock({
   const textChannels = useMemo(() => channels.filter((c) => c.type === 0 || c.type === 5), [channels])
   const [testChannelId, setTestChannelId] = useState<string>(textChannels[0]?.id ?? "")
   const [sendingTest, setSendingTest] = useState(false)
-  const [testResult, setTestResult] = useState<string | null>(null)
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null)
 
   async function send() {
     if (!testChannelId) return
@@ -1030,9 +1032,9 @@ function RankCardBlock({
     setTestResult(null)
     try {
       await sendTestRankCard(guildId, testChannelId)
-      setTestResult("Карта отправлена в канал ✓")
+      setTestResult({ ok: true, text: t("leveling.card.testSent") })
     } catch (e) {
-      setTestResult(e instanceof Error ? e.message : "Ошибка отправки")
+      setTestResult({ ok: false, text: e instanceof Error ? e.message : t("leveling.card.sendError") })
     } finally {
       setSendingTest(false)
     }
@@ -1061,8 +1063,8 @@ function RankCardBlock({
   }
 
   return (
-    <Block title="Rank card (визуал карты ранга)" description="Цвета и фон. Превью обновляется автоматически.">
-      <Field label="Фоновая картинка (URL)" hint="Опционально. Если пусто — используется цвет фона.">
+    <Block title={t("leveling.card.title")} description={t("leveling.card.description")}>
+      <Field label={t("leveling.card.bgImage")} hint={t("leveling.card.bgImageHint")}>
         <TextInput
           value={s.rankBgImageUrl ?? ""}
           onChange={(v) => setS({ ...s, rankBgImageUrl: v || null })}
@@ -1070,32 +1072,32 @@ function RankCardBlock({
         />
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Цвет фона">
+        <Field label={t("leveling.card.bgColor")}>
           <ColorInput value={s.rankBgColor} onChange={(v) => setS({ ...s, rankBgColor: v })} />
         </Field>
-        <Field label="Затемнение overlay (%)">
+        <Field label={t("leveling.card.overlay")}>
           <NumberInput min={0} max={100} value={s.rankOverlayOpacity} onChange={(v) => setS({ ...s, rankOverlayOpacity: v })} />
         </Field>
-        <Field label="Основной текст">
+        <Field label={t("leveling.card.primaryText")}>
           <ColorInput value={s.rankPrimaryTextColor} onChange={(v) => setS({ ...s, rankPrimaryTextColor: v })} />
         </Field>
-        <Field label="Второстепенный текст">
+        <Field label={t("leveling.card.secondaryText")}>
           <ColorInput value={s.rankSecondaryTextColor} onChange={(v) => setS({ ...s, rankSecondaryTextColor: v })} />
         </Field>
-        <Field label="Акцентный (tier)">
+        <Field label={t("leveling.card.accent")}>
           <ColorInput value={s.rankAccentColor} onChange={(v) => setS({ ...s, rankAccentColor: v })} />
         </Field>
-        <Field label="Прогресс-бар">
+        <Field label={t("leveling.card.progress")}>
           <ColorInput value={s.rankProgressColor} onChange={(v) => setS({ ...s, rankProgressColor: v })} />
         </Field>
-        <Field label="Трек прогресс-бара" hint="rgba() поддерживается">
+        <Field label={t("leveling.card.progressTrack")} hint={t("leveling.card.progressTrackHint")}>
           <TextInput value={s.rankProgressBgColor} onChange={(v) => setS({ ...s, rankProgressBgColor: v })} />
         </Field>
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-white/40">Превью (живой PNG-рендер)</p>
+          <p className="text-xs text-white/40">{t("leveling.card.previewLabel")}</p>
           {previewLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-white/40" />}
         </div>
         <div className="rounded-xl overflow-hidden bg-[#0e0e18] border border-white/5 min-h-[120px] flex items-center justify-center">
@@ -1104,20 +1106,20 @@ function RankCardBlock({
           ) : previewUrl ? (
             <img src={previewUrl} alt="Rank card preview" className="w-full block" />
           ) : (
-            <p className="text-xs text-white/40 p-4">Загрузка превью…</p>
+            <p className="text-xs text-white/40 p-4">{t("leveling.card.previewLoading")}</p>
           )}
         </div>
       </div>
 
       <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
-        <p className="text-xs font-medium text-white/70">Тестовая отправка в канал</p>
+        <p className="text-xs font-medium text-white/70">{t("leveling.card.testTitle")}</p>
         <div className="flex gap-2 items-stretch">
           <select
             value={testChannelId}
             onChange={(e) => setTestChannelId(e.target.value)}
             className="flex-1 rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
           >
-            <option value="">— выберите канал —</option>
+            <option value="">{t("leveling.general.pickChannel")}</option>
             {textChannels.map((c) => (
               <option key={c.id} value={c.id}>
                 #{c.name}
@@ -1131,12 +1133,12 @@ function RankCardBlock({
             className="inline-flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
           >
             {sendingTest ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            Отправить
+            {t("leveling.card.send")}
           </button>
         </div>
         {testResult && (
-          <p className={cn("text-xs", testResult.startsWith("Карта") ? "text-emerald-400" : "text-red-400")}>
-            {testResult}
+          <p className={cn("text-xs", testResult.ok ? "text-emerald-400" : "text-red-400")}>
+            {testResult.text}
           </p>
         )}
       </div>
@@ -1147,7 +1149,7 @@ function RankCardBlock({
           onClick={reset}
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/70 hover:bg-white/[0.06]"
         >
-          <RefreshCw className="h-4 w-4" /> Сбросить к дефолту
+          <RefreshCw className="h-4 w-4" /> {t("leveling.tiers.resetDefault")}
         </button>
         <div className="flex-1" />
         <SaveButton dirty={dirty} saving={saving} onClick={save} />
@@ -1161,6 +1163,7 @@ function RankCardBlock({
 // ────────────────────────────────────────────────────────────
 
 function AdvancedBlock({ guildId }: { guildId: string }) {
+  const { t } = useTranslation()
   const [busy, setBusy] = useState<"recalc" | "wipe" | null>(null)
   const [result, setResult] = useState<string | null>(null)
 
@@ -1169,27 +1172,27 @@ function AdvancedBlock({ guildId }: { guildId: string }) {
     setResult(null)
     try {
       const r = await recalcLeveling(guildId)
-      setResult(`Пересчитано записей: ${r.updated}`)
+      setResult(t("leveling.advanced.recalcResult", { n: r.updated }))
     } finally {
       setBusy(null)
     }
   }
 
   async function wipe() {
-    if (!confirm("Сбросить XP всех участников сервера? Действие необратимо.")) return
-    if (!confirm("Точно? Это удалит весь прогресс участников.")) return
+    if (!confirm(t("leveling.advanced.confirmWipe1"))) return
+    if (!confirm(t("leveling.advanced.confirmWipe2"))) return
     setBusy("wipe")
     setResult(null)
     try {
       const r = await wipeLeveling(guildId)
-      setResult(`Удалено XP-записей: ${r.affected}`)
+      setResult(t("leveling.advanced.wipeResult", { n: r.affected }))
     } finally {
       setBusy(null)
     }
   }
 
   return (
-    <Block title="Дополнительно" description="Опасная зона + экспорт">
+    <Block title={t("leveling.advanced.title")} description={t("leveling.advanced.description")}>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -1198,7 +1201,7 @@ function AdvancedBlock({ guildId }: { guildId: string }) {
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm hover:bg-white/[0.06] disabled:opacity-50"
         >
           {busy === "recalc" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          Пересчитать уровни / tier'ы
+          {t("leveling.advanced.recalc")}
         </button>
         <a
           href={levelingCsvExportUrl(guildId)}
@@ -1206,7 +1209,7 @@ function AdvancedBlock({ guildId }: { guildId: string }) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm hover:bg-white/[0.06]"
         >
-          <Download className="h-4 w-4" /> Экспорт CSV
+          <Download className="h-4 w-4" /> {t("leveling.advanced.exportCsv")}
         </a>
         <button
           type="button"
@@ -1215,7 +1218,7 @@ function AdvancedBlock({ guildId }: { guildId: string }) {
           className="inline-flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300 hover:bg-red-500/20 disabled:opacity-50"
         >
           {busy === "wipe" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-          Сбросить XP всех участников
+          {t("leveling.advanced.wipe")}
         </button>
       </div>
       {result && <p className="text-xs text-emerald-400">{result}</p>}
@@ -1239,6 +1242,7 @@ const EVENT_TYPE_OPTIONS: { value: XpEventType; label: string; color: string }[]
 const AUDIT_PAGE_SIZE = 25
 
 function AuditLogBlock({ guildId }: { guildId: string }) {
+  const { t } = useTranslation()
   const [events, setEvents] = useState<LevelingEvent[]>([])
   const [total, setTotal] = useState(0)
   const [offset, setOffset] = useState(0)
@@ -1261,7 +1265,7 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
       setTotal(res.total)
       setOffset(nextOffset)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Ошибка загрузки")
+      setError(e instanceof Error ? e.message : t("leveling.loadError"))
     } finally {
       setLoading(false)
     }
@@ -1277,15 +1281,12 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
   const currentPage = Math.floor(offset / AUDIT_PAGE_SIZE) + 1
 
   return (
-    <Block
-      title="Аудит-лог XP"
-      description="Лента всех XP-событий — chat, voice, ручные команды. Помогает диагностировать жалобы 'у меня не растёт XP'."
-    >
+    <Block title={t("leveling.audit.title")} description={t("leveling.audit.description")}>
       <div className="flex flex-wrap gap-2 items-center">
         <input
           type="text"
           value={userFilter}
-          placeholder="Discord ID пользователя"
+          placeholder={t("leveling.audit.userIdPlaceholder")}
           onChange={(e) => setUserFilter(e.target.value)}
           className="w-64 rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-1.5 text-sm font-mono text-white outline-none focus:border-violet-500/60"
         />
@@ -1322,7 +1323,7 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs hover:bg-white/[0.06] disabled:opacity-50"
         >
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Обновить
+          {t("leveling.audit.refresh")}
         </button>
       </div>
 
@@ -1334,9 +1335,9 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
         <table className="w-full text-xs">
           <thead className="text-white/40 border-b border-white/5">
             <tr>
-              <th className="text-left font-medium px-3 py-2">Время</th>
-              <th className="text-left font-medium px-3 py-2">User</th>
-              <th className="text-left font-medium px-3 py-2">Тип</th>
+              <th className="text-left font-medium px-3 py-2">{t("leveling.audit.colTime")}</th>
+              <th className="text-left font-medium px-3 py-2">{t("leveling.audit.colUser")}</th>
+              <th className="text-left font-medium px-3 py-2">{t("leveling.audit.colType")}</th>
               <th className="text-right font-medium px-3 py-2">XP</th>
               <th className="text-right font-medium px-3 py-2">Total</th>
               <th className="text-right font-medium px-3 py-2">Lv</th>
@@ -1346,7 +1347,7 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
             {events.length === 0 && !loading && (
               <tr>
                 <td colSpan={6} className="text-center text-white/40 px-3 py-6">
-                  Событий нет
+                  {t("leveling.audit.noEvents")}
                 </td>
               </tr>
             )}
@@ -1383,10 +1384,10 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
           disabled={loading || offset === 0}
           className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 hover:bg-white/[0.06] disabled:opacity-40"
         >
-          ← Назад
+          {t("leveling.audit.prev")}
         </button>
         <span>
-          Стр. {currentPage} / {totalPages} · всего {total.toLocaleString("en-US")} событий
+          {t("leveling.audit.pageInfo", { current: currentPage, total: totalPages, n: total.toLocaleString("en-US") })}
         </span>
         <button
           type="button"
@@ -1394,11 +1395,8 @@ function AuditLogBlock({ guildId }: { guildId: string }) {
           disabled={loading || offset + AUDIT_PAGE_SIZE >= total}
           className="rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1 hover:bg-white/[0.06] disabled:opacity-40"
         >
-          Вперёд →
+          {t("leveling.audit.next")}
         </button>
-        <span className="ml-auto inline-flex items-center gap-1 text-white/30">
-          <History className="h-3 w-3" /> Лента pull-only — не дёргает Discord
-        </span>
       </div>
     </Block>
   )

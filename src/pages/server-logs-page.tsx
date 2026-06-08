@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Trans, useTranslation } from "react-i18next"
 import {
   ApiError,
   getChannels,
@@ -11,13 +12,6 @@ import {
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { Loader2, ScrollText } from "lucide-react"
 
-const LOG_TYPE_LABELS: Record<LogsType, string> = {
-  joinLeave: "Join/Leave",
-  messages: "Messages",
-  moderation: "Moderation",
-  channel: "Channel",
-  banKick: "Ban/Kick",
-}
 const LOG_TYPES: LogsType[] = ["joinLeave", "messages", "moderation", "channel", "banKick"]
 
 /**
@@ -26,6 +20,7 @@ const LOG_TYPES: LogsType[] = ["joinLeave", "messages", "moderation", "channel",
  */
 export function ServerLogsPage() {
   const guildId = useCurrentGuildId()
+  const { t } = useTranslation()
   const [channels, setChannels] = useState<Channel[]>([])
   const [logs, setLogs] = useState<GuildLogs>({})
   const [loading, setLoading] = useState(true)
@@ -47,9 +42,9 @@ export function ServerLogsPage() {
       .catch((e) => {
         if (!alive) return
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
-          setError("Нет доступа к серверу.")
+          setError(t("common.noAccess"))
         } else {
-          setError(e instanceof Error ? e.message : "Loading error")
+          setError(e instanceof Error ? e.message : t("serverLogs.loadingError"))
         }
       })
       .finally(() => {
@@ -69,7 +64,7 @@ export function ServerLogsPage() {
       setSavedAt(Date.now())
       setTimeout(() => setSavedAt(null), 2500)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Save error")
+      setError(e instanceof Error ? e.message : t("serverLogs.saveError"))
     } finally {
       setSavingType(null)
     }
@@ -78,7 +73,7 @@ export function ServerLogsPage() {
   if (!guildId) {
     return (
       <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-        <p className="text-white/60">Выберите сервер в селекторе слева вверху.</p>
+        <p className="text-white/60">{t("common.selectServer")}</p>
       </div>
     )
   }
@@ -88,11 +83,14 @@ export function ServerLogsPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <ScrollText className="h-7 w-7 text-violet-400" />
-          Логи сервера
+          {t("serverLogs.title")}
         </h1>
         <p className="text-sm text-white/50 mt-1">
-          Выберите канал для каждого типа логов. Эти настройки также можно изменить через
-          команду <code className="text-violet-300">/logs set</code> в Discord.
+          {/* Inline <code> stays in JSX, the Trans replaces the slot. */}
+          <Trans
+            i18nKey="serverLogs.sub"
+            components={{ code: <code className="text-violet-300" /> }}
+          />
         </p>
       </div>
 
@@ -111,7 +109,7 @@ export function ServerLogsPage() {
       {!loading && !error && (
         <div className="rounded-2xl bg-[#11111c] border border-white/5 p-5 space-y-3">
           {savedAt != null && (
-            <div className="text-xs text-emerald-400">Сохранено.</div>
+            <div className="text-xs text-emerald-400">{t("common.saved")}</div>
           )}
           {LOG_TYPES.map((type) => {
             const currentId = logs[type] ?? null
@@ -119,7 +117,7 @@ export function ServerLogsPage() {
             return (
               <div key={type} className="flex flex-wrap items-center gap-3">
                 <span className="w-32 shrink-0 text-sm font-medium text-white/80">
-                  {LOG_TYPE_LABELS[type]}
+                  {t(`serverLogs.types.${type}`)}
                 </span>
                 <select
                   value={currentId ?? ""}
@@ -127,7 +125,7 @@ export function ServerLogsPage() {
                   onChange={(e) => handleChange(type, e.target.value || null)}
                   className="min-w-[260px] h-10 rounded-lg bg-white/[0.04] border border-white/10 px-3 text-sm text-white outline-none focus:border-violet-500/60"
                 >
-                  <option value="">— Отключить —</option>
+                  <option value="">{t("serverLogs.disable")}</option>
                   {channels.map((c) => (
                     <option key={c.id} value={c.id}>
                       # {c.name}
