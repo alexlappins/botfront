@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { ChevronDown, Plus, Send, Trash2, X } from "lucide-react"
 import { Loader2 } from "lucide-react"
 import type {
@@ -72,13 +73,14 @@ export function VariantEditor({
   hideButtons,
   defaultOpen,
 }: VariantEditorProps) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(!!defaultOpen)
 
   function patch(p: Partial<VariantState>) {
     onChange({ ...value, ...p })
   }
 
-  const summary = value.text?.trim().slice(0, 80) || "(пустой вариант)"
+  const summary = value.text?.trim().slice(0, 80) || t("welcome.editor.summaryEmpty")
   const hasImage = value.imageEnabled
   const buttonCount = value.buttonsConfig?.length ?? 0
 
@@ -109,7 +111,7 @@ export function VariantEditor({
               onClick={onTest}
               disabled={testing}
               className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white disabled:opacity-50"
-              title="Отправить только этот вариант"
+              title={t("welcome.editor.testVariant")}
             >
               {testing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
             </button>
@@ -119,7 +121,7 @@ export function VariantEditor({
               type="button"
               onClick={onRemove}
               className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-red-500/10 hover:text-red-400"
-              title="Удалить вариант"
+              title={t("welcome.editor.removeVariant")}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -130,11 +132,11 @@ export function VariantEditor({
       {open && (
         <div className="border-t border-white/5 p-4 space-y-4">
           <div>
-            <label className="text-xs text-white/60 block mb-1">Текст сообщения (поддерживает переменные)</label>
+            <label className="text-xs text-white/60 block mb-1">{t("welcome.editor.textLabel")}</label>
             <textarea
               value={value.text}
               onChange={(e) => patch({ text: e.target.value })}
-              placeholder="Привет, {user}!"
+              placeholder={t("welcome.editor.textPlaceholder", { user: "{user}" })}
               rows={3}
               className="w-full rounded-lg bg-black/40 border border-white/10 text-sm text-white p-3 outline-none focus:border-violet-500/60 resize-y"
             />
@@ -174,12 +176,14 @@ function ButtonsSection({
   buttons: WelcomeButton[]
   onChange: (next: WelcomeButton[]) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="rounded-xl border border-white/10 bg-black/20 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">
-            Кнопки-ссылки <span className="text-white/40 normal-case">— до 3</span>
+            {t("welcome.editor.buttons.title")}{" "}
+            <span className="text-white/40 normal-case">{t("welcome.editor.buttons.limit")}</span>
           </p>
         </div>
         {buttons.length < 3 && (
@@ -189,11 +193,13 @@ function ButtonsSection({
             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-white/80"
           >
             <Plus className="h-3 w-3" />
-            Добавить
+            {t("welcome.editor.buttons.add")}
           </button>
         )}
       </div>
-      {buttons.length === 0 && <p className="text-xs text-white/40">Нет кнопок.</p>}
+      {buttons.length === 0 && (
+        <p className="text-xs text-white/40">{t("welcome.editor.buttons.none")}</p>
+      )}
       {buttons.map((b, i) => (
         <div key={i} className="grid grid-cols-[1fr_2fr_auto] gap-2">
           <input
@@ -201,7 +207,7 @@ function ButtonsSection({
             onChange={(e) =>
               onChange(buttons.map((row, idx) => (idx === i ? { ...row, label: e.target.value } : row)))
             }
-            placeholder="Текст кнопки"
+            placeholder={t("welcome.editor.buttons.labelPlaceholder")}
             className="rounded-lg bg-black/40 border border-white/10 text-sm text-white px-3 py-2 outline-none focus:border-violet-500/60"
           />
           <input
@@ -216,7 +222,7 @@ function ButtonsSection({
             type="button"
             onClick={() => onChange(buttons.filter((_, idx) => idx !== i))}
             className="grid place-items-center w-9 rounded-lg border border-white/10 hover:bg-white/5 text-white/40 hover:text-red-400"
-            aria-label="Удалить"
+            aria-label={t("welcome.editor.buttons.remove")}
           >
             <X className="h-4 w-4" />
           </button>

@@ -1,7 +1,15 @@
 import { useEffect, useState, type ChangeEvent } from "react"
+import { useTranslation } from "react-i18next"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Loader2, Plus, Save, Trash2, MessageSquare, X } from "lucide-react"
 import {
   emptyEmbedForm,
@@ -29,6 +37,7 @@ import { cn } from "@/lib/utils"
  * Edits are mirrored to the actual Discord message via PATCH (the bot calls message.edit).
  */
 export function GuildServerMessagesPage() {
+  const { t } = useTranslation()
   const guildId = useCurrentGuildId()
   const [messages, setMessages] = useState<GuildMessage[]>([])
   const [channels, setChannels] = useState<Channel[]>([])
@@ -51,7 +60,7 @@ export function GuildServerMessagesPage() {
       setChannels(c)
       setRoles(r)
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Loading error")
+      setError(e instanceof Error ? e.message : t("serverMessages.loadError"))
     } finally {
       setLoading(false)
     }
@@ -77,7 +86,7 @@ export function GuildServerMessagesPage() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <MessageSquare className="h-6 w-6" />
-          Шаблоны сообщений
+          {t("serverMessages.title")}
         </h1>
         <Button
           size="sm"
@@ -85,13 +94,13 @@ export function GuildServerMessagesPage() {
           className="inline-flex items-center gap-1.5"
         >
           <Plus className="h-3.5 w-3.5" />
-          Создать новое сообщение
+          {t("serverMessages.create")}
         </Button>
       </div>
 
       {messages.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-12 text-center text-white/55">
-          <p>Пока сообщений нет. Создайте новое или установите шаблон сервера.</p>
+          <p>{t("serverMessages.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -139,6 +148,7 @@ function ServerMessageCard({
   roles: GuildRole[]
   onChanged: () => void
 }) {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>("text")
 
   // Display: convert <#id>/<@&id> → #name/@Name; on save reverse
@@ -183,24 +193,24 @@ function ServerMessageCard({
         content: rawContent.trim() || null,
         embedJson: embedRaw,
       })
-      setSavedMsg("Saved")
+      setSavedMsg(t("serverMessages.saved"))
       setTimeout(() => setSavedMsg(null), 2000)
       onChanged()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to save")
+      setErr(e instanceof Error ? e.message : t("serverMessages.saveFailed"))
     } finally {
       setSaving(false)
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Delete this message? It will be deleted in Discord too.")) return
+    if (!confirm(t("serverMessages.deleteConfirm"))) return
     setDeleting(true)
     try {
       await deleteGuildMessage(guildId, message.id)
       onChanged()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Failed to delete")
+      setErr(e instanceof Error ? e.message : t("serverMessages.deleteFailed"))
     } finally {
       setDeleting(false)
     }
@@ -238,7 +248,7 @@ function ServerMessageCard({
           <span className="text-xs text-white/40 truncate">#{message.channelName}</span>
         </div>
         <span className="text-xs text-white/40 shrink-0">
-          {open ? "▲ скрыть" : "▼ редактировать"}
+          {open ? t("serverMessages.hide") : t("serverMessages.edit")}
         </span>
       </button>
 
@@ -247,10 +257,10 @@ function ServerMessageCard({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex gap-2">
               <button type="button" onClick={() => setTab("text")} className={tabClass(tab === "text")}>
-                Text
+                {t("serverMessages.tabs.text")}
               </button>
               <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
-                Embed
+                {t("serverMessages.tabs.embed")}
               </button>
             </div>
             <div className="flex items-center gap-1 shrink-0">
@@ -260,7 +270,7 @@ function ServerMessageCard({
                 ) : (
                   <Save className="h-3 w-3 mr-1" />
                 )}
-                Save
+                {t("serverMessages.save")}
               </Button>
               <Button
                 size="sm"
@@ -276,12 +286,12 @@ function ServerMessageCard({
 
           {tab === "text" && (
             <div className="grid gap-2">
-              <Label className="text-xs">Message content</Label>
+              <Label className="text-xs">{t("serverMessages.contentLabel")}</Label>
               <textarea
                 className="flex min-h-[100px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                 value={content}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
-                placeholder="Plain text shown above the embed (or alone)"
+                placeholder={t("serverMessages.contentPlaceholder")}
                 rows={5}
               />
             </div>
@@ -342,6 +352,7 @@ function CreateMessageModal({
   onClose: () => void
   onCreated: () => void
 }) {
+  const { t } = useTranslation()
   const [tab, setTab] = useState<Tab>("text")
   const [channelId, setChannelId] = useState<string>("")
   const [content, setContent] = useState("")
@@ -354,7 +365,7 @@ function CreateMessageModal({
   async function handleCreate() {
     setErr(null)
     if (!channelId) {
-      setErr("Выберите канал")
+      setErr(t("serverMessages.errors.pickChannel"))
       return
     }
     const rawContent = friendlyToMentions(content, channels, roles)
@@ -365,7 +376,7 @@ function CreateMessageModal({
         const parsed = JSON.parse(embedStr) as { embeds?: Record<string, unknown>[] }
         embedObj = parsed.embeds?.[0] ?? null
       } catch {
-        setErr("Embed JSON некорректен")
+        setErr(t("serverMessages.errors.badEmbed"))
         return
       }
     }
@@ -374,7 +385,7 @@ function CreateMessageModal({
       : null
 
     if (!rawContent.trim() && !embedRaw) {
-      setErr("Нужно заполнить текст или embed")
+      setErr(t("serverMessages.errors.needContent"))
       return
     }
     setSaving(true)
@@ -386,7 +397,7 @@ function CreateMessageModal({
       })
       onCreated()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Не удалось создать сообщение")
+      setErr(e instanceof Error ? e.message : t("serverMessages.errors.createFailed"))
     } finally {
       setSaving(false)
     }
@@ -404,12 +415,12 @@ function CreateMessageModal({
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
       <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
         <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
-          <h2 className="text-base font-semibold text-white">Новое сообщение</h2>
+          <h2 className="text-base font-semibold text-white">{t("serverMessages.modalTitle")}</h2>
           <button
             type="button"
             onClick={onClose}
             className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
-            aria-label="Закрыть"
+            aria-label={t("serverMessages.modalClose")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -417,44 +428,41 @@ function CreateMessageModal({
 
         <div className="p-5 space-y-4">
           <div className="grid gap-2">
-            <Label className="text-xs">Канал</Label>
-            <select
-              value={channelId}
-              onChange={(e) => setChannelId(e.target.value)}
-              className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
-            >
-              {/* Native <option> dropdowns are OS-rendered and ignore most
-                  CSS, but browsers do honour explicit background/colour set
-                  on the option itself — so the open list matches the panel
-                  instead of flashing default white. */}
-              <option value="" style={{ background: "#15151f", color: "#fff" }}>
-                Выберите канал
-              </option>
-              {textChannels.map((c) => (
-                <option key={c.id} value={c.id} style={{ background: "#15151f", color: "#fff" }}>
-                  # {c.name}
-                </option>
-              ))}
-            </select>
+            <Label className="text-xs">{t("serverMessages.modalChannel")}</Label>
+            {/* Radix Select, not a native <select>: the open list is rendered
+                in a portal we fully style (dark), so it never flashes the
+                OS-default white background. */}
+            <Select value={channelId} onValueChange={setChannelId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("serverMessages.modalPickChannel")} />
+              </SelectTrigger>
+              <SelectContent>
+                {textChannels.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    #{c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-2">
             <button type="button" onClick={() => setTab("text")} className={tabClass(tab === "text")}>
-              Текст
+              {t("serverMessages.modalText")}
             </button>
             <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
-              Embed
+              {t("serverMessages.modalEmbed")}
             </button>
           </div>
 
           {tab === "text" && (
             <div className="grid gap-2">
-              <Label className="text-xs">Содержимое сообщения</Label>
+              <Label className="text-xs">{t("serverMessages.modalContentLabel")}</Label>
               <textarea
                 className="flex min-h-[120px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
                 value={content}
                 onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
-                placeholder="Текст, который пользователи увидят. Поддерживает #канал и @роль."
+                placeholder={t("serverMessages.modalContentPlaceholder")}
                 rows={6}
               />
             </div>
@@ -466,11 +474,11 @@ function CreateMessageModal({
 
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose} disabled={saving}>
-              Отмена
+              {t("serverMessages.modalCancel")}
             </Button>
             <Button onClick={() => void handleCreate()} disabled={saving}>
               {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
-              Отправить и сохранить
+              {t("serverMessages.modalSubmit")}
             </Button>
           </div>
         </div>
@@ -480,12 +488,11 @@ function CreateMessageModal({
 }
 
 function NoServerHint() {
+  const { t } = useTranslation()
   return (
     <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-      <p className="text-white/60">Выберите сервер в селекторе слева вверху.</p>
-      <p className="text-xs text-white/40 mt-1">
-        После установки шаблона сообщения отсюда можно редактировать.
-      </p>
+      <p className="text-white/60">{t("serverMessages.selectServer")}</p>
+      <p className="text-xs text-white/40 mt-1">{t("serverMessages.selectServerHint")}</p>
     </div>
   )
 }

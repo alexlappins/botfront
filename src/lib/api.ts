@@ -1607,6 +1607,62 @@ export function levelingCsvExportUrl(guildId: string): string {
   return `${API_BASE}/guilds/${guildId}/leveling/xp-export.csv`
 }
 
+// ── Per-command permissions (Misha TZ pt.2 §6) ───────────
+
+export type LevelingCommandKey =
+  | "rank"
+  | "leaderboard"
+  | "xp.give"
+  | "xp.remove"
+  | "xp.set"
+  | "xp.reset"
+  | "xp.ignore"
+  | "xp.recalc"
+
+export type LevelingPermMode = "everyone" | "admins" | "roles"
+
+export interface LevelingCommandPermission {
+  command: LevelingCommandKey
+  mode: LevelingPermMode
+  allowedRoleIds: string[]
+}
+
+export interface LevelingPermissionsResponse {
+  /** Canonical command list with the hard-coded server defaults. The dashboard
+   *  uses it to render rows even before any override exists in DB. */
+  commands: { command: LevelingCommandKey; defaultMode: LevelingPermMode }[]
+  /** Effective permissions per command — DB rows merged over defaults. */
+  permissions: LevelingCommandPermission[]
+}
+
+export async function getLevelingPermissions(
+  guildId: string,
+): Promise<LevelingPermissionsResponse> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/leveling/permissions`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to load permissions")
+  return res.json()
+}
+
+export async function setLevelingPermission(
+  guildId: string,
+  command: LevelingCommandKey,
+  body: { mode: LevelingPermMode; allowedRoleIds: string[] },
+): Promise<LevelingCommandPermission> {
+  const res = await fetch(
+    `${API_BASE}/guilds/${guildId}/leveling/permissions/${encodeURIComponent(command)}`,
+    {
+      ...fetchOptions,
+      method: "PUT",
+      body: JSON.stringify(body),
+    },
+  )
+  if (!res.ok) await throwApiError(res, "Failed to save permission")
+  return res.json()
+}
+
 export type XpEventType =
   | "chat"
   | "voice"

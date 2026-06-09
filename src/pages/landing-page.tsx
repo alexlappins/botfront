@@ -96,7 +96,9 @@ export function LandingPage() {
   const botInvite =
     (import.meta.env.VITE_BOT_INVITE_URL as string | undefined) ?? "https://discord.com/oauth2/authorize"
   const loginHref = "/api/auth/discord"
-  const dashboardHref = user?.role === "admin" ? "/server-templates" : "/store"
+  // Shop is hidden until launch, so non-admins land on message templates
+  // instead of /store (which would render the disabled shop page).
+  const dashboardHref = user?.role === "admin" ? "/server-templates" : "/server-messages"
 
   return (
     <PublicShell activeNav="home">

@@ -38,9 +38,10 @@ export function PublicShell({
   // OAuth login is started by hitting /api/auth/discord — let the browser do
   // the redirect dance rather than calling fetch (server returns a 302).
   const loginHref = `/api/auth/discord`
-  // Where logged-in users want to land. Customers go to their dashboard root,
-  // admins to the template management area. Mirrors HomeRedirect in App.tsx.
-  const dashboardHref = user?.role === "admin" ? "/server-templates" : "/store"
+  // Where logged-in users want to land. Admins → template management area.
+  // Customers → message templates page (the shop is hidden until launch per
+  // Misha's TZ; landing on /store would show an empty/inert area).
+  const dashboardHref = user?.role === "admin" ? "/server-templates" : "/server-messages"
 
   return (
     <div className="public-shell">

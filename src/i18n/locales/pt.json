@@ -1,0 +1,617 @@
+{
+  "common": {
+    "loading": "Carregando…",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "saved": "Salvo",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "remove": "Remover",
+    "add": "Adicionar",
+    "edit": "Editar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "close": "Fechar",
+    "search": "Buscar",
+    "error": "Erro",
+    "noAccess": "Sem acesso a este servidor.",
+    "comingSoon": "Em breve",
+    "openDashboard": "Abrir painel",
+    "signIn": "Entrar",
+    "signOut": "Sair",
+    "addToDiscord": "Adicionar ao Discord",
+    "selectServer": "Escolha um servidor no seletor à esquerda."
+  },
+  "language": {
+    "label": "Idioma",
+    "russian": "Русский",
+    "english": "English",
+    "ukrainian": "Українська",
+    "spanish": "Español",
+    "portuguese": "Português"
+  },
+  "nav": {
+    "store": "Loja",
+    "purchases": "Compras",
+    "serverMessages": "Modelos de mensagem",
+    "welcome": "Boas-vindas",
+    "leveling": "Níveis",
+    "twitch": "Twitch Live",
+    "reactionRoles": "Cargos por reação",
+    "serverLogs": "Registros do servidor",
+    "myServers": "Meus servidores"
+  },
+  "guildSelector": {
+    "loading": "Carregando servidores…",
+    "noServers": "Nenhum servidor com o bot.",
+    "noServersHint": "Instale um modelo → o bot aparecerá no servidor → selecione-o aqui.",
+    "noneSelected": "Nenhum servidor selecionado",
+    "active": "Servidor ativo",
+    "comingSoonPremium": "Em breve: premium"
+  },
+  "landing": {
+    "title": "Invoque o bot que <em>aumenta o nível</em> do seu reino.",
+    "eyebrow": "O companheiro do streamer",
+    "sub": "Alertas ao vivo, moderação protetora e servidores prontos — um companheiro para streamers, VTubers e as comunidades que cuidam.",
+    "ctaShop": "Entrar na Loja",
+    "freeToBegin": "Grátis para começar · Twitch · YouTube · Kick · TikTok",
+    "freeToBeginShort": "Grátis para começar",
+    "alert": {
+      "streamer": "NyxStreams",
+      "wentLive": "entrou ao vivo no Twitch",
+      "liveBadge": "AO VIVO",
+      "preview": "Prévia do stream",
+      "title": "Ranked grind — rumo ao top 100 …",
+      "watching": "<b>{{count}}</b> assistindo",
+      "category": "Just Chatting",
+      "watch": "Assistir",
+      "xpLabel": "Recompensa de chat",
+      "xpValue": "+500 XP",
+      "levelLabel": "Subiu de nível!",
+      "levelValue": "Lv. 42 alcançado"
+    },
+    "stats": {
+      "forgedDaily": "Forjado diariamente",
+      "byStudio": "Por um pequeno estúdio",
+      "platforms": "4 plataformas",
+      "platformsList": "Twitch · YT · Kick · TikTok",
+      "oneClick": "Um clique",
+      "templates": "Modelos de servidor",
+      "verified": "Verificado",
+      "byDiscord": "pelo Discord"
+    },
+    "features": {
+      "title": "O Companheiro",
+      "eyebrow": "Recursos exclusivos",
+      "ward": {
+        "cat": "Segurança",
+        "title": "O Guardião"
+      },
+      "streamerSuite": {
+        "cat": "Lendário",
+        "title": "Streamer Suite",
+        "desc": "O poder distintivo que nenhum outro bot oferece — alertas ao vivo em Twitch, YouTube, Kick e TikTok, ferramentas nativas para VTubers e análises."
+      },
+      "moderation": {
+        "cat": "Moderação",
+        "title": "Mantenha a ordem"
+      },
+      "fellowship": {
+        "cat": "Comunidade",
+        "title": "Irmandade"
+      },
+      "tickets": {
+        "cat": "Suporte",
+        "title": "Tickets"
+      },
+      "giveaways": {
+        "cat": "Engajamento",
+        "title": "Sorteios"
+      },
+      "xp": {
+        "cat": "Recompensa",
+        "title": "XP e níveis"
+      },
+      "analytics": {
+        "cat": "Insights",
+        "title": "Análises"
+      }
+    },
+    "shop": {
+      "eyebrow": "O Mercador",
+      "title": "Reinos em destaque",
+      "sub": "Servidores Discord prontos — canais, cargos, boas-vindas, níveis e alertas ao vivo já configurados. Instalação em um clique após a compra.",
+      "empty": "Os primeiros modelos chegam em breve. Volte mais tarde.",
+      "openShop": "Abrir toda a Loja"
+    },
+    "final": {
+      "title": "Acenda a vela. <em>Entre ao vivo.</em>",
+      "sub": "Coloque o companheiro no seu servidor. Forje canais, invoque alertas, faça sua comunidade crescer."
+    }
+  },
+  "shop": {
+    "eyebrow": "O Mercador",
+    "title": "A Loja",
+    "sub": "Reinos Discord prontos — canais, cargos, boas-vindas, níveis e alertas ao vivo. Navegue sem conta; instale após entrar.",
+    "featuredEyebrow": "Selecionados",
+    "featuredTitle": "Reinos em destaque",
+    "catalogueEyebrow": "Catálogo",
+    "catalogueTitle": "Todos os reinos",
+    "searchPlaceholder": "Buscar reinos…",
+    "reset": "Redefinir",
+    "all": "Todos",
+    "noResults": "Nada corresponde a esses filtros.",
+    "empty": "A loja está vazia.",
+    "loadingRealms": "⌛ invocando reinos…",
+    "summoning": "⌛ invocando reino…",
+    "notFound": "Produto não encontrado",
+    "page": "página",
+    "totalFound": "Encontrados",
+    "realmsLeft": "reinos",
+    "sort": {
+      "newest": "Mais novos",
+      "popular": "Populares",
+      "priceAsc": "Preço ↑",
+      "priceDesc": "Preço ↓"
+    }
+  },
+  "product": {
+    "backToShop": "Voltar à Loja",
+    "purchased": "Comprado! Abra o painel → Minhas compras para instalar.",
+    "perInstall": "por instalação",
+    "buy": "Iniciar instalação",
+    "signInToBuy": "Entre para comprar",
+    "processing": "Processando…",
+    "buyHintLoggedIn": "Após a compra, vá ao painel → Minhas compras → Instalar em um servidor.",
+    "buyHintGuest": "Entre com o Discord para comprar. Você pode navegar por todos os reinos sem conta.",
+    "whatsInside": "O que tem dentro",
+    "stillFilling": "O reino ainda está sendo preenchido.",
+    "chronicleEyebrow": "A Crônica",
+    "chronicleTitle": "Sobre este reino",
+    "contentLabels": {
+      "channels": "Canais",
+      "roles": "Cargos",
+      "messages": "Mensagens",
+      "reactionRoles": "Auto-cargos",
+      "emojis": "Emojis",
+      "welcomeVariants": "Variantes de boas-vindas",
+      "serverStats": "Estatísticas do servidor",
+      "welcome": "Boas-vindas",
+      "goodbye": "Despedidas",
+      "leveling": "Sistema de níveis"
+    }
+  },
+  "welcome": {
+    "title": "Boas-vindas",
+    "sub": "Mensagens quando um membro entra ou sai. Cada variante é uma cópia completa com seu próprio texto, imagem e botões. O bot escolhe uma aleatoriamente ao ser acionado.",
+    "loadError": "Erro ao carregar",
+    "saveError": "Erro ao salvar",
+    "testFailed": "Falha ao enviar",
+    "testSent": "Mensagem de teste enviada",
+    "tabs": {
+      "welcome": "Boas-vindas",
+      "goodbye": "Despedida"
+    },
+    "enabledTitle": "Ativado",
+    "enabledSubWelcome": "Enviar uma mensagem de boas-vindas quando um novo membro entrar",
+    "enabledSubGoodbye": "Publicar em um canal quando um membro sair",
+    "sendTo": "Enviar para",
+    "sendMode": {
+      "channel": "Canal",
+      "dm": "Mensagem direta"
+    },
+    "dmHint": "O bot enviará uma DM ao novo membro. Se ele tiver DMs de estranhos desativadas, a mensagem não chegará.",
+    "channel": "Canal",
+    "channelPlaceholder": "Escolha um canal",
+    "variants": {
+      "newWelcomeTitle": "Boas-vindas para novos membros",
+      "goodbyeTitle": "Despedidas",
+      "subtitle": "Até 5 variantes. O bot escolhe uma aleatoriamente.",
+      "add": "Adicionar variante",
+      "empty": "Sem variantes. Adicione pelo menos uma.",
+      "label": "Variante {{n}}"
+    },
+    "returning": {
+      "title": "Membros que retornam",
+      "sub": "Conjunto separado de variantes para membros que já estiveram no servidor. Mesmas configurações completas das boas-vindas normais."
+    },
+    "actions": {
+      "save": "Salvar",
+      "testRandom": "Teste aleatório",
+      "testDisabledHint": "Ative as boas-vindas para testar"
+    },
+    "variables": {
+      "user": "Menção ao usuário (@username)",
+      "userName": "Nome de usuário sem @",
+      "userTag": "Nome com discriminador",
+      "userId": "ID do usuário",
+      "serverName": "Nome do servidor",
+      "serverMemberCount": "Número de membros"
+    },
+    "variablesHeading": "Variáveis disponíveis",
+    "editor": {
+      "summaryEmpty": "(variante vazia)",
+      "testVariant": "Enviar apenas esta variante",
+      "removeVariant": "Remover variante",
+      "textLabel": "Texto da mensagem (suporta variáveis)",
+      "textPlaceholder": "Olá, {{user}}!",
+      "buttons": {
+        "title": "Botões de link",
+        "limit": "— até 3",
+        "add": "Adicionar",
+        "none": "Sem botões.",
+        "labelPlaceholder": "Texto do botão",
+        "remove": "Remover"
+      },
+      "image": {
+        "title": "Imagem",
+        "description": "Banner gerado com avatar e texto — anexado à mensagem desta variante.",
+        "previewLoading": "Carregando prévia…",
+        "previewError": "Erro na prévia",
+        "uploadError": "Erro no upload",
+        "sendMode": "Modo de envio",
+        "modeWithText": "Texto + imagem",
+        "modeBeforeText": "Imagem antes do texto",
+        "modeImageOnly": "Apenas imagem",
+        "bgTitle": "Fundo",
+        "bgFill": "Cor de preenchimento",
+        "bgImage": "Imagem de fundo",
+        "bgReplace": "Substituir",
+        "bgUpload": "Enviar",
+        "bgRemove": "Remover",
+        "avatarTitle": "Avatar",
+        "avatarRadius": "Raio",
+        "avatarBorderWidth": "Borda, px",
+        "avatarBorderColor": "Cor da borda",
+        "usernameTitle": "Nome de usuário",
+        "textBlockTitle": "Bloco de texto (na imagem)",
+        "textBlockLabel": "Texto (suporta {{vars}})",
+        "fieldSize": "Tamanho",
+        "fieldStroke": "Borda, px",
+        "fieldColor": "Cor",
+        "fieldStrokeColor": "Cor da borda",
+        "contentIsName": "(conteúdo = {{var}})"
+      }
+    }
+  },
+  "twitch": {
+    "title": "Notificações de Twitch ao vivo",
+    "sub": "O bot envia um embed quando o canal de Twitch escolhido entra ao vivo. Fonte única da verdade — alterações aqui e via comando <code>/twitch</code> gravam no mesmo banco de dados.",
+    "loadError": "Erro ao carregar",
+    "notConfigured": "O bot não está configurado para Twitch — um administrador precisa definir <code>TWITCH_CLIENT_ID</code> e <code>TWITCH_CLIENT_SECRET</code> no ambiente do bot e reiniciar. Até lá, adicionar canais não funcionará.",
+    "module": {
+      "title": "Módulo Twitch",
+      "onSub": "Ativado — o bot acompanha os canais da lista e envia notificações.",
+      "offSub": "Desativado — os canais ficam salvos, mas nenhuma notificação é enviada. Ative o interruptor para retomar.",
+      "emptySub": "Ativado por padrão. Adicione seu primeiro canal de Twitch abaixo.",
+      "addFirstTip": "Adicione primeiro um canal de Twitch",
+      "on": "Ativado",
+      "off": "Desativado"
+    },
+    "add": {
+      "title": "Adicionar um canal de Twitch",
+      "slots": "{{used}} / {{limit}} vagas usadas",
+      "username": "Usuário do Twitch",
+      "usernamePlaceholder": "ex. shroud",
+      "channel": "Canal de notificações",
+      "channelPlaceholder": "— escolha um canal —",
+      "submit": "Adicionar",
+      "errors": {
+        "username": "Informe um usuário do Twitch",
+        "channel": "Escolha um canal do Discord",
+        "generic": "Erro ao adicionar",
+        "limitReached": "Limite atingido. Remova um canal para liberar uma vaga."
+      }
+    },
+    "list": {
+      "empty": "Nenhum canal acompanhado ainda — preencha o formulário acima.",
+      "title": "Canais acompanhados",
+      "refresh": "Atualizar",
+      "refreshTip": "Atualizar status ao vivo/offline",
+      "live": "AO VIVO",
+      "offline": "offline",
+      "liveTip": "Ao vivo agora",
+      "offlineTip": "Não está ao vivo",
+      "channelMissing": "(canal excluído: {{id}})",
+      "appearance": "Aparência",
+      "appearanceTip": "Configurar a aparência do embed",
+      "perRowOn": "ON",
+      "perRowOff": "OFF",
+      "enableTip": "Ativar notificações",
+      "disableTip": "Desativar notificações para este canal",
+      "removeTip": "Remover da lista",
+      "confirmRemove": "Parar de acompanhar {{name}}?"
+    },
+    "editor": {
+      "variables": "Variáveis disponíveis",
+      "color": "Cor da faixa do embed",
+      "titleField": "Título",
+      "titleHint": "Padrão: {{tpl}}",
+      "description": "Descrição",
+      "descriptionHint": "Padrão: {{tpl}}. Suporta markdown.",
+      "buttonLabel": "Texto do botão",
+      "contentField": "Mensagem acima do embed (opcional)",
+      "contentHint": "Se contiver uma URL, a prévia automática do Discord é suprimida via SUPPRESS_EMBEDS.",
+      "contentPlaceholder": "@everyone {streamer} live!",
+      "showGame": "Categoria",
+      "showThumbnail": "Miniatura",
+      "showAvatar": "Avatar",
+      "reset": "Redefinir",
+      "save": "Salvar",
+      "saved": "Salvo",
+      "saveError": "Erro ao salvar",
+      "previewLabel": "Prévia (aproximação à visão do Discord)"
+    },
+    "variables": {
+      "streamer": "Nome do streamer",
+      "title": "Título do stream",
+      "game": "Categoria / jogo",
+      "url": "URL do canal",
+      "viewers": "Espectadores (número)",
+      "started_at": "Início (ISO)"
+    }
+  },
+  "serverLogs": {
+    "title": "Registros do servidor",
+    "sub": "Escolha um canal para cada tipo de registro. Essas configurações também podem ser alteradas pelo comando <code>/logs set</code> no Discord.",
+    "loadingError": "Erro ao carregar",
+    "saveError": "Erro ao salvar",
+    "disable": "— Desativar —",
+    "types": {
+      "joinLeave": "Entrada / Saída",
+      "messages": "Mensagens",
+      "moderation": "Moderação",
+      "channel": "Canal",
+      "banKick": "Ban / Kick"
+    }
+  },
+  "serverMessages": {
+    "title": "Modelos de mensagem",
+    "create": "Criar uma nova mensagem",
+    "loadError": "Erro ao carregar",
+    "empty": "Ainda não há mensagens. Crie uma ou instale um modelo de servidor.",
+    "selectServer": "Escolha um servidor no seletor no topo à esquerda.",
+    "selectServerHint": "Depois de instalar um modelo, as mensagens aparecerão aqui.",
+    "edit": "▼ editar",
+    "hide": "▲ ocultar",
+    "tabs": {
+      "text": "Texto",
+      "embed": "Embed"
+    },
+    "save": "Salvar",
+    "saved": "Salvo",
+    "saveFailed": "Erro ao salvar",
+    "deleteFailed": "Erro ao excluir",
+    "deleteConfirm": "Excluir esta mensagem? Ela também será excluída no Discord.",
+    "contentLabel": "Conteúdo da mensagem",
+    "contentPlaceholder": "Texto puro mostrado acima do embed (ou sozinho)",
+    "modalTitle": "Nova mensagem",
+    "modalClose": "Fechar",
+    "modalChannel": "Canal",
+    "modalPickChannel": "Escolha um canal",
+    "modalText": "Texto",
+    "modalEmbed": "Embed",
+    "modalContentLabel": "Conteúdo da mensagem",
+    "modalContentPlaceholder": "Texto que os usuários verão. Suporta #canal e @cargo.",
+    "modalSubmit": "Enviar e salvar",
+    "modalCancel": "Cancelar",
+    "errors": {
+      "pickChannel": "Escolha um canal",
+      "badEmbed": "O JSON do embed é inválido",
+      "needContent": "Preencha texto ou embed",
+      "createFailed": "Erro ao criar a mensagem"
+    }
+  },
+  "reactionRoles": {
+    "title": "Cargos por reação",
+    "sub": "Gerencie reações e botões que concedem cargos aos membros.",
+    "selectServer": "Escolha um servidor no seletor no topo à esquerda.",
+    "loadError": "Erro ao carregar",
+    "tabs": {
+      "buttons": "Botões",
+      "reactions": "Reações"
+    },
+    "reactions": {
+      "activeTitle": "Vínculos ativos",
+      "activeDesc": "Todos os vínculos emoji → cargo neste servidor. Remover um também retira a reação do bot da mensagem.",
+      "empty": "Ainda não há vínculos de reação. Clique em \"Adicionar reação\" para criar um.",
+      "addCta": "Adicionar reação",
+      "modalTitle": "Adicionar vínculo reação → cargo",
+      "modalClose": "Fechar",
+      "message": "Mensagem",
+      "noMessages": "Sem mensagens — instale primeiro um modelo.",
+      "pickMessage": "Escolha uma mensagem",
+      "emoji": "Emoji",
+      "emojiPlaceholder": "✅ ou ID de emoji personalizado",
+      "role": "Cargo",
+      "pickRole": "Escolha um cargo",
+      "missingFields": "Escolha mensagem, emoji e cargo",
+      "addFailed": "Erro ao adicionar",
+      "confirmRemove": "Remover este vínculo?",
+      "adding": "Adicionando…",
+      "add": "Adicionar",
+      "cancel": "Cancelar",
+      "channelFallback": "(canal {{id}})"
+    },
+    "buttons": {
+      "empty": "Ainda não há mensagens neste servidor. Instale um modelo para preenchê-lo.",
+      "noConfigured": "Ainda não há mensagens com botões. Clique em \"Adicionar botões\" para configurar uma.",
+      "intro": "Cada mensagem tem seus próprios botões — adicionados e salvos independentemente. Clique numa mensagem para abrir o editor.",
+      "countOne": "{{count}} botão",
+      "countMany": "{{count}} botões",
+      "hide": "▲ ocultar",
+      "edit": "▼ editar",
+      "saving": "Salvando…",
+      "save": "Salvar botões desta mensagem",
+      "saveFailed": "Erro ao salvar",
+      "addCta": "Adicionar botões",
+      "modalTitle": "Escolha uma mensagem para adicionar botões",
+      "modalEmpty": "Todas as mensagens deste servidor já têm botões configurados.",
+      "modalPickMessage": "Escolha uma mensagem"
+    }
+  },
+  "leveling": {
+    "title": "Sistema de níveis",
+    "sub": "XP por mensagens e chat de voz, tiers personalizados, recompensas de cargo, exclusões. Notificações em um canal ou por DM.",
+    "loadError": "Erro ao carregar",
+    "warning": {
+      "title": "Atenção: problemas com a hierarquia de cargos",
+      "hint": "Mova o cargo do bot mais para cima nas configurações do servidor Discord; caso contrário, ele não conseguirá conceder esses cargos."
+    },
+    "placeholders": {
+      "user": "Menção @user",
+      "userName": "Nome sem @",
+      "level": "Novo nível",
+      "oldLevel": "Nível anterior",
+      "tier": "Tier atual",
+      "newTier": "Novo tier (para milestones)",
+      "oldTier": "Tier anterior (para milestones)",
+      "server": "Nome do servidor"
+    },
+    "general": {
+      "title": "Geral",
+      "description": "Interruptor principal, canal de level-up, modelo da mensagem",
+      "enable": "Ativar o sistema de níveis",
+      "channelLabel": "Para onde enviar mensagens de level-up",
+      "modeChannel": "Canal",
+      "modeDm": "DM para o usuário",
+      "modeDisabled": "Não enviar",
+      "pickChannel": "— escolha um canal —",
+      "templateLabel": "Modelo da mensagem padrão de level-up",
+      "placeholdersHint": "Marcadores: {{list}}",
+      "onlyTier": "Notificar apenas ao trocar de tier (pular level-ups comuns)"
+    },
+    "sources": {
+      "title": "Fontes de XP",
+      "description": "Quanto XP é concedido e por quê",
+      "chatEnable": "XP de chat — conceder por mensagens",
+      "chatMin": "XP mínimo por mensagem",
+      "chatMax": "XP máximo por mensagem",
+      "chatCooldown": "Cooldown (seg)",
+      "chatMinLength": "Tamanho mínimo da mensagem",
+      "voiceEnable": "XP de voz — conceder por minuto em voz",
+      "voicePerMin": "XP por minuto",
+      "voiceMinUsers": "Mín. de usuários no canal",
+      "voiceAfk": "Timeout AFK (min)"
+    },
+    "tiers": {
+      "title": "Tiers (ranques)",
+      "description": "Nomes personalizados para faixas de níveis. O tier aparece ao lado do nível na rank card e no leaderboard.",
+      "levels": "Níveis {{start}}–{{end}}",
+      "deleteTip": "Excluir tier",
+      "name": "Nome",
+      "color": "Cor",
+      "milestoneLabel": "Mensagem milestone de tier (opcional)",
+      "milestoneHint": "Se definida, é enviada na transição para este tier em vez de um level-up comum",
+      "add": "Adicionar tier",
+      "resetDefault": "Restaurar padrão",
+      "saveLabel": "Salvar tiers",
+      "confirmReset": "Restaurar tiers ao padrão?"
+    },
+    "rewards": {
+      "title": "Recompensas de cargo",
+      "description": "Até {{limit}} regras. O cargo do bot precisa estar acima dos cargos atribuídos na hierarquia.",
+      "mode": "Modo",
+      "stackTitle": "Stack",
+      "stackDesc": "Recebe todos os cargos pelo caminho (5, 10, 20…)",
+      "replaceTitle": "Replace",
+      "replaceDesc": "Apenas o cargo do nível mais alto alcançado",
+      "pickRole": "— escolha um cargo —",
+      "add": "Adicionar recompensa"
+    },
+    "noXp": {
+      "title": "Exclusões",
+      "description": "Onde o XP não é concedido",
+      "rolesLabel": "Cargos sem XP",
+      "rolesHint": "Membros com esses cargos não ganham XP",
+      "textLabel": "Canais de texto sem XP",
+      "voiceLabel": "Canais de voz sem XP",
+      "voiceHint": "Por exemplo o canal AFK",
+      "ignoredTitle": "Usuários ignorados",
+      "ignoredManaged": "(gerenciados por /xp ignore)",
+      "listEmpty": "A lista está vazia.",
+      "removeIgnoredTip": "Remover da lista de ignorados",
+      "nothing": "Nada aqui."
+    },
+    "card": {
+      "title": "Rank card (visual)",
+      "description": "Cores e fundo. A prévia atualiza automaticamente.",
+      "bgImage": "Imagem de fundo (URL)",
+      "bgImageHint": "Opcional. Se vazio, usa a cor de fundo.",
+      "bgColor": "Cor de fundo",
+      "overlay": "Escurecimento overlay (%)",
+      "primaryText": "Texto principal",
+      "secondaryText": "Texto secundário",
+      "accent": "Acento (tier)",
+      "progress": "Barra de progresso",
+      "progressTrack": "Trilho da barra de progresso",
+      "progressTrackHint": "rgba() suportado",
+      "previewLabel": "Prévia (renderização PNG ao vivo)",
+      "previewLoading": "Carregando prévia…",
+      "previewError": "Erro na prévia",
+      "testTitle": "Envio de teste para um canal",
+      "send": "Enviar",
+      "testSent": "Card enviada para o canal ✓",
+      "sendError": "Erro ao enviar"
+    },
+    "advanced": {
+      "title": "Avançado",
+      "description": "Zona perigosa + exportação",
+      "recalc": "Recalcular níveis / tiers",
+      "exportCsv": "Exportar CSV",
+      "wipe": "Limpar XP de todos os membros",
+      "recalcResult": "Registros recalculados: {{n}}",
+      "wipeResult": "Registros de XP excluídos: {{n}}",
+      "confirmWipe1": "Limpar XP de todos os membros do servidor? Isso é irreversível.",
+      "confirmWipe2": "Tem certeza? Isso apagará todo o progresso dos membros."
+    },
+    "audit": {
+      "title": "Log de auditoria XP",
+      "description": "Feed de todos os eventos XP — chat, voz, comandos manuais. Ajuda a diagnosticar reclamações tipo 'meu XP não sobe'.",
+      "userIdPlaceholder": "ID do Discord do usuário",
+      "refresh": "Atualizar",
+      "colTime": "Hora",
+      "colUser": "Usuário",
+      "colType": "Tipo",
+      "noEvents": "Sem eventos",
+      "prev": "← Voltar",
+      "next": "Próximo →",
+      "pageInfo": "Pág. {{current}} / {{total}} · {{n}} eventos no total"
+    },
+    "permissions": {
+      "title": "Permissões de comandos",
+      "description": "Escolha quem pode usar cada comando do sistema de níveis. Administradores do servidor sempre ignoram essas regras.",
+      "loadError": "Erro ao carregar permissões",
+      "saveError": "Erro ao salvar",
+      "commandHeader": "Comando",
+      "modeHeader": "Quem pode usar",
+      "rolesHeader": "Cargos permitidos",
+      "modeEveryone": "Todos",
+      "modeAdmins": "Admins / mods",
+      "modeRoles": "Cargos específicos",
+      "rolesPlaceholder": "Escolha um ou mais cargos",
+      "noRoles": "Nenhum cargo escolhido — o comando seguirá disponível apenas para admins.",
+      "defaultBadge": "padrão",
+      "commands": {
+        "rank": "/rank",
+        "leaderboard": "/leaderboard",
+        "xp.give": "/xp give",
+        "xp.remove": "/xp remove",
+        "xp.set": "/xp set",
+        "xp.reset": "/xp reset",
+        "xp.ignore": "/xp ignore",
+        "xp.recalc": "/xp recalc"
+      }
+    }
+  },
+  "footer": {
+    "tag": "Um companheiro do Discord forjado para streamers — alertas ao vivo, moderação protetora, reinos prontos.",
+    "companion": "Companheiro",
+    "account": "Conta",
+    "legal": "Legal",
+    "terms": "Termos",
+    "privacy": "Privacidade",
+    "bottom": "© Level Up · forjado por um pequeno estúdio sob a lua",
+    "verified": "✦ Verificado pelo Discord"
+  }
+}

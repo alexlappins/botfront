@@ -26,7 +26,9 @@
     "label": "Язык",
     "russian": "Русский",
     "english": "English",
-    "ukrainian": "Українська"
+    "ukrainian": "Українська",
+    "spanish": "Español",
+    "portuguese": "Português"
   },
   "nav": {
     "store": "Магазин",
@@ -204,7 +206,10 @@
     "variants": {
       "newWelcomeTitle": "Приветствие новых участников",
       "goodbyeTitle": "Прощания",
-      "subtitle": "До 5 вариантов. Бот выберет один случайно."
+      "subtitle": "До 5 вариантов. Бот выберет один случайно.",
+      "add": "Добавить вариант",
+      "empty": "Нет вариантов. Добавьте хотя бы один.",
+      "label": "Вариант {{n}}"
     },
     "returning": {
       "title": "Возвращающиеся участники",
@@ -223,7 +228,51 @@
       "serverName": "Название сервера",
       "serverMemberCount": "Кол-во участников"
     },
-    "variablesHeading": "Доступные переменные"
+    "variablesHeading": "Доступные переменные",
+    "editor": {
+      "summaryEmpty": "(пустой вариант)",
+      "testVariant": "Отправить только этот вариант",
+      "removeVariant": "Удалить вариант",
+      "textLabel": "Текст сообщения (поддерживает переменные)",
+      "textPlaceholder": "Привет, {{user}}!",
+      "buttons": {
+        "title": "Кнопки-ссылки",
+        "limit": "— до 3",
+        "add": "Добавить",
+        "none": "Нет кнопок.",
+        "labelPlaceholder": "Текст кнопки",
+        "remove": "Удалить"
+      },
+      "image": {
+        "title": "Картинка",
+        "description": "Сгенерированный баннер с аватаром и текстом — прикрепляется к сообщению этого варианта.",
+        "previewLoading": "Загрузка превью…",
+        "previewError": "Ошибка превью",
+        "uploadError": "Ошибка загрузки",
+        "sendMode": "Режим отправки",
+        "modeWithText": "Текст + картинка",
+        "modeBeforeText": "Картинка перед текстом",
+        "modeImageOnly": "Только картинка",
+        "bgTitle": "Фон",
+        "bgFill": "Цвет заливки",
+        "bgImage": "Картинка фона",
+        "bgReplace": "Заменить",
+        "bgUpload": "Загрузить",
+        "bgRemove": "Убрать",
+        "avatarTitle": "Аватар",
+        "avatarRadius": "Радиус",
+        "avatarBorderWidth": "Обводка, px",
+        "avatarBorderColor": "Цвет обводки",
+        "usernameTitle": "Имя пользователя",
+        "textBlockTitle": "Текстовый блок (на картинке)",
+        "textBlockLabel": "Текст (поддерживает {{vars}})",
+        "fieldSize": "Размер",
+        "fieldStroke": "Обводка, px",
+        "fieldColor": "Цвет",
+        "fieldStrokeColor": "Цвет обводки",
+        "contentIsName": "(контент = {{var}})"
+      }
+    }
   },
   "twitch": {
     "title": "Twitch live-уведомления",
@@ -316,6 +365,43 @@
       "banKick": "Бан/Кик"
     }
   },
+  "serverMessages": {
+    "title": "Шаблоны сообщений",
+    "create": "Создать новое сообщение",
+    "loadError": "Ошибка загрузки",
+    "empty": "Пока сообщений нет. Создайте новое или установите шаблон сервера.",
+    "selectServer": "Выберите сервер в селекторе слева вверху.",
+    "selectServerHint": "После установки шаблона сообщения отсюда можно редактировать.",
+    "edit": "▼ редактировать",
+    "hide": "▲ скрыть",
+    "tabs": {
+      "text": "Текст",
+      "embed": "Embed"
+    },
+    "save": "Сохранить",
+    "saved": "Сохранено",
+    "saveFailed": "Не удалось сохранить",
+    "deleteFailed": "Не удалось удалить",
+    "deleteConfirm": "Удалить это сообщение? Оно также будет удалено в Discord.",
+    "contentLabel": "Содержимое сообщения",
+    "contentPlaceholder": "Текст над embed (или вместо него)",
+    "modalTitle": "Новое сообщение",
+    "modalClose": "Закрыть",
+    "modalChannel": "Канал",
+    "modalPickChannel": "Выберите канал",
+    "modalText": "Текст",
+    "modalEmbed": "Embed",
+    "modalContentLabel": "Содержимое сообщения",
+    "modalContentPlaceholder": "Текст, который пользователи увидят. Поддерживает #канал и @роль.",
+    "modalSubmit": "Отправить и сохранить",
+    "modalCancel": "Отмена",
+    "errors": {
+      "pickChannel": "Выберите канал",
+      "badEmbed": "Embed JSON некорректен",
+      "needContent": "Нужно заполнить текст или embed",
+      "createFailed": "Не удалось создать сообщение"
+    }
+  },
   "reactionRoles": {
     "title": "Роли по реакции",
     "sub": "Управление реакциями и кнопками, которые выдают роли участникам.",
@@ -328,12 +414,13 @@
     "reactions": {
       "activeTitle": "Активные привязки",
       "activeDesc": "Все привязки эмодзи → роль на этом сервере. Удаление снимает реакцию бота с сообщения.",
-      "empty": "Привязок пока нет.",
-      "addTitle": "Добавить привязку",
+      "empty": "Привязок реакций пока нет. Нажмите «Добавить реакцию», чтобы создать.",
+      "addCta": "Добавить реакцию",
+      "modalTitle": "Добавить реакцию → роль",
+      "modalClose": "Закрыть",
       "message": "Сообщение",
       "noMessages": "Нет сообщений — установите шаблон.",
       "pickMessage": "Выберите сообщение",
-      "notSelected": "Не выбрано",
       "emoji": "Эмодзи",
       "emojiPlaceholder": "✅ или ID кастомного эмодзи",
       "role": "Роль",
@@ -343,10 +430,12 @@
       "confirmRemove": "Удалить эту привязку?",
       "adding": "Добавление…",
       "add": "Добавить",
+      "cancel": "Отмена",
       "channelFallback": "(канал {{id}})"
     },
     "buttons": {
       "empty": "На этом сервере ещё нет сообщений. Установите шаблон, чтобы они появились.",
+      "noConfigured": "Сообщений с кнопками пока нет. Нажмите «Добавить кнопки», чтобы настроить.",
       "intro": "У каждого сообщения свои кнопки — добавляются и сохраняются независимо. Клик по сообщению раскрывает редактор.",
       "countOne": "{{count}} кнопка",
       "countMany": "{{count}} кнопок",
@@ -354,7 +443,11 @@
       "edit": "▼ редактировать",
       "saving": "Сохранение…",
       "save": "Сохранить кнопки этого сообщения",
-      "saveFailed": "Не удалось сохранить"
+      "saveFailed": "Не удалось сохранить",
+      "addCta": "Добавить кнопки",
+      "modalTitle": "Выберите сообщение для добавления кнопок",
+      "modalEmpty": "У всех сообщений сервера уже настроены кнопки.",
+      "modalPickMessage": "Выберите сообщение"
     }
   },
   "leveling": {
@@ -484,6 +577,31 @@
       "prev": "← Назад",
       "next": "Вперёд →",
       "pageInfo": "Стр. {{current}} / {{total}} · всего {{n}} событий"
+    },
+    "permissions": {
+      "title": "Права на команды",
+      "description": "Выберите, кому доступна каждая команда системы уровней. Админы сервера всегда обходят эти правила.",
+      "loadError": "Не удалось загрузить права",
+      "saveError": "Не удалось сохранить",
+      "commandHeader": "Команда",
+      "modeHeader": "Кому доступна",
+      "rolesHeader": "Разрешённые роли",
+      "modeEveryone": "Всем",
+      "modeAdmins": "Админам / модам",
+      "modeRoles": "Конкретным ролям",
+      "rolesPlaceholder": "Выберите одну или несколько ролей",
+      "noRoles": "Роли не выбраны — команда останется доступной только админам.",
+      "defaultBadge": "по умолчанию",
+      "commands": {
+        "rank": "/rank",
+        "leaderboard": "/leaderboard",
+        "xp.give": "/xp give",
+        "xp.remove": "/xp remove",
+        "xp.set": "/xp set",
+        "xp.reset": "/xp reset",
+        "xp.ignore": "/xp ignore",
+        "xp.recalc": "/xp recalc"
+      }
     }
   },
   "footer": {

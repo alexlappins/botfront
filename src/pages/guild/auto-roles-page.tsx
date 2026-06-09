@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Plus, Smile, Trash2 } from "lucide-react"
+import { Loader2, Plus, Smile, Trash2, X } from "lucide-react"
 import {
   TemplateSelfRoleButtonsEditor,
   parseGuildSelfRoleComponents,
@@ -181,11 +181,7 @@ function ReactionsTab({
   onChanged: () => void
 }) {
   const { t } = useTranslation()
-  const [msgId, setMsgId] = useState("")
-  const [emoji, setEmoji] = useState("")
-  const [roleId, setRoleId] = useState("")
-  const [adding, setAdding] = useState(false)
-  const [addErr, setAddErr] = useState<string | null>(null)
+  const [addOpen, setAddOpen] = useState(false)
 
   function roleLabel(id: string): string {
     return roles.find((r) => r.id === id)?.name ?? id
@@ -196,32 +192,6 @@ function ReactionsTab({
       (x) => x.discordMessageId === b.discordMessageId && x.discordChannelId === b.discordChannelId,
     )
     return m ? `#${m.channelName}` : t("reactionRoles.reactions.channelFallback", { id: b.discordChannelId })
-  }
-
-  async function handleAdd() {
-    if (!msgId || !emoji.trim() || !roleId) {
-      setAddErr(t("reactionRoles.reactions.missingFields"))
-      return
-    }
-    const msg = messages.find((m) => m.id === msgId)
-    if (!msg) return
-    setAdding(true)
-    setAddErr(null)
-    try {
-      await addGuildReactionRole(guildId, {
-        discordChannelId: msg.discordChannelId,
-        discordMessageId: msg.discordMessageId,
-        emojiKey: emoji.trim(),
-        discordRoleId: roleId,
-      })
-      setEmoji("")
-      setRoleId("")
-      onChanged()
-    } catch (e) {
-      setAddErr(e instanceof Error ? e.message : t("reactionRoles.reactions.addFailed"))
-    } finally {
-      setAdding(false)
-    }
   }
 
   async function handleRemove(rrId: string) {
@@ -236,6 +206,18 @@ function ReactionsTab({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          onClick={() => setAddOpen(true)}
+          disabled={messages.length === 0}
+          className="inline-flex items-center gap-1.5"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("reactionRoles.reactions.addCta")}
+        </Button>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>{t("reactionRoles.reactions.activeTitle")}</CardTitle>
@@ -270,80 +252,161 @@ function ReactionsTab({
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            {t("reactionRoles.reactions.addTitle")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="grid gap-1">
-              <Label className="text-xs">{t("reactionRoles.reactions.message")}</Label>
-              {messages.length === 0 ? (
-                <p className="text-xs text-white/50">{t("reactionRoles.reactions.noMessages")}</p>
-              ) : (
-                <Select
-                  value={msgId || "__none__"}
-                  onValueChange={(v) => setMsgId(v === "__none__" ? "" : v)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("reactionRoles.reactions.pickMessage")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none__">{t("reactionRoles.reactions.notSelected")}</SelectItem>
-                    {messages.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        #{m.channelName} · {m.content?.slice(0, 30) || "(embed)"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">{t("reactionRoles.reactions.emoji")}</Label>
-              <Input
-                value={emoji}
-                onChange={(e) => setEmoji(e.target.value)}
-                placeholder={t("reactionRoles.reactions.emojiPlaceholder")}
-              />
-            </div>
-            <div className="grid gap-1">
-              <Label className="text-xs">{t("reactionRoles.reactions.role")}</Label>
-              <Select
-                value={roleId || "__none__"}
-                onValueChange={(v) => setRoleId(v === "__none__" ? "" : v)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={t("reactionRoles.reactions.pickRole")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">{t("reactionRoles.reactions.notSelected")}</SelectItem>
-                  {roles.map((r) => (
-                    <SelectItem key={r.id} value={r.id}>
-                      {r.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {addErr && <p className="text-sm text-red-400">{addErr}</p>}
-
-          <Button
-            size="sm"
-            onClick={() => void handleAdd()}
-            disabled={adding || !msgId || !emoji.trim() || !roleId}
-          >
-            {adding ? t("reactionRoles.reactions.adding") : t("reactionRoles.reactions.add")}
-          </Button>
-        </CardContent>
-      </Card>
+      {addOpen && (
+        <AddReactionModal
+          guildId={guildId}
+          messages={messages}
+          roles={roles}
+          onClose={() => setAddOpen(false)}
+          onAdded={() => {
+            setAddOpen(false)
+            onChanged()
+          }}
+        />
+      )}
     </div>
   )
+}
+
+function AddReactionModal({
+  guildId,
+  messages,
+  roles,
+  onClose,
+  onAdded,
+}: {
+  guildId: string
+  messages: GuildMessage[]
+  roles: GuildRole[]
+  onClose: () => void
+  onAdded: () => void
+}) {
+  const { t } = useTranslation()
+  const [msgId, setMsgId] = useState("")
+  const [emoji, setEmoji] = useState("")
+  const [roleId, setRoleId] = useState("")
+  const [adding, setAdding] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  // Close on Escape — small touch but absence is jarring.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  async function submit() {
+    if (!msgId || !emoji.trim() || !roleId) {
+      setErr(t("reactionRoles.reactions.missingFields"))
+      return
+    }
+    const msg = messages.find((m) => m.id === msgId)
+    if (!msg) return
+    setAdding(true)
+    setErr(null)
+    try {
+      await addGuildReactionRole(guildId, {
+        discordChannelId: msg.discordChannelId,
+        discordMessageId: msg.discordMessageId,
+        emojiKey: emoji.trim(),
+        discordRoleId: roleId,
+      })
+      onAdded()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("reactionRoles.reactions.addFailed"))
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+          <h2 className="text-base font-semibold text-white">
+            {t("reactionRoles.reactions.modalTitle")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
+            aria-label={t("reactionRoles.reactions.modalClose")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid gap-1.5">
+            <Label className="text-xs">{t("reactionRoles.reactions.message")}</Label>
+            <Select value={msgId} onValueChange={setMsgId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("reactionRoles.reactions.pickMessage")} />
+              </SelectTrigger>
+              <SelectContent>
+                {messages.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {pickReactionRoleHeader(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-xs">{t("reactionRoles.reactions.emoji")}</Label>
+            <Input
+              value={emoji}
+              onChange={(e) => setEmoji(e.target.value)}
+              placeholder={t("reactionRoles.reactions.emojiPlaceholder")}
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-xs">{t("reactionRoles.reactions.role")}</Label>
+            <Select value={roleId} onValueChange={setRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("reactionRoles.reactions.pickRole")} />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {err && <p className="text-sm text-red-400">{err}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose} disabled={adding}>
+              {t("reactionRoles.reactions.cancel")}
+            </Button>
+            <Button onClick={() => void submit()} disabled={adding || !msgId || !emoji.trim() || !roleId}>
+              {adding ? t("reactionRoles.reactions.adding") : t("reactionRoles.reactions.add")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Headline for a message inside dropdowns — embed title → content snippet →
+ * channel name, in that order. Mirrors {@link pickAutoRoleHeader} but adds the
+ * channel suffix so users can disambiguate when two messages share a title.
+ */
+function pickReactionRoleHeader(m: GuildMessage): string {
+  const embed = m.embedJson as { title?: unknown } | null
+  const title = typeof embed?.title === "string" ? embed.title.trim() : ""
+  const content = m.content?.trim()
+  const headline = title || (content ? content.slice(0, 40) : "")
+  return headline ? `${headline} · #${m.channelName}` : `#${m.channelName}`
 }
 
 // ─── Buttons tab ────────────────────────────────────────────────────────────
@@ -371,6 +434,13 @@ function ButtonsTab({
   const [savingMsgId, setSavingMsgId] = useState<string | null>(null)
   const [errByMsg, setErrByMsg] = useState<Record<string, string | null>>({})
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set())
+  // Messages that have NO buttons yet but the user picked them from the "add"
+  // modal — they need to stay visible until the user actually saves buttons
+  // (otherwise filtering by .length>0 would hide them immediately). The set
+  // is local-only; on next refresh either the saved buttons keep them in the
+  // list, or they drop back out organically.
+  const [forceShow, setForceShow] = useState<Set<string>>(new Set())
+  const [addOpen, setAddOpen] = useState(false)
 
   // Re-sync when messages change (after onChanged() reloads)
   useEffect(() => {
@@ -386,6 +456,19 @@ function ButtonsTab({
   const roleOptions = useMemo(
     () => roles.map((r) => ({ value: r.id, label: r.name })),
     [roles],
+  )
+
+  // Messages currently rendered in the list = (has buttons) ∪ (force-show).
+  // Server-message order is preserved by walking `messages` rather than the
+  // set, so the list stays stable across reloads.
+  const visibleMessages = useMemo(
+    () => messages.filter((m) => (buttonsByMsg[m.id]?.length ?? 0) > 0 || forceShow.has(m.id)),
+    [messages, buttonsByMsg, forceShow],
+  )
+  // Modal picker shows the inverse — messages the user can still bind buttons to.
+  const pickableMessages = useMemo(
+    () => messages.filter((m) => (buttonsByMsg[m.id]?.length ?? 0) === 0 && !forceShow.has(m.id)),
+    [messages, buttonsByMsg, forceShow],
   )
 
   function toggleExpanded(msgId: string) {
@@ -415,6 +498,20 @@ function ButtonsTab({
     }
   }
 
+  function startAdd(msgId: string) {
+    setForceShow((prev) => {
+      const next = new Set(prev)
+      next.add(msgId)
+      return next
+    })
+    setExpandedMsgs((prev) => {
+      const next = new Set(prev)
+      next.add(msgId)
+      return next
+    })
+    setAddOpen(false)
+  }
+
   if (messages.length === 0) {
     return (
       <Card>
@@ -427,60 +524,157 @@ function ButtonsTab({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-white/50">{t("reactionRoles.buttons.intro")}</p>
-      {messages.map((m) => {
-        const btns = buttonsByMsg[m.id] ?? []
-        const isOpen = expandedMsgs.has(m.id)
-        const isSaving = savingMsgId === m.id
-        const err = errByMsg[m.id]
-        return (
-          <div
-            key={m.id}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden"
-          >
-            <button
-              type="button"
-              onClick={() => toggleExpanded(m.id)}
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.05]"
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-xs text-white/50 flex-1 min-w-0">{t("reactionRoles.buttons.intro")}</p>
+        <Button
+          size="sm"
+          onClick={() => setAddOpen(true)}
+          disabled={pickableMessages.length === 0}
+          className="inline-flex items-center gap-1.5"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {t("reactionRoles.buttons.addCta")}
+        </Button>
+      </div>
+
+      {visibleMessages.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center text-white/50">
+            {t("reactionRoles.buttons.noConfigured")}
+          </CardContent>
+        </Card>
+      ) : (
+        visibleMessages.map((m) => {
+          const btns = buttonsByMsg[m.id] ?? []
+          const isOpen = expandedMsgs.has(m.id)
+          const isSaving = savingMsgId === m.id
+          const err = errByMsg[m.id]
+          return (
+            <div
+              key={m.id}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                {/* Lead with the embed title (or content preview if no embed)
-                    — same reasoning as on the Server Messages page: every
-                    message looked identical when only the channel name showed. */}
-                <span className="text-sm font-medium text-white truncate">
-                  {pickAutoRoleHeader(m)}
-                </span>
-                <span className="text-xs text-white/40 truncate">
-                  #{m.channelName}
-                </span>
-                {btns.length > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 ml-2">
-                    {btns.length === 1
-                      ? t("reactionRoles.buttons.countOne", { count: btns.length })
-                      : t("reactionRoles.buttons.countMany", { count: btns.length })}
+              <button
+                type="button"
+                onClick={() => toggleExpanded(m.id)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-white/[0.05]"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm font-medium text-white truncate">
+                    {pickAutoRoleHeader(m)}
                   </span>
-                )}
-              </div>
-              <span className="text-xs text-white/40 shrink-0">
-                {isOpen ? t("reactionRoles.buttons.hide") : t("reactionRoles.buttons.edit")}
-              </span>
-            </button>
-            {isOpen && (
-              <div className="border-t border-white/5 p-4 space-y-3">
-                <TemplateSelfRoleButtonsEditor
-                  buttons={btns}
-                  onChange={(next) => setButtonsByMsg((prev) => ({ ...prev, [m.id]: next }))}
-                  roleOptions={roleOptions.length > 0 ? roleOptions : undefined}
-                />
-                {err && <p className="text-sm text-red-400">{err}</p>}
-                <Button size="sm" onClick={() => void handleSave(m.id)} disabled={isSaving}>
-                  {isSaving ? t("reactionRoles.buttons.saving") : t("reactionRoles.buttons.save")}
-                </Button>
-              </div>
-            )}
+                  <span className="text-xs text-white/40 truncate">
+                    #{m.channelName}
+                  </span>
+                  {btns.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 ml-2">
+                      {btns.length === 1
+                        ? t("reactionRoles.buttons.countOne", { count: btns.length })
+                        : t("reactionRoles.buttons.countMany", { count: btns.length })}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-white/40 shrink-0">
+                  {isOpen ? t("reactionRoles.buttons.hide") : t("reactionRoles.buttons.edit")}
+                </span>
+              </button>
+              {isOpen && (
+                <div className="border-t border-white/5 p-4 space-y-3">
+                  <TemplateSelfRoleButtonsEditor
+                    buttons={btns}
+                    onChange={(next) => setButtonsByMsg((prev) => ({ ...prev, [m.id]: next }))}
+                    roleOptions={roleOptions.length > 0 ? roleOptions : undefined}
+                  />
+                  {err && <p className="text-sm text-red-400">{err}</p>}
+                  <Button size="sm" onClick={() => void handleSave(m.id)} disabled={isSaving}>
+                    {isSaving ? t("reactionRoles.buttons.saving") : t("reactionRoles.buttons.save")}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )
+        })
+      )}
+
+      {addOpen && (
+        <AddButtonsModal
+          messages={pickableMessages}
+          onClose={() => setAddOpen(false)}
+          onPick={startAdd}
+        />
+      )}
+    </div>
+  )
+}
+
+function AddButtonsModal({
+  messages,
+  onClose,
+  onPick,
+}: {
+  messages: GuildMessage[]
+  onClose: () => void
+  onPick: (msgId: string) => void
+}) {
+  const { t } = useTranslation()
+  const [msgId, setMsgId] = useState("")
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+          <h2 className="text-base font-semibold text-white">
+            {t("reactionRoles.buttons.modalTitle")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
+            aria-label={t("reactionRoles.reactions.modalClose")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          {messages.length === 0 ? (
+            <p className="text-sm text-white/50">{t("reactionRoles.buttons.modalEmpty")}</p>
+          ) : (
+            <div className="grid gap-1.5">
+              <Label className="text-xs">{t("reactionRoles.reactions.message")}</Label>
+              <Select value={msgId} onValueChange={setMsgId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("reactionRoles.buttons.modalPickMessage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {messages.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {pickReactionRoleHeader(m)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose}>
+              {t("reactionRoles.reactions.cancel")}
+            </Button>
+            <Button onClick={() => msgId && onPick(msgId)} disabled={!msgId}>
+              {t("reactionRoles.reactions.add")}
+            </Button>
           </div>
-        )
-      })}
+        </div>
+      </div>
     </div>
   )
 }

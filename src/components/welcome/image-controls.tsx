@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { Image as ImageIcon, Loader2, Upload } from "lucide-react"
 import {
   fetchWelcomePreviewImage,
@@ -64,6 +65,7 @@ export function ImageControls({
   value: VariantImageFields
   onChange: (next: Partial<VariantImageFields>) => void
 }) {
+  const { t } = useTranslation()
   const enabled = value.imageEnabled
   const sendMode = value.imageSendMode
   const bgFill = value.backgroundFill ?? "#1f1f29"
@@ -95,7 +97,7 @@ export function ImageControls({
     let cancelled = false
     setPreviewLoading(true)
     setPreviewError(null)
-    const t = setTimeout(async () => {
+    const handle = setTimeout(async () => {
       try {
         const blob = await fetchWelcomePreviewImage(
           previewGuildId,
@@ -114,14 +116,14 @@ export function ImageControls({
         lastUrlRef.current = url
         setPreviewUrl(url)
       } catch (e) {
-        if (!cancelled) setPreviewError(e instanceof Error ? e.message : "Ошибка превью")
+        if (!cancelled) setPreviewError(e instanceof Error ? e.message : t("welcome.editor.image.previewError"))
       } finally {
         if (!cancelled) setPreviewLoading(false)
       }
     }, 350)
     return () => {
       cancelled = true
-      clearTimeout(t)
+      clearTimeout(handle)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -148,7 +150,7 @@ export function ImageControls({
       const { url } = await uploadFile(file)
       patch({ backgroundImageUrl: url })
     } catch (e) {
-      setUploadError(e instanceof Error ? e.message : "Ошибка загрузки")
+      setUploadError(e instanceof Error ? e.message : t("welcome.editor.image.uploadError"))
     } finally {
       setUploading(false)
       if (fileRef.current) fileRef.current.value = ""
@@ -161,10 +163,10 @@ export function ImageControls({
         <div>
           <p className="text-sm font-semibold text-white flex items-center gap-2">
             <ImageIcon className="h-4 w-4 text-violet-400" />
-            Картинка
+            {t("welcome.editor.image.title")}
           </p>
           <p className="text-xs text-white/50 mt-0.5">
-            Сгенерированный баннер с аватаром и текстом — прикрепляется к сообщению этого варианта.
+            {t("welcome.editor.image.description")}
           </p>
         </div>
         <Toggle checked={enabled} onChange={(v) => patch({ imageEnabled: v })} />
@@ -179,7 +181,7 @@ export function ImageControls({
                   <img src={previewUrl} alt="preview" className="w-full h-full object-contain" />
                 ) : (
                   <div className="absolute inset-0 grid place-items-center text-white/30 text-xs">
-                    Загрузка превью…
+                    {t("welcome.editor.image.previewLoading")}
                   </div>
                 )}
                 {previewLoading && (
@@ -193,13 +195,13 @@ export function ImageControls({
           )}
 
           <div>
-            <p className="text-xs font-semibold text-white/70 mb-2">Режим отправки</p>
+            <p className="text-xs font-semibold text-white/70 mb-2">{t("welcome.editor.image.sendMode")}</p>
             <div className="grid grid-cols-3 gap-2">
               {(
                 [
-                  { v: "with_text" as const, label: "Текст + картинка" },
-                  { v: "before_text" as const, label: "Картинка перед текстом" },
-                  { v: "image_only" as const, label: "Только картинка" },
+                  { v: "with_text" as const, label: t("welcome.editor.image.modeWithText") },
+                  { v: "before_text" as const, label: t("welcome.editor.image.modeBeforeText") },
+                  { v: "image_only" as const, label: t("welcome.editor.image.modeImageOnly") },
                 ]
               ).map((opt) => (
                 <button
@@ -219,10 +221,10 @@ export function ImageControls({
             </div>
           </div>
 
-          <Section title="Фон">
+          <Section title={t("welcome.editor.image.bgTitle")}>
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-start">
               <div className="space-y-2">
-                <label className="text-xs text-white/60 block">Цвет заливки</label>
+                <label className="text-xs text-white/60 block">{t("welcome.editor.image.bgFill")}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -239,7 +241,7 @@ export function ImageControls({
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-xs text-white/60 block">Картинка фона</label>
+                <label className="text-xs text-white/60 block">{t("welcome.editor.image.bgImage")}</label>
                 <div className="flex items-center gap-2">
                   <input
                     ref={fileRef}
@@ -258,7 +260,7 @@ export function ImageControls({
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-sm text-white/80"
                   >
                     {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                    {bgUrl ? "Заменить" : "Загрузить"}
+                    {bgUrl ? t("welcome.editor.image.bgReplace") : t("welcome.editor.image.bgUpload")}
                   </button>
                   {bgUrl && (
                     <button
@@ -266,7 +268,7 @@ export function ImageControls({
                       onClick={() => patch({ backgroundImageUrl: null })}
                       className="px-3 py-2 rounded-lg border border-white/10 text-sm text-white/50 hover:text-red-400"
                     >
-                      Убрать
+                      {t("welcome.editor.image.bgRemove")}
                     </button>
                   )}
                 </div>
@@ -276,20 +278,20 @@ export function ImageControls({
           </Section>
 
           <Section
-            title="Аватар"
+            title={t("welcome.editor.image.avatarTitle")}
             extra={<Toggle checked={avatar.enabled} onChange={(v) => patch({ avatarConfig: { ...avatar, enabled: v } })} />}
           >
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <Slider label="X" min={0} max={CANVAS_W} value={avatar.x} onChange={(v) => patch({ avatarConfig: { ...avatar, x: v } })} />
               <Slider label="Y" min={0} max={CANVAS_H} value={avatar.y} onChange={(v) => patch({ avatarConfig: { ...avatar, y: v } })} />
-              <Slider label="Радиус" min={20} max={150} value={avatar.radius} onChange={(v) => patch({ avatarConfig: { ...avatar, radius: v } })} />
-              <Slider label="Обводка, px" min={0} max={20} value={avatar.borderWidth} onChange={(v) => patch({ avatarConfig: { ...avatar, borderWidth: v } })} />
+              <Slider label={t("welcome.editor.image.avatarRadius")} min={20} max={150} value={avatar.radius} onChange={(v) => patch({ avatarConfig: { ...avatar, radius: v } })} />
+              <Slider label={t("welcome.editor.image.avatarBorderWidth")} min={0} max={20} value={avatar.borderWidth} onChange={(v) => patch({ avatarConfig: { ...avatar, borderWidth: v } })} />
             </div>
-            <ColorRow label="Цвет обводки" value={avatar.borderColor} onChange={(v) => patch({ avatarConfig: { ...avatar, borderColor: v } })} />
+            <ColorRow label={t("welcome.editor.image.avatarBorderColor")} value={avatar.borderColor} onChange={(v) => patch({ avatarConfig: { ...avatar, borderColor: v } })} />
           </Section>
 
           <Section
-            title="Имя пользователя"
+            title={t("welcome.editor.image.usernameTitle")}
             extra={<Toggle checked={username.enabled} onChange={(v) => patch({ usernameConfig: { ...username, enabled: v } })} />}
           >
             <TextBlockControls
@@ -300,11 +302,13 @@ export function ImageControls({
           </Section>
 
           <Section
-            title="Текстовый блок (на картинке)"
+            title={t("welcome.editor.image.textBlockTitle")}
             extra={<Toggle checked={text.enabled} onChange={(v) => patch({ imageTextConfig: { ...text, enabled: v } })} />}
           >
             <div>
-              <label className="text-xs text-white/60 block mb-1">Текст (поддерживает {"{user.name}"} и др.)</label>
+              <label className="text-xs text-white/60 block mb-1">
+                {t("welcome.editor.image.textBlockLabel", { vars: "{user.name}, …" })}
+              </label>
               <input
                 type="text"
                 value={text.text}
@@ -440,6 +444,7 @@ function TextBlockControls<T extends Omit<ImageTextBlock, "text"> & { text?: str
   onChange: (next: T) => void
   hideContent?: boolean
 }) {
+  const { t } = useTranslation()
   function p(patch: Partial<T>) {
     onChange({ ...value, ...patch })
   }
@@ -448,8 +453,8 @@ function TextBlockControls<T extends Omit<ImageTextBlock, "text"> & { text?: str
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Slider label="X" min={0} max={CANVAS_W} value={value.x} onChange={(v) => p({ x: v } as Partial<T>)} />
         <Slider label="Y" min={0} max={CANVAS_H} value={value.y} onChange={(v) => p({ y: v } as Partial<T>)} />
-        <Slider label="Размер" min={10} max={96} value={value.fontSize} onChange={(v) => p({ fontSize: v } as Partial<T>)} />
-        <Slider label="Обводка, px" min={0} max={10} value={value.strokeWidth ?? 0} onChange={(v) => p({ strokeWidth: v } as Partial<T>)} />
+        <Slider label={t("welcome.editor.image.fieldSize")} min={10} max={96} value={value.fontSize} onChange={(v) => p({ fontSize: v } as Partial<T>)} />
+        <Slider label={t("welcome.editor.image.fieldStroke")} min={0} max={10} value={value.strokeWidth ?? 0} onChange={(v) => p({ strokeWidth: v } as Partial<T>)} />
       </div>
       <div className="flex items-center gap-3 flex-wrap">
         <button
@@ -477,11 +482,15 @@ function TextBlockControls<T extends Omit<ImageTextBlock, "text"> & { text?: str
             </button>
           ))}
         </div>
-        {hideContent && <span className="text-[11px] text-white/40">(контент = {"{user.name}"})</span>}
+        {hideContent && (
+          <span className="text-[11px] text-white/40">
+            {t("welcome.editor.image.contentIsName", { var: "{user.name}" })}
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <ColorRow label="Цвет" value={value.color} onChange={(v) => p({ color: v } as Partial<T>)} />
-        <ColorRow label="Цвет обводки" value={value.strokeColor ?? "#000000"} onChange={(v) => p({ strokeColor: v } as Partial<T>)} />
+        <ColorRow label={t("welcome.editor.image.fieldColor")} value={value.color} onChange={(v) => p({ color: v } as Partial<T>)} />
+        <ColorRow label={t("welcome.editor.image.fieldStrokeColor")} value={value.strokeColor ?? "#000000"} onChange={(v) => p({ strokeColor: v } as Partial<T>)} />
       </div>
     </div>
   )

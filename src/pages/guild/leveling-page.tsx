@@ -8,6 +8,7 @@ import {
   getGuildRoles,
   getLeveling,
   getLevelingEvents,
+  getLevelingPermissions,
   levelingCsvExportUrl,
   recalcLeveling,
   removeIgnoredUser,
@@ -17,11 +18,16 @@ import {
   replaceNoXpRoles,
   resetLevelingTiers,
   sendTestRankCard,
+  setLevelingPermission,
   updateLevelingSettings,
   wipeLeveling,
   type Channel,
   type GuildRole,
+  type LevelingCommandKey,
+  type LevelingCommandPermission,
   type LevelingEvent,
+  type LevelingPermMode,
+  type LevelingPermissionsResponse,
   type LevelingSettings,
   type LevelingState,
   type LevelingTier,
@@ -156,6 +162,7 @@ export function LevelingPage() {
             }}
           />
           <RankCardBlock guildId={guildId} initial={state.settings} channels={channels} />
+          <PermissionsBlock guildId={guildId} roles={roles} />
           <AdvancedBlock guildId={guildId} />
           <AuditLogBlock guildId={guildId} />
         </>
@@ -1223,6 +1230,241 @@ function AdvancedBlock({ guildId }: { guildId: string }) {
       </div>
       {result && <p className="text-xs text-emerald-400">{result}</p>}
     </Block>
+  )
+}
+
+// ────────────────────────────────────────────────────────────
+// Block 8: Command permissions (Misha TZ pt.2 §6)
+// ────────────────────────────────────────────────────────────
+
+function PermissionsBlock({
+  guildId,
+  roles,
+}: {
+  guildId: string
+  roles: GuildRole[]
+}) {
+  const { t } = useTranslation()
+  const [data, setData] = useState<LevelingPermissionsResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  // Per-row "saving…" indicator + last-save error. Keyed by command so two
+  // rows can be edited in parallel without one overwriting the other's state.
+  const [savingCmd, setSavingCmd] = useState<LevelingCommandKey | null>(null)
+  const [rowErrors, setRowErrors] = useState<Partial<Record<LevelingCommandKey, string>>>({})
+
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    setError(null)
+    getLevelingPermissions(guildId)
+      .then((r) => {
+        if (alive) setData(r)
+      })
+      .catch((e) => {
+        if (alive) setError(e instanceof Error ? e.message : t("leveling.permissions.loadError"))
+      })
+      .finally(() => {
+        if (alive) setLoading(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [guildId, t])
+
+  async function persist(
+    command: LevelingCommandKey,
+    next: { mode: LevelingPermMode; allowedRoleIds: string[] },
+  ) {
+    setSavingCmd(command)
+    setRowErrors((p) => ({ ...p, [command]: undefined }))
+    try {
+      const saved = await setLevelingPermission(guildId, command, next)
+      setData((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          permissions: prev.permissions.map((p) => (p.command === command ? saved : p)),
+        }
+      })
+    } catch (e) {
+      setRowErrors((p) => ({
+        ...p,
+        [command]: e instanceof Error ? e.message : t("leveling.permissions.saveError"),
+      }))
+    } finally {
+      setSavingCmd(null)
+    }
+  }
+
+  return (
+    <Block
+      title={t("leveling.permissions.title")}
+      description={t("leveling.permissions.description")}
+    >
+      {loading && (
+        <div className="flex items-center justify-center py-6">
+          <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+        </div>
+      )}
+      {error && !loading && (
+        <p className="text-sm text-red-300">{error}</p>
+      )}
+      {data && !loading && (
+        <div className="space-y-2">
+          {data.commands.map(({ command, defaultMode }) => {
+            const row =
+              data.permissions.find((p) => p.command === command) ??
+              ({ command, mode: defaultMode, allowedRoleIds: [] } as LevelingCommandPermission)
+            return (
+              <PermissionRow
+                key={command}
+                command={command}
+                defaultMode={defaultMode}
+                row={row}
+                roles={roles}
+                saving={savingCmd === command}
+                rowError={rowErrors[command]}
+                onChange={(next) => void persist(command, next)}
+              />
+            )
+          })}
+        </div>
+      )}
+    </Block>
+  )
+}
+
+function PermissionRow({
+  command,
+  defaultMode,
+  row,
+  roles,
+  saving,
+  rowError,
+  onChange,
+}: {
+  command: LevelingCommandKey
+  defaultMode: LevelingPermMode
+  row: LevelingCommandPermission
+  roles: GuildRole[]
+  saving: boolean
+  rowError: string | undefined
+  onChange: (next: { mode: LevelingPermMode; allowedRoleIds: string[] }) => void
+}) {
+  const { t } = useTranslation()
+  const isDefault = row.mode === defaultMode && row.allowedRoleIds.length === 0
+
+  function changeMode(mode: LevelingPermMode) {
+    if (mode === row.mode && mode !== "roles") return
+    onChange({ mode, allowedRoleIds: mode === "roles" ? row.allowedRoleIds : [] })
+  }
+
+  function toggleRole(roleId: string) {
+    const next = new Set(row.allowedRoleIds)
+    if (next.has(roleId)) next.delete(roleId)
+    else next.add(roleId)
+    onChange({ mode: "roles", allowedRoleIds: [...next] })
+  }
+
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 space-y-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <code className="text-sm font-mono text-white">
+          {t(`leveling.permissions.commands.${command}`)}
+        </code>
+        {isDefault && (
+          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-white/5 text-white/40">
+            {t("leveling.permissions.defaultBadge")}
+          </span>
+        )}
+        <div className="flex-1" />
+        {saving && <Loader2 className="h-3.5 w-3.5 animate-spin text-white/40" />}
+      </div>
+
+      <div className="flex gap-2 flex-wrap">
+        <ModeButton
+          active={row.mode === "everyone"}
+          label={t("leveling.permissions.modeEveryone")}
+          onClick={() => changeMode("everyone")}
+        />
+        <ModeButton
+          active={row.mode === "admins"}
+          label={t("leveling.permissions.modeAdmins")}
+          onClick={() => changeMode("admins")}
+        />
+        <ModeButton
+          active={row.mode === "roles"}
+          label={t("leveling.permissions.modeRoles")}
+          onClick={() => changeMode("roles")}
+        />
+      </div>
+
+      {row.mode === "roles" && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] uppercase tracking-wider text-white/40">
+            {t("leveling.permissions.rolesHeader")}
+          </p>
+          <div className="rounded-lg border border-white/10 bg-[#0e0e18] p-2 max-h-[160px] overflow-y-auto space-y-0.5">
+            {roles.length === 0 && (
+              <p className="text-xs text-white/40 px-1 py-2">
+                {t("leveling.permissions.rolesPlaceholder")}
+              </p>
+            )}
+            {roles.map((r) => {
+              const checked = row.allowedRoleIds.includes(r.id)
+              return (
+                <label
+                  key={r.id}
+                  className={cn(
+                    "flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer text-sm",
+                    checked ? "bg-violet-500/15 text-white" : "text-white/80 hover:bg-white/[0.04]",
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleRole(r.id)}
+                    className="accent-violet-500"
+                  />
+                  <span className="truncate">{r.name}</span>
+                </label>
+              )
+            })}
+          </div>
+          {row.allowedRoleIds.length === 0 && (
+            <p className="text-[11px] text-amber-300/80">{t("leveling.permissions.noRoles")}</p>
+          )}
+        </div>
+      )}
+
+      {rowError && <p className="text-xs text-red-300">{rowError}</p>}
+    </div>
+  )
+}
+
+function ModeButton({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+        active
+          ? "border-violet-500 bg-violet-500/15 text-white"
+          : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+      )}
+    >
+      {label}
+    </button>
   )
 }
 

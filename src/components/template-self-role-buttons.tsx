@@ -330,8 +330,7 @@ export function TemplateSelfRoleButtonsEditor({
       <div>
         <p className="text-sm font-medium">Auto-role buttons</p>
         <p className="text-xs text-[hsl(var(--muted-foreground))] mt-1">
-          Channel and message order are set in the card header. On install the bot substitutes role IDs
-          into <code className="text-[10px]">customId</code>. Up to 5 buttons per row.
+          Up to 5 buttons per row.
         </p>
       </div>
 

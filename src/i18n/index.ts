@@ -5,6 +5,8 @@ import { initReactI18next } from "react-i18next"
 import en from "./locales/en.json"
 import ru from "./locales/ru.json"
 import uk from "./locales/uk.json"
+import es from "./locales/es.json"
+import pt from "./locales/pt.json"
 
 /**
  * App-wide i18n config. Adding a language = drop a new JSON, add it to
@@ -25,6 +27,8 @@ export const LANGUAGES = [
   { code: "ru", label: "RU", name: "Русский" },
   { code: "uk", label: "UA", name: "Українська" },
   { code: "en", label: "EN", name: "English" },
+  { code: "es", label: "ES", name: "Español" },
+  { code: "pt", label: "PT", name: "Português" },
 ] as const
 
 export type LanguageCode = (typeof LANGUAGES)[number]["code"]
@@ -39,6 +43,8 @@ void i18n
       en: { translation: en },
       ru: { translation: ru },
       uk: { translation: uk },
+      es: { translation: es },
+      pt: { translation: pt },
     },
     fallbackLng: "en",
     supportedLngs: SUPPORTED_LANGS,

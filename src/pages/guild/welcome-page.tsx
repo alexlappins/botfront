@@ -548,6 +548,7 @@ function VariantsList({
   hideButtons?: boolean
   embedded?: boolean
 }) {
+  const { t } = useTranslation()
   const inner = (
     <>
       <div className={cn("flex items-center justify-between", embedded ? "mb-2 mt-3" : "mb-3")}>
@@ -562,15 +563,13 @@ function VariantsList({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/40 text-sm text-violet-100"
           >
             <Plus className="h-3.5 w-3.5" />
-            Добавить вариант
+            {t("welcome.variants.add")}
           </button>
         )}
       </div>
       <div className="space-y-2">
         {variants.length === 0 && (
-          <p className="text-xs text-white/40 italic">
-            Нет вариантов. Добавьте хотя бы один.
-          </p>
+          <p className="text-xs text-white/40 italic">{t("welcome.variants.empty")}</p>
         )}
         {variants.map((v, i) => (
           <VariantEditor
@@ -588,7 +587,7 @@ function VariantsList({
             }
             onTest={v.id ? () => onTest(v.id) : undefined}
             testing={testing === v.id}
-            label={`Вариант ${i + 1}`}
+            label={t("welcome.variants.label", { n: i + 1 })}
             hideButtons={hideButtons}
             defaultOpen={variants.length === 1 || i === 0}
           />
