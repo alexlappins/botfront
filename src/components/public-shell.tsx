@@ -51,7 +51,7 @@ export function PublicShell({
         <div className="public-wrap public-nav-in">
           <Link to="/" className="public-logo" onClick={() => setOpen(false)}>
             <span className="public-crest">
-              <span>✦</span>
+              <img className="public-crest-img" src="/mascot.webp" alt="" />
             </span>
             <span>Level Up</span>
           </Link>
@@ -114,7 +114,7 @@ export function PublicShell({
           <div className="public-footer-col public-footer-brand">
             <Link to="/" className="public-logo">
               <span className="public-crest">
-                <span>✦</span>
+                <img className="public-crest-img" src="/mascot.webp" alt="" />
               </span>
               <span>Level Up</span>
             </Link>
@@ -272,20 +272,16 @@ function PublicTheme() {
         font-size: 19px; font-weight: 700; letter-spacing: 0.06em;
         text-transform: uppercase; color: #fff; white-space: nowrap;
       }
-      /* Brand mark — rounded square blurple gradient with a white diamond glyph.
-         The existing markup wraps a <span>✦</span>; we hide the glyph and draw
-         the diamond as a clip-path on the span so we don't touch the markup. */
+      /* Brand mark — scaled-down animated mascot (/mascot.webp): the robot
+         raises/lowers the "LEVEL UP" banner, same loop as the hero. Taller box
+         so the overhead banner frames aren't clipped; the robot self-animates. */
       .public-crest {
-        width: 34px; height: 34px; transform: none;
-        border: 0; border-radius: 9px;
-        background: linear-gradient(150deg, var(--pub-blurple-br), var(--pub-blurple));
-        box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset, 0 8px 24px rgba(88,101,242,0.45);
-        display: grid; place-items: center;
+        display: inline-flex; align-items: center; justify-content: center;
+        transform: none; border: 0; background: none; box-shadow: none;
       }
-      .public-crest span {
-        display: block; transform: none; font-size: 0; color: transparent;
-        width: 12px; height: 12px; background: #fff;
-        clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+      .public-crest-img {
+        height: 52px; width: auto; display: block;
+        filter: drop-shadow(0 2px 8px rgba(88,101,242,0.5));
       }
       .public-nav-links {
         display: flex; align-items: center; gap: 30px;
