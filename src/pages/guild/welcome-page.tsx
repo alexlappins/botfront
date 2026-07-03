@@ -18,6 +18,8 @@ import {
   type WelcomeVariantRole,
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
+import { usePremium } from "@/contexts/premium-context"
+import { PremiumChip, PremiumGate, usePremiumModal } from "@/components/premium"
 import { cn } from "@/lib/utils"
 import {
   emptyVariant,
@@ -135,7 +137,10 @@ export function WelcomePage() {
         <WelcomeTab guildId={guildId} channels={channels} value={welcome} onChange={setWelcome} />
       )}
       {!loading && !error && tab === "goodbye" && goodbye && (
-        <GoodbyeTab guildId={guildId} channels={channels} value={goodbye} onChange={setGoodbye} />
+        /* Goodbye is Premium-only (TZ v2.1 §4.1): visible but locked on free. */
+        <PremiumGate>
+          <GoodbyeTab guildId={guildId} channels={channels} value={goodbye} onChange={setGoodbye} />
+        </PremiumGate>
       )}
     </div>
   )
@@ -318,29 +323,32 @@ function WelcomeTab({
           testing={testing}
         />
 
-        <Card>
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <p className="text-sm font-semibold text-white">{t("welcome.returning.title")}</p>
-              <p className="text-xs text-white/50 mt-0.5">{t("welcome.returning.sub")}</p>
+        {/* Returning members is Premium-only (TZ v2.1 §4.2). */}
+        <PremiumGate>
+          <Card>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-sm font-semibold text-white">{t("welcome.returning.title")}</p>
+                <p className="text-xs text-white/50 mt-0.5">{t("welcome.returning.sub")}</p>
+              </div>
+              <Toggle checked={returningEnabled} onChange={setReturningEnabled} />
             </div>
-            <Toggle checked={returningEnabled} onChange={setReturningEnabled} />
-          </div>
-          {returningEnabled && (
-            <VariantsList
-              title=""
-              subtitle=""
-              variants={returningVariants}
-              onChange={setReturningVariants}
-              defaultText={DEFAULT_RETURNING_TEXT}
-              guildId={guildId}
-              previewKind="welcome"
-              onTest={(id) => handleTest(id, true)}
-              testing={testing}
-              embedded
-            />
-          )}
-        </Card>
+            {returningEnabled && (
+              <VariantsList
+                title=""
+                subtitle=""
+                variants={returningVariants}
+                onChange={setReturningVariants}
+                defaultText={DEFAULT_RETURNING_TEXT}
+                guildId={guildId}
+                previewKind="welcome"
+                onTest={(id) => handleTest(id, true)}
+                testing={testing}
+                embedded
+              />
+            )}
+          </Card>
+        </PremiumGate>
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-4 self-start">
@@ -549,6 +557,10 @@ function VariantsList({
   embedded?: boolean
 }) {
   const { t } = useTranslation()
+  const { premium } = usePremium()
+  const openPremiumModal = usePremiumModal()
+  // Multiple variants are Premium (TZ v2.1 §3): free = exactly 1 active variant.
+  const atFreeLimit = !premium && variants.length >= 1
   const inner = (
     <>
       <div className={cn("flex items-center justify-between", embedded ? "mb-2 mt-3" : "mb-3")}>
@@ -559,11 +571,20 @@ function VariantsList({
         {variants.length < 5 && (
           <button
             type="button"
-            onClick={() => onChange([...variants, emptyVariant(defaultText)])}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/40 text-sm text-violet-100"
+            onClick={() =>
+              atFreeLimit ? openPremiumModal() : onChange([...variants, emptyVariant(defaultText)])
+            }
+            title={atFreeLimit ? t("premium.lockTooltip") : undefined}
+            className={cn(
+              "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm",
+              atFreeLimit
+                ? "bg-white/[0.03] border-white/10 text-white/40 cursor-pointer"
+                : "bg-violet-600/20 hover:bg-violet-600/30 border-violet-500/40 text-violet-100",
+            )}
           >
             <Plus className="h-3.5 w-3.5" />
             {t("welcome.variants.add")}
+            {atFreeLimit && <PremiumChip />}
           </button>
         )}
       </div>

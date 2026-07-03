@@ -2003,3 +2003,170 @@ export async function wipeTemplateLeveling(templateId: string): Promise<{ ok: bo
   if (!res.ok) await throwApiError(res, "Failed to wipe template leveling")
   return res.json()
 }
+
+// ── Premium subscription (Misha TZ v2.1) ─────────────────
+// Status is per-guild; the single source of truth behind the dashboard badge
+// and every feature gate. Backed by GET/PUT /api/guilds/:id/premium.
+
+export interface PremiumStatus {
+  premium: boolean
+  plan: string
+  /** ISO end of current period, or null for open-ended/none. */
+  until: string | null
+}
+
+export async function getPremiumStatus(guildId: string): Promise<PremiumStatus> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/premium`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load premium status")
+  return res.json()
+}
+
+/** Admin-only manual toggle (testing / comp grants). until=null → open-ended. */
+export async function setPremiumStatus(
+  guildId: string,
+  body: { active: boolean; until?: string | null },
+): Promise<PremiumStatus> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/premium`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to set premium status")
+  return res.json()
+}
+
+// ── Scheduled posts (TZ v2.1 §2, premium) ────────────────
+
+export type ScheduleKind = "once" | "daily" | "weekly" | "monthly"
+
+export interface ScheduledPost {
+  id: string
+  guildId: string
+  channelId: string
+  content: string | null
+  embedJson: Record<string, unknown> | null
+  componentsJson: unknown[] | null
+  kind: ScheduleKind
+  timeOfDay: string | null
+  daysOfWeek: number[] | null
+  dayOfMonth: number | null
+  nextRunAt: string | null
+  lastRunAt: string | null
+  status: "active" | "paused" | "done"
+  runCount: number
+  createdAt: string
+}
+
+export interface ScheduledPostInput {
+  channelId: string
+  content?: string | null
+  embedJson?: Record<string, unknown> | null
+  componentsJson?: unknown[] | null
+  kind: ScheduleKind
+  runAt?: string
+  timeOfDay?: string
+  daysOfWeek?: number[]
+  dayOfMonth?: number
+  status?: "active" | "paused"
+}
+
+export async function listScheduledPosts(guildId: string): Promise<ScheduledPost[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/scheduled-posts`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load scheduled posts")
+  return res.json()
+}
+
+export async function createScheduledPost(guildId: string, body: ScheduledPostInput): Promise<ScheduledPost> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/scheduled-posts`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to create scheduled post")
+  return res.json()
+}
+
+export async function updateScheduledPost(
+  guildId: string,
+  id: string,
+  body: Partial<ScheduledPostInput>,
+): Promise<ScheduledPost> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/scheduled-posts/${id}`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update scheduled post")
+  return res.json()
+}
+
+export async function deleteScheduledPost(guildId: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/scheduled-posts/${id}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to delete scheduled post")
+}
+
+// ── Bot Personalization (TZ v2.1 §8, premium) ────────────
+
+export interface BotPersonalizationSettings {
+  enabled: boolean
+  customName: string | null
+  customAvatarUrl: string | null
+  missingWebhookPerms: { channelId: string; channelName: string }[]
+}
+
+export async function getBotPersonalization(guildId: string): Promise<BotPersonalizationSettings> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/personalization`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load personalization")
+  return res.json()
+}
+
+export async function saveBotPersonalization(
+  guildId: string,
+  body: { enabled?: boolean; customName?: string | null; customAvatarUrl?: string | null },
+): Promise<BotPersonalizationSettings> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/personalization`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save personalization")
+  return res.json()
+}
+
+export async function previewBotPersonalization(
+  guildId: string,
+  channelId: string,
+): Promise<{ ok: boolean; via: "webhook" | "bot" }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/personalization/preview`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ channelId }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to send preview")
+  return res.json()
+}
+
+// ── Stripe checkout (Premium billing) ────────────────────
+
+/** Returns the Stripe-hosted checkout URL; caller redirects the browser there. */
+export async function createPremiumCheckout(guildId: string): Promise<{ url: string }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/premium/checkout`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to start checkout")
+  return res.json()
+}
+
+/** Stripe Customer Portal (cancel / change card) for the guild's subscription. */
+export async function createPremiumPortal(guildId: string): Promise<{ url: string }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/premium/portal`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to open billing portal")
+  return res.json()
+}

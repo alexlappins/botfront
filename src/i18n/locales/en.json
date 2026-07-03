@@ -39,7 +39,8 @@
     "twitch": "Twitch Live",
     "reactionRoles": "Reaction roles",
     "serverLogs": "Server logs",
-    "myServers": "My servers"
+    "myServers": "My servers",
+    "personalization": "Bot Personalization"
   },
   "guildSelector": {
     "loading": "Loading servers…",
@@ -400,7 +401,74 @@
       "badEmbed": "Embed JSON is invalid",
       "needContent": "Fill in either text or embed",
       "createFailed": "Failed to create the message"
+    },
+    "schedule": {
+      "title": "Schedule",
+      "publishNow": "Publish now",
+      "later": "Schedule for later",
+      "recurring": "Recurring",
+      "runAt": "Date & time (your local time)",
+      "recurrence": "Repeat",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "timeOfDay": "Time (your local time)",
+      "daysOfWeek": "Days of week",
+      "dayOfMonth": "Day of month",
+      "scheduledBadge": "🕐 Scheduled",
+      "recurringBadge": "🔁 Recurring",
+      "listTitle": "Scheduled posts",
+      "listEmpty": "No scheduled posts yet.",
+      "next": "Next run",
+      "runs": "runs",
+      "pause": "Pause",
+      "resume": "Resume",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this scheduled post?",
+      "done": "Done",
+      "paused": "Paused",
+      "days": [
+        "Sun",
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat"
+      ]
     }
+  },
+  "personalization": {
+    "title": "Bot Personalization",
+    "sub": "Make the bot's messages on your server look like your own bot — custom name and avatar via webhooks.",
+    "enable": "Enable personalization",
+    "name": "Custom bot name",
+    "namePlaceholder": "My Server Bot",
+    "avatar": "Custom avatar URL",
+    "avatarHint": "PNG/JPG/GIF, up to 256 KB, at least 128×128. Discord may cache webhook avatars for up to an hour.",
+    "previewChannel": "Preview channel",
+    "preview": "Send preview",
+    "previewSentWebhook": "Preview sent with your custom identity ✓",
+    "previewSentBot": "Preview sent as the plain bot — check Manage Webhooks permission in that channel.",
+    "save": "Save",
+    "saved": "Saved",
+    "whatChangesTitle": "What changes",
+    "whatChanges": "Welcome / goodbye / returning messages · Level-up notifications · Twitch live alerts · Published & scheduled messages",
+    "whatStaysTitle": "What does NOT change (Discord limitation)",
+    "whatStays": "Slash commands (/rank etc.) · The bot in the member list · Direct command replies · Bot embed footers",
+    "permWarning": "The bot is missing the Manage Webhooks permission in these channels — messages there will fall back to the plain bot identity:",
+    "loadError": "Loading error",
+    "saveError": "Failed to save"
+  },
+  "premium": {
+    "badgeFree": "Free",
+    "badgePremium": "Premium",
+    "lockedLabel": "Premium",
+    "lockTooltip": "This feature is available on the Premium plan.",
+    "modalTitle": "Premium feature",
+    "modalBody": "This feature is available on the Premium subscription.",
+    "learnMore": "Learn more",
+    "cancel": "Cancel"
   },
   "reactionRoles": {
     "title": "Reaction roles",
@@ -613,5 +681,24 @@
     "privacy": "Privacy",
     "bottom": "© Level Up · forged by a small moonlit studio",
     "verified": "✦ Verified by Discord"
+  },
+  "pricing": {
+    "title": "Premium",
+    "sub": "Unlock everything for your server. One subscription per server, cancel anytime.",
+    "free": "Free",
+    "premium": "Premium",
+    "period": "/month per server",
+    "cta": "Upgrade to Premium",
+    "manage": "Manage subscription",
+    "processing": "Redirecting to checkout…",
+    "selectServer": "Pick a server in the selector first.",
+    "alreadyPremium": "This server already has Premium ✓",
+    "successTitle": "Payment successful!",
+    "successBody": "Premium is being activated for your server — it usually takes a few seconds. Refresh the dashboard if the badge hasn't flipped yet.",
+    "backToDashboard": "Back to dashboard",
+    "features": {
+      "freeList": "1 welcome variant · 1 Twitch channel · Standard welcome image (with watermark) · Leveling, reaction roles, logs",
+      "premiumList": "Unlimited welcome variants · Goodbye + returning members · Custom welcome images, no watermark · Role Rewards · Multiple Twitch channels · Scheduled & recurring posts · Bot Personalization"
+    }
   }
 }

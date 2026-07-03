@@ -39,7 +39,8 @@
     "twitch": "Twitch Live",
     "reactionRoles": "Roles por reacción",
     "serverLogs": "Registros del servidor",
-    "myServers": "Mis servidores"
+    "myServers": "Mis servidores",
+    "personalization": "Personalización del bot"
   },
   "guildSelector": {
     "loading": "Cargando servidores…",
@@ -400,7 +401,74 @@
       "badEmbed": "El JSON del embed no es válido",
       "needContent": "Rellena el texto o el embed",
       "createFailed": "Error al crear el mensaje"
+    },
+    "schedule": {
+      "title": "Programación",
+      "publishNow": "Publicar ahora",
+      "later": "Programar",
+      "recurring": "Recurrente",
+      "runAt": "Fecha y hora (tu hora local)",
+      "recurrence": "Repetir",
+      "daily": "Diario",
+      "weekly": "Semanal",
+      "monthly": "Mensual",
+      "timeOfDay": "Hora (tu hora local)",
+      "daysOfWeek": "Días de la semana",
+      "dayOfMonth": "Día del mes",
+      "scheduledBadge": "🕐 Programado",
+      "recurringBadge": "🔁 Recurrente",
+      "listTitle": "Publicaciones programadas",
+      "listEmpty": "No hay publicaciones programadas.",
+      "next": "Próxima ejecución",
+      "runs": "ejecuciones",
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "delete": "Eliminar",
+      "deleteConfirm": "¿Eliminar esta publicación programada?",
+      "done": "Completado",
+      "paused": "En pausa",
+      "days": [
+        "Dom",
+        "Lun",
+        "Mar",
+        "Mié",
+        "Jue",
+        "Vie",
+        "Sáb"
+      ]
     }
+  },
+  "personalization": {
+    "title": "Personalización del bot",
+    "sub": "Los mensajes del bot en tu servidor se verán como de tu propio bot — nombre y avatar personalizados vía webhooks.",
+    "enable": "Activar personalización",
+    "name": "Nombre del bot",
+    "namePlaceholder": "Mi bot del servidor",
+    "avatar": "URL del avatar",
+    "avatarHint": "PNG/JPG/GIF, hasta 256 KB, mínimo 128×128. Discord puede cachear avatares de webhooks hasta una hora.",
+    "previewChannel": "Canal de prueba",
+    "preview": "Enviar vista previa",
+    "previewSentWebhook": "Vista previa enviada con tu identidad personalizada ✓",
+    "previewSentBot": "La vista previa salió como el bot normal — revisa el permiso Manage Webhooks en ese canal.",
+    "save": "Guardar",
+    "saved": "Guardado",
+    "whatChangesTitle": "Qué cambia",
+    "whatChanges": "Bienvenidas / despedidas / returning · Notificaciones de nivel · Alertas de Twitch · Mensajes publicados y programados",
+    "whatStaysTitle": "Qué NO cambia (limitación de Discord)",
+    "whatStays": "Comandos slash (/rank, etc.) · El bot en la lista de miembros · Respuestas directas a comandos · Pies de embed del bot",
+    "permWarning": "Al bot le falta el permiso Manage Webhooks en estos canales — allí los mensajes saldrán como el bot normal:",
+    "loadError": "Error al cargar",
+    "saveError": "Error al guardar"
+  },
+  "premium": {
+    "badgeFree": "Free",
+    "badgePremium": "Premium",
+    "lockedLabel": "Premium",
+    "lockTooltip": "Esta función está disponible en el plan Premium.",
+    "modalTitle": "Función Premium",
+    "modalBody": "Esta función está disponible en la suscripción Premium.",
+    "learnMore": "Saber más",
+    "cancel": "Cancelar"
   },
   "reactionRoles": {
     "title": "Roles por reacción",
@@ -613,5 +681,24 @@
     "privacy": "Privacidad",
     "bottom": "© Level Up · forjado por un pequeño estudio bajo la luna",
     "verified": "✦ Verificado por Discord"
+  },
+  "pricing": {
+    "title": "Premium",
+    "sub": "Desbloquea todo para tu servidor. Una suscripción por servidor, cancela cuando quieras.",
+    "free": "Free",
+    "premium": "Premium",
+    "period": "/mes por servidor",
+    "cta": "Mejorar a Premium",
+    "manage": "Gestionar suscripción",
+    "processing": "Redirigiendo al pago…",
+    "selectServer": "Primero elige un servidor en el selector.",
+    "alreadyPremium": "Este servidor ya tiene Premium ✓",
+    "successTitle": "¡Pago completado!",
+    "successBody": "Premium se está activando para tu servidor — suele tardar unos segundos. Actualiza el panel si la insignia aún no cambió.",
+    "backToDashboard": "Volver al panel",
+    "features": {
+      "freeList": "1 variante de bienvenida · 1 canal de Twitch · Imagen de bienvenida estándar (con marca de agua) · Niveles, roles por reacción, registros",
+      "premiumList": "Variantes de bienvenida ilimitadas · Goodbye + returning · Imágenes personalizadas sin marca de agua · Role Rewards · Varios canales de Twitch · Publicaciones programadas y recurrentes · Personalización del bot"
+    }
   }
 }

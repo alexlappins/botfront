@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react"
 import { Link, NavLink, Outlet } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import {
+  Bot,
   ChevronDown,
   HandHeart,
   Loader2,
@@ -17,6 +18,8 @@ import {
 } from "lucide-react"
 import { LOGOUT_URL } from "@/lib/api"
 import { ActiveGuildProvider, useActiveGuild } from "@/contexts/active-guild-context"
+import { PremiumProvider } from "@/contexts/premium-context"
+import { PremiumBadge, PremiumModalProvider } from "@/components/premium"
 import { useAuth } from "@/contexts/auth-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { cn } from "@/lib/utils"
@@ -49,12 +52,17 @@ const NAV: NavItem[] = [
   { to: "/twitch", labelKey: "nav.twitch", icon: Twitch },
   { to: "/reaction-roles", labelKey: "nav.reactionRoles", icon: Smile },
   { to: "/server-logs", labelKey: "nav.serverLogs", icon: ScrollText },
+  { to: "/personalization", labelKey: "nav.personalization", icon: Bot },
 ]
 
 export function AdminLayout({ children }: { children?: ReactNode }) {
   return (
     <ActiveGuildProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
+      <PremiumProvider>
+        <PremiumModalProvider>
+          <AdminLayoutInner>{children}</AdminLayoutInner>
+        </PremiumModalProvider>
+      </PremiumProvider>
     </ActiveGuildProvider>
   )
 }
@@ -266,6 +274,8 @@ function TopBar() {
   // (store search + news feed). Stub UI now would just confuse users.
   return (
     <header className="flex items-center justify-end gap-4 px-8 h-16 border-b border-white/5 bg-[#0b0b14]/60 backdrop-blur">
+      {/* Premium status indicator for the active server (TZ §1.3). */}
+      <PremiumBadge />
       <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-sm font-semibold">
             {user?.username?.[0]?.toUpperCase() ?? "U"}

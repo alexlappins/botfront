@@ -25,6 +25,8 @@ import {
   type TwitchSubscription,
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
+import { usePremium } from "@/contexts/premium-context"
+import { PremiumChip, usePremiumModal } from "@/components/premium"
 import { cn } from "@/lib/utils"
 
 /** Sample variable values used in the inline preview. Same keys the backend
@@ -247,7 +249,12 @@ function AddForm({
   const [err, setErr] = useState<string | null>(null)
 
   const textChannels = useMemo(() => channels.filter(isTextChannel), [channels])
-  const limitReached = used >= limit
+  const { premium } = usePremium()
+  const openPremiumModal = usePremiumModal()
+  // Free plan tracks 1 channel (TZ v2.1 §7); premium uses the server limit.
+  const effectiveLimit = premium ? limit : Math.min(limit, 1)
+  const limitReached = used >= effectiveLimit
+  const premiumLocked = !premium && used >= 1
 
   async function submit() {
     setErr(null)
@@ -280,9 +287,12 @@ function AddForm({
   return (
     <section className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-white">{t("twitch.add.title")}</h2>
+        <h2 className="text-sm font-semibold text-white flex items-center gap-2">
+          {t("twitch.add.title")}
+          {premiumLocked && <PremiumChip />}
+        </h2>
         <span className={cn("text-[11px]", limitReached ? "text-amber-400" : "text-white/40")}>
-          {t("twitch.add.slots", { used, limit })}
+          {t("twitch.add.slots", { used, limit: effectiveLimit })}
         </span>
       </div>
       <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
@@ -319,8 +329,8 @@ function AddForm({
         <div className="flex items-end">
           <button
             type="button"
-            onClick={submit}
-            disabled={disabled || limitReached || adding}
+            onClick={() => (premiumLocked ? openPremiumModal() : void submit())}
+            disabled={disabled || adding || (limitReached && !premiumLocked)}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 h-[38px]"
           >
             {adding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -329,7 +339,7 @@ function AddForm({
         </div>
       </div>
       {err && <p className="text-xs text-red-400">{err}</p>}
-      {limitReached && !err && (
+      {limitReached && !err && !premiumLocked && (
         <p className="text-xs text-amber-400">{t("twitch.add.errors.limitReached")}</p>
       )}
     </section>

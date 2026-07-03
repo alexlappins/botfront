@@ -20,15 +20,22 @@ import {
 } from "@/components/template-embed-builder"
 import {
   createGuildMessage,
-  getGuildMessages,
-  updateGuildMessage,
+  createScheduledPost,
   deleteGuildMessage,
+  deleteScheduledPost,
   getChannels,
+  getGuildMessages,
   getGuildRoles,
-  type GuildMessage,
+  listScheduledPosts,
+  updateGuildMessage,
+  updateScheduledPost,
   type Channel,
+  type GuildMessage,
   type GuildRole,
+  type ScheduledPost,
 } from "@/lib/api"
+import { usePremium } from "@/contexts/premium-context"
+import { PremiumChip, usePremiumModal } from "@/components/premium"
 import { friendlyToMentions, mentionsToFriendly } from "@/lib/discord-mentions"
 import { cn } from "@/lib/utils"
 
@@ -42,6 +49,7 @@ export function GuildServerMessagesPage() {
   const [messages, setMessages] = useState<GuildMessage[]>([])
   const [channels, setChannels] = useState<Channel[]>([])
   const [roles, setRoles] = useState<GuildRole[]>([])
+  const [scheduled, setScheduled] = useState<ScheduledPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
@@ -51,14 +59,16 @@ export function GuildServerMessagesPage() {
     setLoading(true)
     setError(null)
     try {
-      const [m, c, r] = await Promise.all([
+      const [m, c, r, sp] = await Promise.all([
         getGuildMessages(guildId),
         getChannels(guildId).catch(() => [] as Channel[]),
         getGuildRoles(guildId).catch(() => [] as GuildRole[]),
+        listScheduledPosts(guildId).catch(() => [] as ScheduledPost[]),
       ])
       setMessages(m)
       setChannels(c)
       setRoles(r)
+      setScheduled(sp)
     } catch (e) {
       setError(e instanceof Error ? e.message : t("serverMessages.loadError"))
     } finally {
@@ -117,6 +127,15 @@ export function GuildServerMessagesPage() {
         </div>
       )}
 
+      {scheduled.length > 0 && (
+        <ScheduledPostsList
+          guildId={guildId}
+          posts={scheduled}
+          channels={channels}
+          onChanged={() => void load()}
+        />
+      )}
+
       {creating && (
         <CreateMessageModal
           guildId={guildId}
@@ -129,6 +148,98 @@ export function GuildServerMessagesPage() {
           }}
         />
       )}
+    </div>
+  )
+}
+
+/** Scheduled/recurring posts management list (TZ v2.1 §2.4). */
+function ScheduledPostsList({
+  guildId,
+  posts,
+  channels,
+  onChanged,
+}: {
+  guildId: string
+  posts: ScheduledPost[]
+  channels: Channel[]
+  onChanged: () => void
+}) {
+  const { t } = useTranslation()
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  function channelName(id: string): string {
+    return channels.find((c) => c.id === id)?.name ?? id
+  }
+
+  async function toggle(post: ScheduledPost) {
+    setBusyId(post.id)
+    try {
+      await updateScheduledPost(guildId, post.id, {
+        status: post.status === "paused" ? "active" : "paused",
+      })
+      onChanged()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function remove(post: ScheduledPost) {
+    if (!confirm(t("serverMessages.schedule.deleteConfirm"))) return
+    setBusyId(post.id)
+    try {
+      await deleteScheduledPost(guildId, post.id)
+      onChanged()
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 space-y-2">
+      <p className="text-sm font-semibold text-white">{t("serverMessages.schedule.listTitle")}</p>
+      {posts.map((p) => (
+        <div
+          key={p.id}
+          className="flex items-center gap-3 px-3 py-2 rounded-lg border border-white/10 bg-white/[0.02] text-sm"
+        >
+          <span className="text-[11px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 shrink-0">
+            {p.kind === "once"
+              ? t("serverMessages.schedule.scheduledBadge")
+              : t("serverMessages.schedule.recurringBadge")}
+          </span>
+          <span className="text-white/80 truncate flex-1 min-w-0">
+            #{channelName(p.channelId)}
+            {p.content ? ` · ${p.content.slice(0, 40)}` : ""}
+          </span>
+          <span className="text-xs text-white/40 shrink-0">
+            {p.status === "done"
+              ? t("serverMessages.schedule.done")
+              : p.status === "paused"
+                ? t("serverMessages.schedule.paused")
+                : p.nextRunAt
+                  ? `${t("serverMessages.schedule.next")}: ${new Date(p.nextRunAt).toLocaleString()}`
+                  : "—"}
+            {" · "}
+            {p.runCount} {t("serverMessages.schedule.runs")}
+          </span>
+          {p.status !== "done" && (
+            <Button size="sm" variant="ghost" disabled={busyId === p.id} onClick={() => void toggle(p)}>
+              {p.status === "paused"
+                ? t("serverMessages.schedule.resume")
+                : t("serverMessages.schedule.pause")}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busyId === p.id}
+            onClick={() => void remove(p)}
+            className="text-red-400 hover:text-red-400"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
     </div>
   )
 }
@@ -353,6 +464,8 @@ function CreateMessageModal({
   onCreated: () => void
 }) {
   const { t } = useTranslation()
+  const { premium } = usePremium()
+  const openPremiumModal = usePremiumModal()
   const [tab, setTab] = useState<Tab>("text")
   const [channelId, setChannelId] = useState<string>("")
   const [content, setContent] = useState("")
@@ -360,7 +473,31 @@ function CreateMessageModal({
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
+  // Schedule block (TZ v2.1 §2): "now" is free; later/recurring are Premium.
+  const [scheduleMode, setScheduleMode] = useState<"now" | "later" | "recurring">("now")
+  const [runAtLocal, setRunAtLocal] = useState("")
+  const [recKind, setRecKind] = useState<"daily" | "weekly" | "monthly">("daily")
+  const [timeLocal, setTimeLocal] = useState("12:00")
+  const [weekDays, setWeekDays] = useState<number[]>([])
+  const [monthDay, setMonthDay] = useState(1)
+
   const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
+
+  function pickScheduleMode(mode: "now" | "later" | "recurring") {
+    if (mode !== "now" && !premium) {
+      openPremiumModal()
+      return
+    }
+    setScheduleMode(mode)
+  }
+
+  /** Convert a local 'HH:MM' to UTC 'HH:MM' (backend stores UTC). */
+  function localTimeToUtc(hhmm: string): string {
+    const [h, m] = hhmm.split(":").map(Number)
+    const d = new Date()
+    d.setHours(h, m, 0, 0)
+    return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`
+  }
 
   async function handleCreate() {
     setErr(null)
@@ -390,11 +527,32 @@ function CreateMessageModal({
     }
     setSaving(true)
     try {
-      await createGuildMessage(guildId, {
-        discordChannelId: channelId,
-        content: rawContent.trim() || null,
-        embedJson: embedRaw,
-      })
+      if (scheduleMode === "now") {
+        await createGuildMessage(guildId, {
+          discordChannelId: channelId,
+          content: rawContent.trim() || null,
+          embedJson: embedRaw,
+        })
+      } else if (scheduleMode === "later") {
+        // datetime-local is in the admin's local tz; Date() converts to UTC ISO.
+        await createScheduledPost(guildId, {
+          channelId,
+          content: rawContent.trim() || null,
+          embedJson: embedRaw,
+          kind: "once",
+          runAt: new Date(runAtLocal).toISOString(),
+        })
+      } else {
+        await createScheduledPost(guildId, {
+          channelId,
+          content: rawContent.trim() || null,
+          embedJson: embedRaw,
+          kind: recKind,
+          timeOfDay: localTimeToUtc(timeLocal),
+          ...(recKind === "weekly" ? { daysOfWeek: weekDays } : {}),
+          ...(recKind === "monthly" ? { dayOfMonth: monthDay } : {}),
+        })
+      }
       onCreated()
     } catch (e) {
       setErr(e instanceof Error ? e.message : t("serverMessages.errors.createFailed"))
@@ -469,6 +627,129 @@ function CreateMessageModal({
           )}
 
           {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+
+          {/* Schedule block (TZ v2.1 §2). Visible to everyone; later/recurring
+              options are Premium — clicking them on free opens the modal. */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-white">{t("serverMessages.schedule.title")}</p>
+              {!premium && <PremiumChip />}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {(
+                [
+                  { v: "now" as const, label: t("serverMessages.schedule.publishNow") },
+                  { v: "later" as const, label: t("serverMessages.schedule.later") },
+                  { v: "recurring" as const, label: t("serverMessages.schedule.recurring") },
+                ]
+              ).map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => pickScheduleMode(opt.v)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                    scheduleMode === opt.v
+                      ? "border-violet-500 bg-violet-500/15 text-white"
+                      : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                    opt.v !== "now" && !premium && "opacity-60",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {scheduleMode === "later" && (
+              <div className="grid gap-1.5">
+                <Label className="text-xs">{t("serverMessages.schedule.runAt")}</Label>
+                <input
+                  type="datetime-local"
+                  value={runAtLocal}
+                  onChange={(e) => setRunAtLocal(e.target.value)}
+                  className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm [color-scheme:dark]"
+                />
+              </div>
+            )}
+
+            {scheduleMode === "recurring" && (
+              <div className="space-y-3">
+                <div className="flex gap-2 flex-wrap">
+                  {(
+                    [
+                      { v: "daily" as const, label: t("serverMessages.schedule.daily") },
+                      { v: "weekly" as const, label: t("serverMessages.schedule.weekly") },
+                      { v: "monthly" as const, label: t("serverMessages.schedule.monthly") },
+                    ]
+                  ).map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setRecKind(opt.v)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                        recKind === opt.v
+                          ? "border-violet-500 bg-violet-500/15 text-white"
+                          : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-1.5 max-w-[180px]">
+                  <Label className="text-xs">{t("serverMessages.schedule.timeOfDay")}</Label>
+                  <input
+                    type="time"
+                    value={timeLocal}
+                    onChange={(e) => setTimeLocal(e.target.value)}
+                    className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm [color-scheme:dark]"
+                  />
+                </div>
+                {recKind === "weekly" && (
+                  <div className="grid gap-1.5">
+                    <Label className="text-xs">{t("serverMessages.schedule.daysOfWeek")}</Label>
+                    <div className="flex gap-1.5 flex-wrap">
+                      {(t("serverMessages.schedule.days", { returnObjects: true }) as string[]).map(
+                        (day, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() =>
+                              setWeekDays((prev) =>
+                                prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx],
+                              )
+                            }
+                            className={cn(
+                              "px-2.5 py-1 rounded-md text-xs border",
+                              weekDays.includes(idx)
+                                ? "border-violet-500 bg-violet-500/15 text-white"
+                                : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                            )}
+                          >
+                            {day}
+                          </button>
+                        ),
+                      )}
+                    </div>
+                  </div>
+                )}
+                {recKind === "monthly" && (
+                  <div className="grid gap-1.5 max-w-[120px]">
+                    <Label className="text-xs">{t("serverMessages.schedule.dayOfMonth")}</Label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      value={monthDay}
+                      onChange={(e) => setMonthDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))}
+                      className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
 

@@ -27,6 +27,8 @@ import { AdminStorePage } from "@/pages/admin-store-page"
 import { AdminTemplateAccessPage } from "@/pages/admin-template-access-page"
 import { AdminLayout } from "@/components/admin-layout"
 import { ServerLogsPage } from "@/pages/server-logs-page"
+import { PersonalizationPage } from "@/pages/guild/personalization-page"
+import { PremiumSuccessPage, PricingPage } from "@/pages/pricing-page"
 
 /**
  * Role guard. On mismatch we send the user to `/` (the landing), where the
@@ -104,6 +106,9 @@ function App() {
             <Route path="/twitch" element={<TwitchPage />} />
             <Route path="/reaction-roles" element={<GuildAutoRolesPage />} />
             <Route path="/server-logs" element={<ServerLogsPage />} />
+            <Route path="/personalization" element={<PersonalizationPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route path="/premium/success" element={<PremiumSuccessPage />} />
           </Route>
 
           {/* Standalone install wizard (no admin shell) */}

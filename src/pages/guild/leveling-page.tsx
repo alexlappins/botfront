@@ -35,6 +35,7 @@ import {
   type XpEventType,
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
+import { PremiumGate } from "@/components/premium"
 import { cn } from "@/lib/utils"
 
 const PLACEHOLDER_KEYS = [
@@ -131,17 +132,20 @@ export function LevelingPage() {
           <GeneralBlock guildId={guildId} channels={channels} initial={state.settings} />
           <XpSourcesBlock guildId={guildId} initial={state.settings} />
           <TiersBlock guildId={guildId} initial={state.tiers} />
-          <RoleRewardsBlock
-            guildId={guildId}
-            initial={state.rewards}
-            roles={roles}
-            limit={state.limits.roleRewards}
-            mode={state.settings.roleRewardsMode}
-            onModeChange={async (mode) => {
-              await updateLevelingSettings(guildId, { roleRewardsMode: mode })
-              setState((s) => (s ? { ...s, settings: { ...s.settings, roleRewardsMode: mode } } : s))
-            }}
-          />
+          {/* Role Rewards is Premium (TZ v2.1 §6): visible-but-locked on free. */}
+          <PremiumGate>
+            <RoleRewardsBlock
+              guildId={guildId}
+              initial={state.rewards}
+              roles={roles}
+              limit={state.limits.roleRewards}
+              mode={state.settings.roleRewardsMode}
+              onModeChange={async (mode) => {
+                await updateLevelingSettings(guildId, { roleRewardsMode: mode })
+                setState((s) => (s ? { ...s, settings: { ...s.settings, roleRewardsMode: mode } } : s))
+              }}
+            />
+          </PremiumGate>
           <NoXpZonesBlock
             guildId={guildId}
             roles={roles}

@@ -39,7 +39,8 @@
     "twitch": "Twitch Live",
     "reactionRoles": "Ролі по реакції",
     "serverLogs": "Логи сервера",
-    "myServers": "Мої сервери"
+    "myServers": "Мої сервери",
+    "personalization": "Персоналізація бота"
   },
   "guildSelector": {
     "loading": "Завантаження серверів…",
@@ -400,7 +401,74 @@
       "badEmbed": "Embed JSON некоректний",
       "needContent": "Потрібно заповнити текст або embed",
       "createFailed": "Не вдалося створити повідомлення"
+    },
+    "schedule": {
+      "title": "Розклад",
+      "publishNow": "Опублікувати зараз",
+      "later": "Запланувати",
+      "recurring": "Повторювана",
+      "runAt": "Дата та час (ваш локальний)",
+      "recurrence": "Повтор",
+      "daily": "Щодня",
+      "weekly": "Щотижня",
+      "monthly": "Щомісяця",
+      "timeOfDay": "Час (ваш локальний)",
+      "daysOfWeek": "Дні тижня",
+      "dayOfMonth": "Число місяця",
+      "scheduledBadge": "🕐 Заплановано",
+      "recurringBadge": "🔁 Повторюється",
+      "listTitle": "Заплановані публікації",
+      "listEmpty": "Запланованих публікацій немає.",
+      "next": "Наступний запуск",
+      "runs": "запусків",
+      "pause": "Пауза",
+      "resume": "Відновити",
+      "delete": "Видалити",
+      "deleteConfirm": "Видалити цю заплановану публікацію?",
+      "done": "Завершено",
+      "paused": "На паузі",
+      "days": [
+        "Нд",
+        "Пн",
+        "Вт",
+        "Ср",
+        "Чт",
+        "Пт",
+        "Сб"
+      ]
     }
+  },
+  "personalization": {
+    "title": "Персоналізація бота",
+    "sub": "Повідомлення бота на вашому сервері виглядатимуть як від вашого власного бота — своє ім'я та аватар через вебхуки.",
+    "enable": "Увімкнути персоналізацію",
+    "name": "Ім'я бота",
+    "namePlaceholder": "Мій серверний бот",
+    "avatar": "URL аватара",
+    "avatarHint": "PNG/JPG/GIF, до 256 КБ, мінімум 128×128. Discord може кешувати аватари вебхуків до години.",
+    "previewChannel": "Канал для тесту",
+    "preview": "Надіслати прев'ю",
+    "previewSentWebhook": "Прев'ю надіслано з вашим кастомним ім'ям ✓",
+    "previewSentBot": "Прев'ю пішло від звичайного бота — перевірте право Manage Webhooks у цьому каналі.",
+    "save": "Зберегти",
+    "saved": "Збережено",
+    "whatChangesTitle": "Що змінюється",
+    "whatChanges": "Привітання / прощання / returning · Level-up сповіщення · Twitch-алерти · Опубліковані та заплановані повідомлення",
+    "whatStaysTitle": "Що НЕ змінюється (обмеження Discord)",
+    "whatStays": "Slash-команди (/rank тощо) · Бот у списку учасників · Прямі відповіді на команди · Embed-футери бота",
+    "permWarning": "У бота немає права Manage Webhooks у цих каналах — там повідомлення будуть від звичайного бота:",
+    "loadError": "Помилка завантаження",
+    "saveError": "Не вдалося зберегти"
+  },
+  "premium": {
+    "badgeFree": "Free",
+    "badgePremium": "Premium",
+    "lockedLabel": "Premium",
+    "lockTooltip": "Ця функція доступна в Premium-підписці.",
+    "modalTitle": "Premium-функція",
+    "modalBody": "Ця функція доступна в Premium-підписці.",
+    "learnMore": "Дізнатися більше",
+    "cancel": "Скасувати"
   },
   "reactionRoles": {
     "title": "Ролі по реакції",
@@ -613,5 +681,24 @@
     "privacy": "Конфіденційність",
     "bottom": "© Level Up · кований маленькою місячною студією",
     "verified": "✦ Перевірено Discord"
+  },
+  "pricing": {
+    "title": "Premium",
+    "sub": "Відкрий усе для свого сервера. Одна підписка на сервер, скасування будь-коли.",
+    "free": "Free",
+    "premium": "Premium",
+    "period": "/міс за сервер",
+    "cta": "Перейти на Premium",
+    "manage": "Керувати підпискою",
+    "processing": "Перенаправляємо на оплату…",
+    "selectServer": "Спочатку оберіть сервер у селекторі.",
+    "alreadyPremium": "У цього сервера вже є Premium ✓",
+    "successTitle": "Оплата пройшла!",
+    "successBody": "Premium активується для вашого сервера — зазвичай це займає кілька секунд. Оновіть панель, якщо бейдж ще не змінився.",
+    "backToDashboard": "Повернутися в панель",
+    "features": {
+      "freeList": "1 варіант привітання · 1 Twitch-канал · Стандартна welcome-картинка (з watermark) · Рівні, ролі по реакції, логи",
+      "premiumList": "Безліміт варіантів привітання · Goodbye + returning · Кастомні welcome-картинки без watermark · Role Rewards · Кілька Twitch-каналів · Заплановані та повторювані пости · Персоналізація бота"
+    }
   }
 }
