@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
-import { AlertTriangle, Bot, CheckCircle2, Info, Loader2, Send } from "lucide-react"
+import { AlertTriangle, Bot, CheckCircle2, Info, Loader2, Send, Upload } from "lucide-react"
 import {
   getBotPersonalization,
   getChannels,
   previewBotPersonalization,
   saveBotPersonalization,
+  uploadFile,
   type BotPersonalizationSettings,
   type Channel,
 } from "@/lib/api"
@@ -98,6 +99,47 @@ function SettingsForm({
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [err, setErr] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Discord webhook avatar constraints (TZ §3): PNG/JPG/GIF, ≤256 KB, ≥128×128.
+  const AVATAR_MAX_BYTES = 256 * 1024
+  const AVATAR_MIN_SIZE = 128
+  const AVATAR_TYPES = new Set(["image/png", "image/jpeg", "image/jpg", "image/gif"])
+
+  async function handleAvatarFile(file: File) {
+    setErr(null)
+    if (!AVATAR_TYPES.has(file.type)) {
+      setErr(t("personalization.avatarErrType"))
+      return
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setErr(t("personalization.avatarErrSize"))
+      return
+    }
+    const objectUrl = URL.createObjectURL(file)
+    try {
+      const ok = await new Promise<boolean>((resolve) => {
+        const img = new Image()
+        img.onload = () =>
+          resolve(img.naturalWidth >= AVATAR_MIN_SIZE && img.naturalHeight >= AVATAR_MIN_SIZE)
+        img.onerror = () => resolve(false)
+        img.src = objectUrl
+      })
+      if (!ok) {
+        setErr(t("personalization.avatarErrSmall"))
+        return
+      }
+      setUploading(true)
+      const { url } = await uploadFile(file)
+      setAvatarUrl(url)
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("personalization.saveError"))
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+      setUploading(false)
+    }
+  }
 
   const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
   const [previewChannel, setPreviewChannel] = useState(textChannels[0]?.id ?? "")
@@ -175,17 +217,57 @@ function SettingsForm({
           />
         </label>
 
-        <label className="block space-y-1.5">
-          <span className="text-xs font-medium text-white/70">{t("personalization.avatar")}</span>
-          <input
-            type="text"
-            value={avatarUrl}
-            placeholder="https://…"
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            className="w-full rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
-          />
+        <div className="space-y-1.5">
+          <span className="block text-xs font-medium text-white/70">{t("personalization.avatar")}</span>
+
+          {/* File upload — the primary way to set an avatar (TZ §3) */}
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) void handleAvatarFile(f)
+                e.target.value = ""
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm hover:bg-white/[0.06] disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {t("personalization.avatarUpload")}
+            </button>
+            {avatarUrl && (
+              <img
+                src={avatarUrl}
+                alt=""
+                className="h-10 w-10 rounded-full object-cover border border-white/10"
+                onError={(e) => {
+                  ;(e.target as HTMLImageElement).style.display = "none"
+                }}
+              />
+            )}
+          </div>
+          <span className="block text-[11px] text-white/40">{t("personalization.avatarFileHint")}</span>
+
+          {/* Or paste a direct URL */}
+          <label className="block space-y-1.5 pt-1">
+            <span className="text-[11px] text-white/40">{t("personalization.avatarOrUrl")}</span>
+            <input
+              type="text"
+              value={avatarUrl}
+              placeholder="https://…"
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
+            />
+          </label>
           <span className="block text-[11px] text-white/40">{t("personalization.avatarHint")}</span>
-        </label>
+        </div>
 
         <div className="flex items-center gap-3">
           <button

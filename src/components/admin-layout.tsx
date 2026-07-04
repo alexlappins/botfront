@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { LOGOUT_URL } from "@/lib/api"
 import { ActiveGuildProvider, useActiveGuild } from "@/contexts/active-guild-context"
-import { PremiumProvider } from "@/contexts/premium-context"
+import { PremiumProvider, usePremium } from "@/contexts/premium-context"
 import { PremiumBadge, PremiumModalProvider } from "@/components/premium"
 import { useAuth } from "@/contexts/auth-context"
 import { LanguageSwitcher } from "@/components/language-switcher"
@@ -121,25 +121,40 @@ function Sidebar() {
         ))}
       </nav>
 
-      <div className="px-5 py-3 border-t border-white/5 shrink-0 flex items-center justify-between gap-2">
-        <span className="text-[11px] font-semibold tracking-[0.16em] text-white/35 uppercase">
-          {t("language.label")}
-        </span>
-        <LanguageSwitcher />
-      </div>
+      {/* Language selector moved to the TopBar (TZ §10). */}
+      <SidebarPremiumBlock />
+    </aside>
+  )
+}
 
-      <div className="px-5 py-4 border-t border-white/5 shrink-0">
+/** Bottom sidebar CTA: upgrade link for free guilds, plan status for premium ones. */
+function SidebarPremiumBlock() {
+  const { t } = useTranslation()
+  const { premium } = usePremium()
+  return (
+    <div className="px-5 py-4 border-t border-white/5 shrink-0">
+      {premium ? (
         <Link
-          to="#"
-          className="block w-full text-center rounded-xl border border-white/10 bg-white/[0.03] py-2 text-sm text-white/60 hover:bg-white/5"
+          to="/pricing"
+          className="block w-full text-center rounded-xl border border-amber-400/30 bg-amber-400/[0.06] py-2 text-sm text-amber-300 hover:bg-amber-400/10"
         >
           <span className="inline-flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            {t("guildSelector.comingSoonPremium")}
+            {t("premium.badgePremium")}
           </span>
         </Link>
-      </div>
-    </aside>
+      ) : (
+        <Link
+          to="/pricing"
+          className="block w-full text-center rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 py-2 text-sm font-medium text-white hover:from-violet-500 hover:to-purple-500"
+        >
+          <span className="inline-flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            {t("premium.sidebarCta")}
+          </span>
+        </Link>
+      )}
+    </div>
   )
 }
 
@@ -274,6 +289,8 @@ function TopBar() {
   // (store search + news feed). Stub UI now would just confuse users.
   return (
     <header className="flex items-center justify-end gap-4 px-8 h-16 border-b border-white/5 bg-[#0b0b14]/60 backdrop-blur">
+      {/* Language selector lives up here next to the user avatar (TZ §10). */}
+      <LanguageSwitcher />
       {/* Premium status indicator for the active server (TZ §1.3). */}
       <PremiumBadge />
       <div className="flex items-center gap-3">

@@ -47,11 +47,10 @@
     "noServers": "Sin servidores con el bot.",
     "noServersHint": "Instala una plantilla → el bot aparecerá en el servidor → elígelo aquí.",
     "noneSelected": "Ningún servidor seleccionado",
-    "active": "Servidor activo",
-    "comingSoonPremium": "Pronto: premium"
+    "active": "Servidor activo"
   },
   "landing": {
-    "title": "Invoca al bot que <em>sube de nivel</em> tu reino.",
+    "title": "<em>Sube de nivel</em> tu comunidad",
     "eyebrow": "El compañero del streamer",
     "sub": "Alertas en vivo, moderación protectora y servidores ya forjados — un compañero para streamers, VTubers y las comunidades que cuidan.",
     "ctaShop": "Entrar a la Tienda",
@@ -84,38 +83,29 @@
     "features": {
       "title": "El Compañero",
       "eyebrow": "Funciones únicas",
-      "ward": {
-        "cat": "Seguridad",
-        "title": "El Guardián"
+      "serverMessages": {
+        "cat": "Contenido",
+        "title": "Plantillas de mensajes"
       },
-      "streamerSuite": {
-        "cat": "Legendario",
-        "title": "Streamer Suite",
-        "desc": "El poder distintivo que ningún otro bot ofrece — alertas en vivo en Twitch, YouTube, Kick y TikTok, herramientas nativas para VTubers y analíticas."
+      "reactionRoles": {
+        "cat": "Roles",
+        "title": "Roles por reacción"
       },
-      "moderation": {
-        "cat": "Moderación",
-        "title": "Mantén el orden"
-      },
-      "fellowship": {
-        "cat": "Comunidad",
-        "title": "Hermandad"
-      },
-      "tickets": {
-        "cat": "Soporte",
-        "title": "Tickets"
-      },
-      "giveaways": {
-        "cat": "Participación",
-        "title": "Sorteos"
-      },
-      "xp": {
+      "leveling": {
         "cat": "Recompensa",
-        "title": "XP y niveles"
+        "title": "Sistema de niveles"
       },
-      "analytics": {
-        "cat": "Información",
-        "title": "Analíticas"
+      "welcome": {
+        "cat": "Comunidad",
+        "title": "Mensajes de bienvenida"
+      },
+      "serverLogs": {
+        "cat": "Control",
+        "title": "Registros del servidor"
+      },
+      "twitch": {
+        "cat": "Live",
+        "title": "Integración con Twitch"
       }
     },
     "shop": {
@@ -123,11 +113,40 @@
       "title": "Reinos destacados",
       "sub": "Servidores Discord ya forjados — canales, roles, bienvenidas, niveles y alertas en vivo preconfigurados. Instalación en un clic tras la compra.",
       "empty": "Las primeras plantillas llegarán pronto. Vuelve más tarde.",
-      "openShop": "Abrir toda la Tienda"
+      "openShop": "Abrir toda la Tienda",
+      "announce": "Pronto abriremos una tienda con plantillas de servidores de Discord listas para usar y decoraciones: emojis, paneles, separadores, iconos, banners y mucho más."
     },
     "final": {
-      "title": "Enciende la vela. <em>Sal en vivo.</em>",
+      "title": "Level Up Your Server",
       "sub": "Coloca al compañero en tu servidor. Forja canales, invoca alertas, haz crecer tu gremio."
+    },
+    "plans": {
+      "eyebrow": "Precios",
+      "title": "Choose your plan",
+      "perMonth": "/mes por servidor",
+      "launchPrice": "Launch price",
+      "getPremium": "Get Premium",
+      "footnote": "Cancela cuando quieras · Sin cargos ocultos",
+      "freeFeatures": [
+        "Plantillas de mensajes",
+        "1 variante de bienvenida",
+        "Niveles (XP de chat y voz)",
+        "Roles por reacción",
+        "Registros del servidor",
+        "1 canal de Twitch",
+        "Imágenes de bienvenida estándar"
+      ],
+      "premiumFeatures": [
+        "Todo lo de Free",
+        "Programador de publicaciones",
+        "×3 variantes de bienvenida",
+        "Mensajes de despedida",
+        "Mensajes para miembros que regresan",
+        "Imágenes de bienvenida personalizadas",
+        "Role rewards en niveles",
+        "×3 canales de Twitch",
+        "Personalización del bot"
+      ]
     }
   },
   "shop": {
@@ -435,7 +454,9 @@
         "Jue",
         "Vie",
         "Sáb"
-      ]
+      ],
+      "edit": "Editar",
+      "editTitle": "Editar publicación programada"
     }
   },
   "personalization": {
@@ -458,7 +479,13 @@
     "whatStays": "Comandos slash (/rank, etc.) · El bot en la lista de miembros · Respuestas directas a comandos · Pies de embed del bot",
     "permWarning": "Al bot le falta el permiso Manage Webhooks en estos canales — allí los mensajes saldrán como el bot normal:",
     "loadError": "Error al cargar",
-    "saveError": "Error al guardar"
+    "saveError": "Error al guardar",
+    "avatarUpload": "Subir imagen",
+    "avatarFileHint": "PNG, JPG o GIF · máx. 256 KB · mínimo 128×128 px",
+    "avatarOrUrl": "O pega una URL directa de la imagen",
+    "avatarErrType": "Solo se permiten imágenes PNG, JPG o GIF",
+    "avatarErrSize": "La imagen es demasiado grande: Discord permite hasta 256 KB para avatares de webhook",
+    "avatarErrSmall": "La imagen es demasiado pequeña: se requiere un mínimo de 128×128 px"
   },
   "premium": {
     "badgeFree": "Free",
@@ -468,7 +495,8 @@
     "modalTitle": "Función Premium",
     "modalBody": "Esta función está disponible en la suscripción Premium.",
     "learnMore": "Saber más",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "sidebarCta": "Obtener Premium"
   },
   "reactionRoles": {
     "title": "Roles por reacción",
@@ -680,7 +708,8 @@
     "terms": "Términos",
     "privacy": "Privacidad",
     "bottom": "© Level Up · forjado por un pequeño estudio bajo la luna",
-    "verified": "✦ Verificado por Discord"
+    "verified": "✦ Verificado por Discord",
+    "refund": "Política de reembolsos"
   },
   "pricing": {
     "title": "Premium",

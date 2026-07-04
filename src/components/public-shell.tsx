@@ -138,8 +138,9 @@ export function PublicShell({
           </div>
           <div className="public-footer-col">
             <h5>{t("footer.legal")}</h5>
-            <a href="#">{t("footer.terms")}</a>
-            <a href="#">{t("footer.privacy")}</a>
+            <Link to="/terms">{t("footer.terms")}</Link>
+            <Link to="/privacy">{t("footer.privacy")}</Link>
+            <Link to="/refund">{t("footer.refund")}</Link>
           </div>
         </div>
         <div className="public-wrap public-footer-bottom">

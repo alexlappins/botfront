@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Plus, Save, Trash2, MessageSquare, X } from "lucide-react"
+import { Loader2, Pencil, Plus, Save, Trash2, MessageSquare, X } from "lucide-react"
 import {
   emptyEmbedForm,
   parseEmbedJsonToForm,
@@ -33,6 +33,7 @@ import {
   type GuildMessage,
   type GuildRole,
   type ScheduledPost,
+  type ScheduleKind,
 } from "@/lib/api"
 import { usePremium } from "@/contexts/premium-context"
 import { PremiumChip, usePremiumModal } from "@/components/premium"
@@ -166,6 +167,7 @@ function ScheduledPostsList({
 }) {
   const { t } = useTranslation()
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<ScheduledPost | null>(null)
 
   function channelName(id: string): string {
     return channels.find((c) => c.id === id)?.name ?? id
@@ -223,6 +225,17 @@ function ScheduledPostsList({
             {p.runCount} {t("serverMessages.schedule.runs")}
           </span>
           {p.status !== "done" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={busyId === p.id}
+              onClick={() => setEditing(p)}
+              title={t("serverMessages.schedule.edit")}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {p.status !== "done" && (
             <Button size="sm" variant="ghost" disabled={busyId === p.id} onClick={() => void toggle(p)}>
               {p.status === "paused"
                 ? t("serverMessages.schedule.resume")
@@ -240,8 +253,298 @@ function ScheduledPostsList({
           </Button>
         </div>
       ))}
+
+      {editing && (
+        <EditScheduledPostModal
+          guildId={guildId}
+          post={editing}
+          channels={channels}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            onChanged()
+          }}
+        />
+      )}
     </div>
   )
+}
+
+/**
+ * Edit an existing scheduled post before it fires (TZ §2): message content
+ * (text + embed incl. images), target channel, run time, and recurrence.
+ * PUT /scheduled-posts/:id recomputes next_run_at server-side.
+ */
+function EditScheduledPostModal({
+  guildId,
+  post,
+  channels,
+  onClose,
+  onSaved,
+}: {
+  guildId: string
+  post: ScheduledPost
+  channels: Channel[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { t } = useTranslation()
+  const [tab, setTab] = useState<Tab>("text")
+  const [channelId, setChannelId] = useState(post.channelId)
+  const [content, setContent] = useState(post.content ?? "")
+  const [embedForm, setEmbedForm] = useState<EmbedFormState>(() =>
+    parseEmbedJsonToForm(post.embedJson ?? null),
+  )
+  const [kind, setKind] = useState<ScheduleKind>(post.kind)
+  // datetime-local wants "YYYY-MM-DDTHH:MM" in the admin's local tz.
+  const [runAtLocal, setRunAtLocal] = useState(() =>
+    post.nextRunAt ? toDatetimeLocal(new Date(post.nextRunAt)) : "",
+  )
+  const [timeLocal, setTimeLocal] = useState(() =>
+    post.timeOfDay ? utcTimeToLocal(post.timeOfDay) : "12:00",
+  )
+  const [weekDays, setWeekDays] = useState<number[]>(post.daysOfWeek ?? [])
+  const [monthDay, setMonthDay] = useState(post.dayOfMonth ?? 1)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
+
+  async function handleSave() {
+    setErr(null)
+    const embedStr = serializeFormToEmbedJson(embedForm)
+    let embedObj: Record<string, unknown> | null = null
+    if (embedStr) {
+      try {
+        const parsed = JSON.parse(embedStr) as { embeds?: Record<string, unknown>[] }
+        embedObj = parsed.embeds?.[0] ?? null
+      } catch {
+        setErr(t("serverMessages.errors.badEmbed"))
+        return
+      }
+    }
+    if (!content.trim() && !embedObj) {
+      setErr(t("serverMessages.errors.needContent"))
+      return
+    }
+    setSaving(true)
+    try {
+      await updateScheduledPost(guildId, post.id, {
+        channelId,
+        content: content.trim() || null,
+        embedJson: embedObj,
+        kind,
+        ...(kind === "once" ? { runAt: new Date(runAtLocal).toISOString() } : {}),
+        ...(kind !== "once" ? { timeOfDay: localHHMMToUtc(timeLocal) } : {}),
+        ...(kind === "weekly" ? { daysOfWeek: weekDays } : {}),
+        ...(kind === "monthly" ? { dayOfMonth: monthDay } : {}),
+      })
+      onSaved()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("serverMessages.saveFailed"))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const tabClass = (active: boolean) =>
+    cn(
+      "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+      active
+        ? "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]"
+        : "text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--muted))]",
+    )
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+          <h2 className="text-base font-semibold text-white">
+            {t("serverMessages.schedule.editTitle")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
+            aria-label={t("serverMessages.modalClose")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid gap-2">
+            <Label className="text-xs">{t("serverMessages.modalChannel")}</Label>
+            <Select value={channelId} onValueChange={setChannelId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("serverMessages.modalPickChannel")} />
+              </SelectTrigger>
+              <SelectContent>
+                {textChannels.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    #{c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setTab("text")} className={tabClass(tab === "text")}>
+              {t("serverMessages.modalText")}
+            </button>
+            <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
+              {t("serverMessages.modalEmbed")}
+            </button>
+          </div>
+
+          {tab === "text" && (
+            <div className="grid gap-2">
+              <Label className="text-xs">{t("serverMessages.modalContentLabel")}</Label>
+              <textarea
+                className="flex min-h-[120px] w-full rounded-md border border-[hsl(var(--input))] bg-transparent px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+                value={content}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value)}
+                rows={6}
+              />
+            </div>
+          )}
+
+          {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+
+          {/* Timing */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4 space-y-3">
+            <p className="text-sm font-semibold text-white">{t("serverMessages.schedule.title")}</p>
+            <div className="flex gap-2 flex-wrap">
+              {(
+                [
+                  { v: "once" as const, label: t("serverMessages.schedule.later") },
+                  { v: "daily" as const, label: t("serverMessages.schedule.daily") },
+                  { v: "weekly" as const, label: t("serverMessages.schedule.weekly") },
+                  { v: "monthly" as const, label: t("serverMessages.schedule.monthly") },
+                ]
+              ).map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setKind(opt.v)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                    kind === opt.v
+                      ? "border-violet-500 bg-violet-500/15 text-white"
+                      : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {kind === "once" && (
+              <div className="grid gap-1.5 max-w-[280px]">
+                <Label className="text-xs">{t("serverMessages.schedule.runAt")}</Label>
+                <input
+                  type="datetime-local"
+                  value={runAtLocal}
+                  onChange={(e) => setRunAtLocal(e.target.value)}
+                  className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm [color-scheme:dark]"
+                />
+              </div>
+            )}
+
+            {kind !== "once" && (
+              <div className="grid gap-1.5 max-w-[180px]">
+                <Label className="text-xs">{t("serverMessages.schedule.timeOfDay")}</Label>
+                <input
+                  type="time"
+                  value={timeLocal}
+                  onChange={(e) => setTimeLocal(e.target.value)}
+                  className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm [color-scheme:dark]"
+                />
+              </div>
+            )}
+
+            {kind === "weekly" && (
+              <div className="grid gap-1.5">
+                <Label className="text-xs">{t("serverMessages.schedule.daysOfWeek")}</Label>
+                <div className="flex gap-1.5 flex-wrap">
+                  {(t("serverMessages.schedule.days", { returnObjects: true }) as string[]).map(
+                    (day, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() =>
+                          setWeekDays((prev) =>
+                            prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx],
+                          )
+                        }
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs border",
+                          weekDays.includes(idx)
+                            ? "border-violet-500 bg-violet-500/15 text-white"
+                            : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                        )}
+                      >
+                        {day}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+
+            {kind === "monthly" && (
+              <div className="grid gap-1.5 max-w-[120px]">
+                <Label className="text-xs">{t("serverMessages.schedule.dayOfMonth")}</Label>
+                <input
+                  type="number"
+                  min={1}
+                  max={31}
+                  value={monthDay}
+                  onChange={(e) => setMonthDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))}
+                  className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm"
+                />
+              </div>
+            )}
+          </div>
+
+          {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              {t("serverMessages.modalCancel")}
+            </Button>
+            <Button onClick={() => void handleSave()} disabled={saving}>
+              {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Save className="h-3 w-3 mr-1" />}
+              {t("serverMessages.save")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** Date → "YYYY-MM-DDTHH:MM" in the local timezone (datetime-local format). */
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** 'HH:MM' UTC → local 'HH:MM' (inverse of localHHMMToUtc). */
+function utcTimeToLocal(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number)
+  const d = new Date()
+  d.setUTCHours(h, m, 0, 0)
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+}
+
+/** Local 'HH:MM' → UTC 'HH:MM' (backend stores UTC). */
+function localHHMMToUtc(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number)
+  const d = new Date()
+  d.setHours(h, m, 0, 0)
+  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`
 }
 
 type Tab = "text" | "embed"

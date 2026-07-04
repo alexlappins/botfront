@@ -3,8 +3,8 @@ import type { ReactElement } from "react"
 import { AuthProvider } from "@/contexts/auth-context"
 import { useAuth } from "@/contexts/auth-context"
 import { LandingPage } from "@/pages/landing-page"
-import { PublicShopPage } from "@/pages/public-shop-page"
-import { PublicProductPage } from "@/pages/public-product-page"
+import { ComingSoonPage } from "@/pages/coming-soon-page"
+import { PrivacyPage, RefundPage, TermsPage } from "@/pages/legal-pages"
 import { LoginPage } from "@/pages/login-page"
 import { GuildPage } from "@/pages/guild-page"
 import { GuildLayout } from "@/components/guild-layout"
@@ -52,8 +52,13 @@ function App() {
               so guests don't trigger /api/auth/me, the active-guild context,
               or any other dashboard-shaped infrastructure. */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/shop" element={<PublicShopPage />} />
-          <Route path="/shop/:id" element={<PublicProductPage />} />
+          {/* Shop is a stub until launch (TZ §1): nav + hero button land here. */}
+          <Route path="/shop" element={<ComingSoonPage />} />
+          <Route path="/shop/:id" element={<ComingSoonPage />} />
+          {/* Legal documents (TZ §11). */}
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/refund" element={<RefundPage />} />
           <Route path="/login" element={<LoginPage />} />
 
           <Route

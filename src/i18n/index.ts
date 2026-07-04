@@ -24,11 +24,12 @@ import pt from "./locales/pt.json"
  * to wait for already-loaded JSON.
  */
 export const LANGUAGES = [
-  { code: "ru", label: "RU", name: "Русский" },
-  { code: "uk", label: "UA", name: "Українська" },
+  // Order is a product decision (Misha TZ §2): English first.
   { code: "en", label: "EN", name: "English" },
   { code: "es", label: "ES", name: "Español" },
   { code: "pt", label: "PT", name: "Português" },
+  { code: "uk", label: "UA", name: "Українська" },
+  { code: "ru", label: "RU", name: "Русский" },
 ] as const
 
 export type LanguageCode = (typeof LANGUAGES)[number]["code"]

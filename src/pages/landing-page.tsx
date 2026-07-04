@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { Trans, useTranslation } from "react-i18next"
 import { useAuth } from "@/contexts/auth-context"
-import { getStoreFeatured, type StoreTemplateProduct } from "@/lib/api"
 import { PublicShell } from "@/components/public-shell"
 
 /**
@@ -74,24 +73,8 @@ function ScrollProgress() {
 export function LandingPage() {
   const { user } = useAuth()
   const { t } = useTranslation()
-  const [featured, setFeatured] = useState<StoreTemplateProduct[]>([])
 
-  useEffect(() => {
-    let alive = true
-    getStoreFeatured()
-      .then((items) => {
-        if (alive) setFeatured(items)
-      })
-      .catch(() => {
-        // Featured rail is optional — landing still works without it.
-      })
-    return () => {
-      alive = false
-    }
-  }, [])
-
-  // Re-run when `featured` lands so the shop-rail tiles get observed too.
-  useScrollReveal([featured.length])
+  useScrollReveal()
 
   const botInvite =
     (import.meta.env.VITE_BOT_INVITE_URL as string | undefined) ?? "https://discord.com/oauth2/authorize"
@@ -147,7 +130,67 @@ export function LandingPage() {
 
       <div className="public-divider" />
 
-      {/* Featured products from the store */}
+      {/* Premium plans (TZ §12): Free vs Premium, launch price. */}
+      <section id="plans" className="public-section">
+        <div className="public-wrap">
+          <div className="public-head center" data-reveal>
+            <span className="eyebrow">{t("landing.plans.eyebrow")}</span>
+            <div className="row">
+              <span className="fl" />
+              <h2>{t("landing.plans.title")}</h2>
+              <span className="fl" />
+            </div>
+          </div>
+
+          <div className="plans-grid">
+            {/* Premium first in DOM → on mobile stacking it lands on top (TZ). */}
+            <div className="plan-card plan-premium" data-reveal>
+              <p className="plan-name">Premium</p>
+              <p className="plan-price">
+                <span className="plan-old">$9.99</span> $4.99
+                <span className="plan-period">{t("landing.plans.perMonth")}</span>
+              </p>
+              <span className="plan-launch">{t("landing.plans.launchPrice")}</span>
+              <ul className="plan-list">
+                {(t("landing.plans.premiumFeatures", { returnObjects: true }) as string[]).map(
+                  (f, i) => (
+                    <li key={i}>{f}</li>
+                  ),
+                )}
+              </ul>
+              <Link to="/pricing" className="public-btn public-btn-fill plan-btn">
+                {t("landing.plans.getPremium")}
+              </Link>
+            </div>
+
+            <div className="plan-card" data-reveal style={{ ["--reveal-delay" as string]: "100ms" }}>
+              <p className="plan-name plan-name-free">Free</p>
+              <p className="plan-price">$0</p>
+              <ul className="plan-list">
+                {(t("landing.plans.freeFeatures", { returnObjects: true }) as string[]).map(
+                  (f, i) => (
+                    <li key={i}>{f}</li>
+                  ),
+                )}
+              </ul>
+              <a
+                href={botInvite}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="public-btn plan-btn"
+              >
+                {t("common.addToDiscord")}
+              </a>
+            </div>
+          </div>
+          <p className="plans-foot" data-reveal>{t("landing.plans.footnote")}</p>
+        </div>
+      </section>
+
+      <div className="public-divider" />
+
+      {/* Shop announcement (TZ §8): featured-products rail replaced with the
+          upcoming-store teaser until the marketplace launches. */}
       <section id="shop" className="public-section">
         <div className="public-wrap">
           <div className="public-head" data-reveal>
@@ -157,44 +200,7 @@ export function LandingPage() {
               <span className="fl" />
               <span className="fl-end">✦</span>
             </div>
-            <p className="public-sub">{t("landing.shop.sub")}</p>
-          </div>
-
-          {featured.length === 0 ? (
-            <div className="empty-state" data-reveal>
-              <p>{t("landing.shop.empty")}</p>
-            </div>
-          ) : (
-            <div className="gal">
-              {featured.map((p, i) => (
-                <Link
-                  key={p.id ?? p.templateId}
-                  to={`/shop/${p.id}`}
-                  className="gtile public-card"
-                  data-reveal
-                  style={{ ["--reveal-delay" as string]: `${i * 80}ms` }}
-                >
-                  <div className="gtile-img">
-                    {p.screenshots?.[0] || p.iconUrl ? (
-                      <img src={p.screenshots?.[0] ?? p.iconUrl ?? ""} alt={p.name} />
-                    ) : (
-                      <span className="gtile-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
-                    )}
-                    <div className="play">▶</div>
-                  </div>
-                  <span className="cap">
-                    {p.name}
-                    {p.category ? ` · ${p.category}` : ""}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <div style={{ textAlign: "center", marginTop: 34 }} data-reveal>
-            <Link to="/shop" className="public-btn public-btn-lg">
-              {t("landing.shop.openShop")}
-            </Link>
+            <p className="public-sub">{t("landing.shop.announce")}</p>
           </div>
         </div>
       </section>
@@ -232,24 +238,21 @@ export function LandingPage() {
   )
 }
 
-/** Source of truth for the features grid layout. The `i18nKey` namespaces
- *  the {cat,title,desc} strings in the translation files; the icon is keyed
- *  off the same value via {@link FeatureIcon}. `feat: true` makes the card
- *  span 2×2 in the grid (visual hero of the section). */
+/** Source of truth for the features grid (TZ §7): six REAL shipped features,
+ *  card style unchanged. The `i18nKey` namespaces the {cat,title} strings in
+ *  the translation files; the icon is keyed off the same value. */
 const FEATURES: { i18nKey: string; feat?: boolean }[] = [
-  { i18nKey: "ward" },
-  { i18nKey: "streamerSuite", feat: true },
-  { i18nKey: "moderation" },
-  { i18nKey: "fellowship" },
-  { i18nKey: "tickets" },
-  { i18nKey: "giveaways" },
-  { i18nKey: "xp" },
-  { i18nKey: "analytics" },
+  { i18nKey: "serverMessages" },
+  { i18nKey: "reactionRoles" },
+  { i18nKey: "leveling" },
+  { i18nKey: "welcome" },
+  { i18nKey: "serverLogs" },
+  { i18nKey: "twitch" },
 ]
 
 /**
- * Stroke SVG line-icons for each feature. Matches the stats-strip aesthetic
- * — currentColor + 2px stroke + rounded caps. Sized via CSS on `.fcard .thumb svg`.
+ * Stroke SVG line-icons for each feature. Matches the site aesthetic —
+ * currentColor + 2px stroke + rounded caps. Sized via CSS on `.fcard .thumb svg`.
  */
 function FeatureIcon({ name }: { name: string }) {
   const stroke = {
@@ -260,67 +263,49 @@ function FeatureIcon({ name }: { name: string }) {
     strokeLinejoin: "round" as const,
   }
   switch (name) {
-    case "ward":
+    case "serverMessages": // message templates
       return (
         <svg viewBox="0 0 24 24" {...stroke}>
-          <path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z" />
-          <path d="m9 12 2 2 4-4" />
+          <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <path d="M8 8h8M8 12h5" />
         </svg>
       )
-    case "streamerSuite":
+    case "reactionRoles": // reaction roles
       return (
         <svg viewBox="0 0 24 24" {...stroke}>
-          <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8.5 14.5c.9 1.2 2.1 1.9 3.5 1.9s2.6-.7 3.5-1.9" />
+          <path d="M9 9.5h.01M15 9.5h.01" strokeWidth={2.6} />
         </svg>
       )
-    case "moderation":
+    case "leveling": // XP / levels
       return (
         <svg viewBox="0 0 24 24" {...stroke}>
-          <path d="M12 3v18" />
-          <path d="M5 7h14" />
-          <path d="M7 7 4 14a3 3 0 0 0 6 0z" />
-          <path d="m17 7-3 7a3 3 0 0 0 6 0z" />
+          <path d="M3 17 9 11l4 4 7-8" />
+          <path d="M15 7h5v5" />
         </svg>
       )
-    case "fellowship":
+    case "welcome": // welcome messages
       return (
         <svg viewBox="0 0 24 24" {...stroke}>
-          <circle cx="9" cy="8" r="3.5" />
-          <path d="M2 21c0-3.5 3-6 7-6s7 2.5 7 6" />
-          <circle cx="17" cy="9" r="2.5" />
-          <path d="M16 14c2.8 0 5 1.8 6 4" />
+          <path d="M11 17a5 5 0 0 1 5-5h5" />
+          <path d="M16 7l5 5-5 5" />
+          <path d="M8 4H6a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h2" />
         </svg>
       )
-    case "tickets":
+    case "serverLogs": // server logs
       return (
         <svg viewBox="0 0 24 24" {...stroke}>
-          <path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z" />
-          <path d="M13 6v12" strokeDasharray="2 2" />
+          <path d="M6 3h9l4 4v14H6z" />
+          <path d="M15 3v4h4" />
+          <path d="M9 12h6M9 16h6" />
         </svg>
       )
-    case "giveaways":
+    case "twitch": // twitch integration
       return (
         <svg viewBox="0 0 24 24" {...stroke}>
-          <rect x="3" y="8" width="18" height="5" rx="1" />
-          <path d="M5 13v8h14v-8" />
-          <path d="M12 8v13" />
-          <path d="M12 8c-2 0-4-1-4-3s2-3 4 0c2-3 4-2 4 0s-2 3-4 3z" />
-        </svg>
-      )
-    case "xp":
-      return (
-        <svg viewBox="0 0 24 24" {...stroke}>
-          <circle cx="12" cy="9" r="6" />
-          <path d="m8.5 14-1.5 7 5-3 5 3-1.5-7" />
-        </svg>
-      )
-    case "analytics":
-      return (
-        <svg viewBox="0 0 24 24" {...stroke}>
-          <path d="M3 21h18" />
-          <rect x="5" y="13" width="3" height="6" />
-          <rect x="10.5" y="9" width="3" height="10" />
-          <rect x="16" y="5" width="3" height="14" />
+          <path d="M4 3h16v11l-5 5h-4l-3 3v-3H4z" />
+          <path d="M10 8v4M15 8v4" />
         </svg>
       )
     default:
@@ -434,7 +419,7 @@ function LandingStyles() {
       /* ── Features grid ── */
       .fgrid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr); /* 6 features → clean 3×2 */
         gap: 18px;
       }
       .fcard {
@@ -495,6 +480,81 @@ function LandingStyles() {
       @media (max-width: 540px) {
         .fgrid { grid-template-columns: 1fr; }
         .fcard.feat { grid-column: auto; }
+      }
+
+      /* ── Plans (Choose your plan, TZ §12) ── */
+      .plans-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        max-width: 860px;
+        margin: 0 auto;
+      }
+      .plan-card {
+        background: linear-gradient(180deg, var(--pub-panel), var(--pub-bg-2));
+        border: 1px solid var(--pub-line);
+        border-radius: 16px;
+        padding: 28px;
+        display: flex; flex-direction: column; gap: 14px;
+        /* Premium is first in DOM (mobile-top); on desktop show Free left. */
+        order: 2;
+      }
+      .plan-card.plan-premium {
+        order: 1;
+        border-color: rgba(124,132,255,0.45);
+        background: linear-gradient(180deg, rgba(88,101,242,0.16), rgba(11,11,23,0.9));
+        box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, 0 18px 60px rgba(88,101,242,0.22);
+      }
+      @media (min-width: 761px) {
+        .plans-grid .plan-card { order: 2; }             /* Free right… */
+        .plans-grid .plan-card.plan-premium { order: 3; } /* …Premium after it */
+        .plans-grid { direction: rtl; }
+        .plans-grid .plan-card { direction: ltr; }
+      }
+      .plan-name {
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+        font-size: 18px; text-transform: uppercase; letter-spacing: 0.04em;
+        color: var(--pub-blurple-br);
+      }
+      .plan-name-free { color: var(--pub-ink-mut); }
+      .plan-price {
+        font-family: 'Space Grotesk', sans-serif; font-weight: 700;
+        font-size: 40px; color: #fff; line-height: 1;
+      }
+      .plan-old {
+        font-size: 22px; color: var(--pub-ink-faint);
+        text-decoration: line-through; margin-right: 8px;
+      }
+      .plan-period {
+        font-family: 'Manrope', sans-serif; font-weight: 500;
+        font-size: 13px; color: var(--pub-ink-mut); margin-left: 6px;
+      }
+      .plan-launch {
+        align-self: flex-start;
+        font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+        color: var(--pub-cyan);
+        border: 1px solid rgba(86,230,255,0.35);
+        background: rgba(86,230,255,0.08);
+        border-radius: 999px; padding: 3px 10px;
+      }
+      .plan-list {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-direction: column; gap: 8px;
+        font-family: 'Manrope', sans-serif; font-size: 14.5px; color: var(--pub-ink-soft);
+        flex: 1;
+      }
+      .plan-list li { padding-left: 22px; position: relative; }
+      .plan-list li::before {
+        content: "✓"; position: absolute; left: 0;
+        color: var(--pub-blurple-br); font-weight: 700;
+      }
+      .plan-btn { justify-content: center; margin-top: 6px; }
+      .plans-foot {
+        text-align: center; margin-top: 22px;
+        font-family: 'Manrope', sans-serif; font-size: 12.5px; color: var(--pub-ink-faint);
+      }
+      @media (max-width: 760px) {
+        .plans-grid { grid-template-columns: 1fr; } /* stacked, Premium on top */
       }
 
       /* ── Featured gallery (shop preview) ── */
@@ -602,7 +662,7 @@ function NeonHeroStats({ botInvite }: { botInvite: string }) {
             <h1 className="lu-h1">
               <Trans i18nKey="landing.title" components={{ em: <span className="lu-hl" /> }} />
             </h1>
-            <p className="lu-sub">{t("landing.sub")}</p>
+            {/* Subtitle removed per TZ §3.2. */}
             <div className="lu-cta-row">
               <a
                 href={botInvite}
@@ -616,12 +676,9 @@ function NeonHeroStats({ botInvite }: { botInvite: string }) {
                 {t("landing.ctaShop")}
               </Link>
             </div>
+            {/* Trust line trimmed to the single phrase per TZ §5. */}
             <div className="lu-trust">
               <span className="lu-free">{t("landing.freeToBeginShort")}</span>
-              <span className="lu-tdot" /><span>Twitch</span>
-              <span className="lu-tdot" /><span>YouTube</span>
-              <span className="lu-tdot" /><span>Kick</span>
-              <span className="lu-tdot" /><span>TikTok</span>
             </div>
           </div>
 
@@ -685,60 +742,8 @@ function NeonHeroStats({ botInvite }: { botInvite: string }) {
         </header>
       </div>
 
-      <div className="lu-strip">
-        <div className="lu-wrap lu-strip-in">
-          <NeonStat
-            label={t("landing.stats.forgedDaily")}
-            caption={t("landing.stats.byStudio")}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14.5 3.5 9 9l-5.5 1.5L8 14l-1 6.5L12 17l5 3.5L16 14l4.5-3.5L15 9z" />
-              </svg>
-            }
-          />
-          <NeonStat
-            label={t("landing.stats.platforms")}
-            caption={t("landing.stats.platformsList")}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="13" rx="2" />
-                <path d="M8 21h8M12 17v4" />
-              </svg>
-            }
-          />
-          <NeonStat
-            label={t("landing.stats.oneClick")}
-            caption={t("landing.stats.templates")}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M13 2 4 14h7l-1 8 9-12h-7z" />
-              </svg>
-            }
-          />
-          <NeonStat
-            label={t("landing.stats.verified")}
-            caption={t("landing.stats.byDiscord")}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-            }
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function NeonStat({ label, caption, icon }: { label: string; caption: string; icon: React.ReactNode }) {
-  return (
-    <div className="lu-stat">
-      <div className="lu-stat-b">{icon}</div>
-      <div>
-        <h4>{label}</h4>
-        <p>{caption}</p>
-      </div>
+      {/* Stats/trust strip removed per TZ §6 — returns after Discord
+          verification. Styles (.lu-strip*) kept for the comeback. */}
     </div>
   )
 }
