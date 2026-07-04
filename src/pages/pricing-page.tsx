@@ -84,10 +84,14 @@ export function PricingPage() {
             <Gem className="h-4 w-4" />
             {t("pricing.premium")}
           </p>
-          <p className="text-3xl font-bold text-white">
-            {/* Price is defined by the Stripe Price object; shown generically here.
-                Update this label if you want the number hard-coded in the UI. */}
+          <p className="text-3xl font-bold text-white flex items-baseline gap-2 flex-wrap">
+            {/* Keep in sync with the landing plans block and the Stripe Price. */}
+            <span className="text-lg font-medium text-white/35 line-through">$9.99</span>
+            <span>$4.99</span>
             <span className="text-sm font-normal text-white/50">{t("pricing.period")}</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide rounded-full border border-amber-400/40 bg-amber-400/10 text-amber-300 px-2 py-0.5">
+              {t("landing.plans.launchPrice")}
+            </span>
           </p>
           <ul className="space-y-2 text-sm text-white/80">
             {t("pricing.features.premiumList")
