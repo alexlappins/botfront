@@ -77,7 +77,6 @@
       "platformsList": "Twitch · YT · Kick · TikTok",
       "oneClick": "Um clique",
       "templates": "Modelos de servidor",
-      "verified": "Verificado",
       "byDiscord": "pelo Discord"
     },
     "features": {
@@ -457,6 +456,12 @@
       ],
       "edit": "Editar",
       "editTitle": "Editar publicação agendada"
+    },
+    "repost": {
+      "cta": "Publicar novamente",
+      "title": "Publicar este modelo",
+      "sendNow": "Enviar agora",
+      "schedule": "Agendar"
     }
   },
   "personalization": {
@@ -527,7 +532,12 @@
       "adding": "Adicionando…",
       "add": "Adicionar",
       "cancel": "Cancelar",
-      "channelFallback": "(canal {{id}})"
+      "channelFallback": "(canal {{id}})",
+      "edit": "Editar",
+      "editTitle": "Editar reação",
+      "editFailed": "Falha ao atualizar a reação",
+      "saving": "Salvando…",
+      "save": "Salvar"
     },
     "buttons": {
       "empty": "Ainda não há mensagens neste servidor. Instale um modelo para preenchê-lo.",
@@ -708,7 +718,6 @@
     "terms": "Termos",
     "privacy": "Privacidade",
     "bottom": "© Level Up · forjado por um pequeno estúdio sob a lua",
-    "verified": "✦ Verificado pelo Discord",
     "refund": "Política de reembolso"
   },
   "pricing": {
@@ -729,5 +738,11 @@
       "freeList": "1 variante de boas-vindas · 1 canal da Twitch · Imagem de boas-vindas padrão (com marca d'água) · Níveis, cargos por reação, registros",
       "premiumList": "Variantes de boas-vindas ilimitadas · Goodbye + returning · Imagens personalizadas sem marca d'água · Role Rewards · Vários canais da Twitch · Publicações agendadas e recorrentes · Personalização do bot"
     }
+  },
+  "imageUpload": {
+    "upload": "Enviar imagem",
+    "replace": "Substituir imagem",
+    "remove": "Remover",
+    "error": "Erro no envio"
   }
 }

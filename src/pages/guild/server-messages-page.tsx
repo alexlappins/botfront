@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Pencil, Plus, Save, Trash2, MessageSquare, X } from "lucide-react"
+import { Loader2, Pencil, Plus, Save, Send, Trash2, MessageSquare, X } from "lucide-react"
 import {
   emptyEmbedForm,
   parseEmbedJsonToForm,
@@ -27,6 +27,7 @@ import {
   getGuildMessages,
   getGuildRoles,
   listScheduledPosts,
+  resendGuildMessage,
   updateGuildMessage,
   updateScheduledPost,
   type Channel,
@@ -224,17 +225,15 @@ function ScheduledPostsList({
             {" · "}
             {p.runCount} {t("serverMessages.schedule.runs")}
           </span>
-          {p.status !== "done" && (
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={busyId === p.id}
-              onClick={() => setEditing(p)}
-              title={t("serverMessages.schedule.edit")}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={busyId === p.id}
+            onClick={() => setEditing(p)}
+            title={t("serverMessages.schedule.edit")}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
           {p.status !== "done" && (
             <Button size="sm" variant="ghost" disabled={busyId === p.id} onClick={() => void toggle(p)}>
               {p.status === "paused"
@@ -338,6 +337,8 @@ function EditScheduledPostModal({
         ...(kind !== "once" ? { timeOfDay: localHHMMToUtc(timeLocal) } : {}),
         ...(kind === "weekly" ? { daysOfWeek: weekDays } : {}),
         ...(kind === "monthly" ? { dayOfMonth: monthDay } : {}),
+        // Editing a fired one-off re-arms it (TZ §3).
+        ...(post.status === "done" ? { status: "active" as const } : {}),
       })
       onSaved()
     } catch (e) {
@@ -581,6 +582,7 @@ function ServerMessageCard({
   const [err, setErr] = useState<string | null>(null)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [reposting, setReposting] = useState(false)
 
   async function handleSave() {
     setErr(null)
@@ -686,6 +688,10 @@ function ServerMessageCard({
                 )}
                 {t("serverMessages.save")}
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setReposting(true)}>
+                <Send className="h-3 w-3 mr-1" />
+                {t("serverMessages.repost.cta")}
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"
@@ -717,6 +723,264 @@ function ServerMessageCard({
           {savedMsg && <p className="text-xs text-[hsl(var(--primary))]">{savedMsg}</p>}
         </div>
       )}
+
+      {reposting && (
+        <RepostMessageModal
+          guildId={guildId}
+          message={message}
+          channels={channels}
+          onClose={() => setReposting(false)}
+          onDone={() => {
+            setReposting(false)
+            onChanged()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Re-post a published template (TZ §2, ProBot-style): pick any channel and
+ * either send immediately, schedule a one-off, or set up a recurring autopost.
+ * Content is taken from the saved snapshot — save edits first, then repost.
+ */
+function RepostMessageModal({
+  guildId,
+  message,
+  channels,
+  onClose,
+  onDone,
+}: {
+  guildId: string
+  message: GuildMessage
+  channels: Channel[]
+  onClose: () => void
+  onDone: () => void
+}) {
+  const { t } = useTranslation()
+  const { premium } = usePremium()
+  const openPremiumModal = usePremiumModal()
+  const [channelId, setChannelId] = useState(message.discordChannelId)
+  const [mode, setMode] = useState<"now" | "later" | "recurring">("now")
+  const [runAtLocal, setRunAtLocal] = useState("")
+  const [recKind, setRecKind] = useState<"daily" | "weekly" | "monthly">("daily")
+  const [timeLocal, setTimeLocal] = useState("12:00")
+  const [weekDays, setWeekDays] = useState<number[]>([])
+  const [monthDay, setMonthDay] = useState(1)
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
+
+  function pickMode(next: "now" | "later" | "recurring") {
+    if (next !== "now" && !premium) {
+      openPremiumModal()
+      return
+    }
+    setMode(next)
+  }
+
+  async function submit() {
+    setErr(null)
+    if (!channelId) {
+      setErr(t("serverMessages.errors.pickChannel"))
+      return
+    }
+    setBusy(true)
+    try {
+      if (mode === "now") {
+        await resendGuildMessage(guildId, message.id, channelId)
+      } else if (mode === "later") {
+        await createScheduledPost(guildId, {
+          channelId,
+          content: message.content ?? null,
+          embedJson: message.embedJson ?? null,
+          kind: "once",
+          runAt: new Date(runAtLocal).toISOString(),
+        })
+      } else {
+        await createScheduledPost(guildId, {
+          channelId,
+          content: message.content ?? null,
+          embedJson: message.embedJson ?? null,
+          kind: recKind,
+          timeOfDay: localHHMMToUtc(timeLocal),
+          ...(recKind === "weekly" ? { daysOfWeek: weekDays } : {}),
+          ...(recKind === "monthly" ? { dayOfMonth: monthDay } : {}),
+        })
+      }
+      onDone()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("serverMessages.errors.createFailed"))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+          <h2 className="text-base font-semibold text-white">{t("serverMessages.repost.title")}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
+            aria-label={t("serverMessages.modalClose")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid gap-2">
+            <Label className="text-xs">{t("serverMessages.modalChannel")}</Label>
+            <Select value={channelId} onValueChange={setChannelId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("serverMessages.modalPickChannel")} />
+              </SelectTrigger>
+              <SelectContent>
+                {textChannels.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    #{c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            {(
+              [
+                { v: "now" as const, label: t("serverMessages.schedule.publishNow") },
+                { v: "later" as const, label: t("serverMessages.schedule.later") },
+                { v: "recurring" as const, label: t("serverMessages.schedule.recurring") },
+              ]
+            ).map((opt) => (
+              <button
+                key={opt.v}
+                type="button"
+                onClick={() => pickMode(opt.v)}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors inline-flex items-center gap-1.5",
+                  mode === opt.v
+                    ? "border-violet-500 bg-violet-500/15 text-white"
+                    : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                )}
+              >
+                {opt.label}
+                {opt.v !== "now" && !premium && <PremiumChip />}
+              </button>
+            ))}
+          </div>
+
+          {mode === "later" && (
+            <div className="grid gap-1.5 max-w-[280px]">
+              <Label className="text-xs">{t("serverMessages.schedule.runAt")}</Label>
+              <input
+                type="datetime-local"
+                value={runAtLocal}
+                onChange={(e) => setRunAtLocal(e.target.value)}
+                className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm [color-scheme:dark]"
+              />
+            </div>
+          )}
+
+          {mode === "recurring" && (
+            <div className="space-y-3">
+              <div className="flex gap-2 flex-wrap">
+                {(
+                  [
+                    { v: "daily" as const, label: t("serverMessages.schedule.daily") },
+                    { v: "weekly" as const, label: t("serverMessages.schedule.weekly") },
+                    { v: "monthly" as const, label: t("serverMessages.schedule.monthly") },
+                  ]
+                ).map((opt) => (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => setRecKind(opt.v)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                      recKind === opt.v
+                        ? "border-violet-500 bg-violet-500/15 text-white"
+                        : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                    )}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-1.5 max-w-[180px]">
+                <Label className="text-xs">{t("serverMessages.schedule.timeOfDay")}</Label>
+                <input
+                  type="time"
+                  value={timeLocal}
+                  onChange={(e) => setTimeLocal(e.target.value)}
+                  className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm [color-scheme:dark]"
+                />
+              </div>
+              {recKind === "weekly" && (
+                <div className="flex gap-1.5 flex-wrap">
+                  {(t("serverMessages.schedule.days", { returnObjects: true }) as string[]).map(
+                    (day, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() =>
+                          setWeekDays((prev) =>
+                            prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx],
+                          )
+                        }
+                        className={cn(
+                          "px-2.5 py-1 rounded-md text-xs border",
+                          weekDays.includes(idx)
+                            ? "border-violet-500 bg-violet-500/15 text-white"
+                            : "border-white/10 text-white/60 hover:bg-white/[0.04]",
+                        )}
+                      >
+                        {day}
+                      </button>
+                    ),
+                  )}
+                </div>
+              )}
+              {recKind === "monthly" && (
+                <div className="grid gap-1.5 max-w-[120px]">
+                  <Label className="text-xs">{t("serverMessages.schedule.dayOfMonth")}</Label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={monthDay}
+                    onChange={(e) => setMonthDay(Math.min(31, Math.max(1, Number(e.target.value) || 1)))}
+                    className="rounded-md border border-white/10 bg-[#15151f] text-white px-3 py-2 text-sm"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose} disabled={busy}>
+              {t("serverMessages.modalCancel")}
+            </Button>
+            <Button onClick={() => void submit()} disabled={busy}>
+              {busy ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Send className="h-3 w-3 mr-1" />
+              )}
+              {mode === "now"
+                ? t("serverMessages.repost.sendNow")
+                : t("serverMessages.repost.schedule")}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

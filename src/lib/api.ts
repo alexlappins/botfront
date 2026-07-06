@@ -1242,6 +1242,126 @@ export async function addGuildReactionRole(
   return res.json()
 }
 
+// ─── Owner admin: manual subscriptions (TZ §15) ─────────────────────────────
+
+export interface AdminSubscriptionRow {
+  guildId: string
+  guildName: string | null
+  botOnGuild: boolean
+  active: boolean
+  plan: string
+  source: "stripe" | "manual"
+  until: string | null
+  updatedAt: string
+}
+
+export interface AdminGuildHit {
+  guildId: string
+  name: string
+  iconUrl: string | null
+  memberCount: number | null
+  userRole?: "owner" | "admin"
+}
+
+export interface AdminSubscriptionAuditRow {
+  id: string
+  action: "grant" | "cancel"
+  guildId: string
+  guildName: string | null
+  adminId: string
+  adminName: string | null
+  durationDays: number | null
+  reason: string | null
+  source: string | null
+  createdAt: string
+}
+
+export async function adminListSubscriptions(): Promise<AdminSubscriptionRow[]> {
+  const res = await fetch(`${API_BASE}/admin/subscriptions`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load subscriptions")
+  return res.json()
+}
+
+export async function adminSearchGuilds(q: string): Promise<AdminGuildHit[]> {
+  const res = await fetch(`${API_BASE}/admin/subscriptions/search-guild?q=${encodeURIComponent(q)}`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Search failed")
+  return res.json()
+}
+
+export async function adminSearchUserGuilds(q: string): Promise<AdminGuildHit[]> {
+  const res = await fetch(`${API_BASE}/admin/subscriptions/search-user?q=${encodeURIComponent(q)}`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Search failed")
+  return res.json()
+}
+
+export async function adminGrantSubscription(body: {
+  guildId: string
+  days: number
+  reason?: string
+}): Promise<PremiumStatus> {
+  const res = await fetch(`${API_BASE}/admin/subscriptions/grant`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to grant subscription")
+  return res.json()
+}
+
+export async function adminCancelSubscription(body: {
+  guildId: string
+  reason?: string
+}): Promise<PremiumStatus> {
+  const res = await fetch(`${API_BASE}/admin/subscriptions/cancel`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to cancel subscription")
+  return res.json()
+}
+
+export async function adminSubscriptionHistory(): Promise<AdminSubscriptionAuditRow[]> {
+  const res = await fetch(`${API_BASE}/admin/subscriptions/history`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load history")
+  return res.json()
+}
+
+/** Re-post an existing template message to a channel (new Discord message). */
+export async function resendGuildMessage(
+  guildId: string,
+  msgId: string,
+  discordChannelId: string,
+): Promise<GuildMessage> {
+  const res = await fetch(`${guildData(guildId)}/messages/${msgId}/send`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ discordChannelId }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to post message")
+  return res.json()
+}
+
+export async function updateGuildReactionRole(
+  guildId: string,
+  rrId: string,
+  body: { emojiKey?: string; discordRoleId?: string },
+): Promise<GuildReactionRole> {
+  const res = await fetch(`${guildData(guildId)}/reaction-roles/${rrId}`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update reaction role")
+  return res.json()
+}
+
 export async function deleteGuildReactionRole(guildId: string, rrId: string): Promise<void> {
   const res = await fetch(`${guildData(guildId)}/reaction-roles/${rrId}`, {
     ...fetchOptions,

@@ -166,6 +166,14 @@ export function ServerTemplatesListPage() {
                       >
                         Open editor
                       </Link>
+                      {/* Owner shortcut (TZ §14): run the same install wizard
+                          customers use to set this template up on a test server. */}
+                      <Link
+                        to={`/install/${t.id}`}
+                        className="text-sm text-[hsl(var(--primary))] hover:underline"
+                      >
+                        Install to server
+                      </Link>
                       <Button
                         size="sm"
                         variant="ghost"

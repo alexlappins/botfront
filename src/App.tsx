@@ -25,6 +25,7 @@ import { MyPurchasesPage } from "@/pages/my-purchases-page"
 import { InstallWizardPage } from "@/pages/install-wizard-page"
 import { AdminStorePage } from "@/pages/admin-store-page"
 import { AdminTemplateAccessPage } from "@/pages/admin-template-access-page"
+import { AdminSubscriptionsPage } from "@/pages/admin-subscriptions-page"
 import { AdminLayout } from "@/components/admin-layout"
 import { ServerLogsPage } from "@/pages/server-logs-page"
 import { PersonalizationPage } from "@/pages/guild/personalization-page"
@@ -35,11 +36,12 @@ import { PremiumSuccessPage, PricingPage } from "@/pages/pricing-page"
  * "Open dashboard" CTA in the public nav routes them back to their real home.
  * That's deliberate: it works for guests, customers, admins all the same.
  */
-function RequireRole({ role, children }: { role: "admin" | "customer"; children: ReactElement }) {
+function RequireRole({ role, children }: { role: ("admin" | "customer")[] | "admin" | "customer"; children: ReactElement }) {
   const { user, loading } = useAuth()
   if (loading) return null
   if (!user) return <Navigate to="/login" replace />
-  if (user.role !== role) return <Navigate to="/" replace />
+  const allowed = Array.isArray(role) ? role : [role]
+  if (!user.role || !allowed.includes(user.role)) return <Navigate to="/" replace />
   return children
 }
 
@@ -93,6 +95,14 @@ function App() {
               </RequireRole>
             }
           />
+          <Route
+            path="/admin/subscriptions"
+            element={
+              <RequireRole role="admin">
+                <AdminSubscriptionsPage />
+              </RequireRole>
+            }
+          />
 
           {/* Customer pages — shared AdminLayout (sidebar + active server) */}
           <Route
@@ -116,11 +126,12 @@ function App() {
             <Route path="/premium/success" element={<PremiumSuccessPage />} />
           </Route>
 
-          {/* Standalone install wizard (no admin shell) */}
+          {/* Standalone install wizard (no admin shell). Admins can run it too —
+              that's how the owner installs templates onto test servers (TZ §14). */}
           <Route
             path="/install/:templateId"
             element={
-              <RequireRole role="customer">
+              <RequireRole role={["customer", "admin"]}>
                 <InstallWizardPage />
               </RequireRole>
             }

@@ -36,6 +36,7 @@ import {
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { PremiumGate } from "@/components/premium"
+import { ImageUploadField } from "@/components/image-upload-field"
 import { cn } from "@/lib/utils"
 
 const PLACEHOLDER_KEYS = [
@@ -1076,10 +1077,9 @@ function RankCardBlock({
   return (
     <Block title={t("leveling.card.title")} description={t("leveling.card.description")}>
       <Field label={t("leveling.card.bgImage")} hint={t("leveling.card.bgImageHint")}>
-        <TextInput
-          value={s.rankBgImageUrl ?? ""}
-          onChange={(v) => setS({ ...s, rankBgImageUrl: v || null })}
-          placeholder="https://..."
+        <ImageUploadField
+          value={s.rankBgImageUrl}
+          onChange={(url) => setS({ ...s, rankBgImageUrl: url })}
         />
       </Field>
       <div className="grid grid-cols-2 gap-3">

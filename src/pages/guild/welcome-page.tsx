@@ -41,10 +41,10 @@ const VARIABLES: { key: string; i18nKey: string }[] = [
   { key: "{server.memberCount}", i18nKey: "serverMemberCount" },
 ]
 
-const DEFAULT_WELCOME_TEXT = "Привет, {user}! Добро пожаловать на **{server.name}** 🎉"
-const DEFAULT_RETURNING_TEXT = "С возвращением, {user}!"
+const DEFAULT_WELCOME_TEXT = "Hey {user}! Welcome to **{server.name}** 🎉"
+const DEFAULT_RETURNING_TEXT = "Welcome back, {user}!"
 const DEFAULT_GOODBYE_TEXT =
-  "{user.name} покинул(а) **{server.name}**. Нас стало {server.memberCount}."
+  "{user.name} has left **{server.name}**. We are now {server.memberCount}."
 
 export function WelcomePage() {
   const guildId = useCurrentGuildId()

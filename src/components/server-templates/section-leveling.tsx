@@ -27,6 +27,7 @@ import {
   type TemplateLevelingTier,
   type TemplateRoleReward,
 } from "@/lib/api"
+import { ImageUploadField } from "@/components/image-upload-field"
 import { cn } from "@/lib/utils"
 
 /**
@@ -1005,8 +1006,8 @@ function RankCardSubblock({
       title="Rank card (визуал)"
       description="Цвета и фон. Превью увидит покупатель в своей админке — здесь нет реального сервера для PNG-рендера."
     >
-      <Field label="Фоновая картинка (URL)">
-        <TextInput value={s.rankBgImageUrl ?? ""} onChange={(v) => setS({ ...s, rankBgImageUrl: v || null })} placeholder="https://..." />
+      <Field label="Background image">
+        <ImageUploadField value={s.rankBgImageUrl} onChange={(url) => setS({ ...s, rankBgImageUrl: url })} />
       </Field>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Цвет фона">

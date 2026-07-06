@@ -20,10 +20,10 @@ import {
 } from "@/components/welcome/variant-editor"
 import { cn } from "@/lib/utils"
 
-const DEFAULT_WELCOME = "Привет, {user}! Добро пожаловать на **{server.name}** 🎉"
-const DEFAULT_RETURNING = "С возвращением, {user}!"
+const DEFAULT_WELCOME = "Hey {user}! Welcome to **{server.name}** 🎉"
+const DEFAULT_RETURNING = "Welcome back, {user}!"
 const DEFAULT_GOODBYE =
-  "{user.name} покинул(а) **{server.name}**. Нас стало {server.memberCount}."
+  "{user.name} has left **{server.name}**. We are now {server.memberCount}."
 
 /**
  * Owner-admin section to configure Welcome/Goodbye on a ServerTemplate.

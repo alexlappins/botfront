@@ -77,7 +77,6 @@
       "platformsList": "Twitch · YT · Kick · TikTok",
       "oneClick": "One-click",
       "templates": "Server templates",
-      "verified": "Verified",
       "byDiscord": "by Discord"
     },
     "features": {
@@ -457,6 +456,12 @@
       ],
       "edit": "Edit",
       "editTitle": "Edit scheduled post"
+    },
+    "repost": {
+      "cta": "Post again",
+      "title": "Post this template",
+      "sendNow": "Send now",
+      "schedule": "Schedule"
     }
   },
   "personalization": {
@@ -527,7 +532,12 @@
       "adding": "Adding…",
       "add": "Add",
       "cancel": "Cancel",
-      "channelFallback": "(channel {{id}})"
+      "channelFallback": "(channel {{id}})",
+      "edit": "Edit",
+      "editTitle": "Edit reaction",
+      "editFailed": "Failed to update reaction",
+      "saving": "Saving…",
+      "save": "Save"
     },
     "buttons": {
       "empty": "No messages on this server yet. Install a template to populate it.",
@@ -708,7 +718,6 @@
     "terms": "Terms",
     "privacy": "Privacy",
     "bottom": "© Level Up · forged by a small moonlit studio",
-    "verified": "✦ Verified by Discord",
     "refund": "Refund Policy"
   },
   "pricing": {
@@ -729,5 +738,11 @@
       "freeList": "1 welcome variant · 1 Twitch channel · Standard welcome image (with watermark) · Leveling, reaction roles, logs",
       "premiumList": "Unlimited welcome variants · Goodbye + returning members · Custom welcome images, no watermark · Role Rewards · Multiple Twitch channels · Scheduled & recurring posts · Bot Personalization"
     }
+  },
+  "imageUpload": {
+    "upload": "Upload image",
+    "replace": "Replace image",
+    "remove": "Remove",
+    "error": "Upload error"
   }
 }

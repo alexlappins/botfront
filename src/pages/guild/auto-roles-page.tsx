@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Loader2, Plus, Smile, Trash2, X } from "lucide-react"
+import { Loader2, Pencil, Plus, Smile, Trash2, X } from "lucide-react"
 import {
   TemplateSelfRoleButtonsEditor,
   parseGuildSelfRoleComponents,
@@ -24,6 +24,7 @@ import {
   getGuildReactionRoles,
   addGuildReactionRole,
   deleteGuildReactionRole,
+  updateGuildReactionRole,
   getGuildRoles,
   updateGuildMessage,
   type GuildMessage,
@@ -182,6 +183,7 @@ function ReactionsTab({
 }) {
   const { t } = useTranslation()
   const [addOpen, setAddOpen] = useState(false)
+  const [editing, setEditing] = useState<GuildReactionRole | null>(null)
 
   function roleLabel(id: string): string {
     return roles.find((r) => r.id === id)?.name ?? id
@@ -240,6 +242,14 @@ function ReactionsTab({
                   <Button
                     size="sm"
                     variant="ghost"
+                    onClick={() => setEditing(b)}
+                    title={t("reactionRoles.reactions.edit")}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
                     onClick={() => void handleRemove(b.id)}
                     className="text-red-400 hover:text-red-400"
                   >
@@ -264,6 +274,126 @@ function ReactionsTab({
           }}
         />
       )}
+
+      {editing && (
+        <EditReactionModal
+          guildId={guildId}
+          binding={editing}
+          roles={roles}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null)
+            onChanged()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/** Edit an existing emoji→role binding (TZ §10): change the emoji and/or role. */
+function EditReactionModal({
+  guildId,
+  binding,
+  roles,
+  onClose,
+  onSaved,
+}: {
+  guildId: string
+  binding: GuildReactionRole
+  roles: GuildRole[]
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const { t } = useTranslation()
+  const [emoji, setEmoji] = useState(binding.emojiKey)
+  const [roleId, setRoleId] = useState(binding.discordRoleId)
+  const [saving, setSaving] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+    }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  async function submit() {
+    if (!emoji.trim() || !roleId) {
+      setErr(t("reactionRoles.reactions.missingFields"))
+      return
+    }
+    setSaving(true)
+    setErr(null)
+    try {
+      await updateGuildReactionRole(guildId, binding.id, {
+        emojiKey: emoji.trim(),
+        discordRoleId: roleId,
+      })
+      onSaved()
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : t("reactionRoles.reactions.editFailed"))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
+      <div className="w-full max-w-xl rounded-2xl border border-white/10 bg-[#0e0e18] shadow-2xl">
+        <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+          <h2 className="text-base font-semibold text-white">
+            {t("reactionRoles.reactions.editTitle")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white"
+            aria-label={t("reactionRoles.reactions.modalClose")}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid gap-1.5">
+            <Label className="text-xs">{t("reactionRoles.reactions.emoji")}</Label>
+            <Input
+              value={emoji}
+              onChange={(e) => setEmoji(e.target.value)}
+              placeholder={t("reactionRoles.reactions.emojiPlaceholder")}
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label className="text-xs">{t("reactionRoles.reactions.role")}</Label>
+            <Select value={roleId} onValueChange={setRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder={t("reactionRoles.reactions.pickRole")} />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {err && <p className="text-sm text-red-400">{err}</p>}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              {t("reactionRoles.reactions.cancel")}
+            </Button>
+            <Button onClick={() => void submit()} disabled={saving || !emoji.trim() || !roleId}>
+              {saving ? t("reactionRoles.reactions.saving") : t("reactionRoles.reactions.save")}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

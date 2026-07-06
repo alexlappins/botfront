@@ -254,19 +254,6 @@ function SettingsForm({
             )}
           </div>
           <span className="block text-[11px] text-white/40">{t("personalization.avatarFileHint")}</span>
-
-          {/* Or paste a direct URL */}
-          <label className="block space-y-1.5 pt-1">
-            <span className="text-[11px] text-white/40">{t("personalization.avatarOrUrl")}</span>
-            <input
-              type="text"
-              value={avatarUrl}
-              placeholder="https://…"
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0e0e18] px-3 py-2 text-sm text-white outline-none focus:border-violet-500/60"
-            />
-          </label>
-          <span className="block text-[11px] text-white/40">{t("personalization.avatarHint")}</span>
         </div>
 
         <div className="flex items-center gap-3">

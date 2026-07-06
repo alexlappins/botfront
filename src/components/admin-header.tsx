@@ -7,6 +7,7 @@ const links = [
   { to: "/server-templates", label: "Templates" },
   { to: "/admin/store", label: "Store" },
   { to: "/admin/template-access", label: "Access" },
+  { to: "/admin/subscriptions", label: "Subscriptions" },
 ] as const
 
 function linkActive(pathname: string, to: string) {

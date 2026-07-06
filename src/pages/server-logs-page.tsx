@@ -10,6 +10,13 @@ import {
   type LogsType,
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Loader2, ScrollText } from "lucide-react"
 
 const LOG_TYPES: LogsType[] = ["joinLeave", "messages", "moderation", "channel", "banKick"]
@@ -119,19 +126,23 @@ export function ServerLogsPage() {
                 <span className="w-32 shrink-0 text-sm font-medium text-white/80">
                   {t(`serverLogs.types.${type}`)}
                 </span>
-                <select
-                  value={currentId ?? ""}
+                <Select
+                  value={currentId ?? "none"}
                   disabled={savingType === type}
-                  onChange={(e) => handleChange(type, e.target.value || null)}
-                  className="min-w-[260px] h-10 rounded-lg bg-white/[0.04] border border-white/10 px-3 text-sm text-white outline-none focus:border-violet-500/60"
+                  onValueChange={(val) => handleChange(type, val === "none" ? null : val)}
                 >
-                  <option value="">{t("serverLogs.disable")}</option>
-                  {channels.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      # {c.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="min-w-[260px] w-auto rounded-lg bg-white/[0.04] border-white/10">
+                    <SelectValue placeholder={t("serverLogs.disable")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("serverLogs.disable")}</SelectItem>
+                    {channels.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        # {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 {ch && (
                   <span className="text-xs text-white/40">→ #{ch.name}</span>
                 )}

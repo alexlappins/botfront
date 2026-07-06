@@ -145,7 +145,6 @@ export function PublicShell({
         </div>
         <div className="public-wrap public-footer-bottom">
           <span>{t("footer.bottom")}</span>
-          <span>{t("footer.verified")}</span>
         </div>
       </footer>
     </div>

@@ -77,7 +77,6 @@
       "platformsList": "Twitch · YT · Kick · TikTok",
       "oneClick": "Un clic",
       "templates": "Plantillas de servidor",
-      "verified": "Verificado",
       "byDiscord": "por Discord"
     },
     "features": {
@@ -457,6 +456,12 @@
       ],
       "edit": "Editar",
       "editTitle": "Editar publicación programada"
+    },
+    "repost": {
+      "cta": "Publicar de nuevo",
+      "title": "Publicar esta plantilla",
+      "sendNow": "Enviar ahora",
+      "schedule": "Programar"
     }
   },
   "personalization": {
@@ -527,7 +532,12 @@
       "adding": "Añadiendo…",
       "add": "Añadir",
       "cancel": "Cancelar",
-      "channelFallback": "(canal {{id}})"
+      "channelFallback": "(canal {{id}})",
+      "edit": "Editar",
+      "editTitle": "Editar reacción",
+      "editFailed": "No se pudo actualizar la reacción",
+      "saving": "Guardando…",
+      "save": "Guardar"
     },
     "buttons": {
       "empty": "Aún no hay mensajes en este servidor. Instala una plantilla para poblarlo.",
@@ -708,7 +718,6 @@
     "terms": "Términos",
     "privacy": "Privacidad",
     "bottom": "© Level Up · forjado por un pequeño estudio bajo la luna",
-    "verified": "✦ Verificado por Discord",
     "refund": "Política de reembolsos"
   },
   "pricing": {
@@ -729,5 +738,11 @@
       "freeList": "1 variante de bienvenida · 1 canal de Twitch · Imagen de bienvenida estándar (con marca de agua) · Niveles, roles por reacción, registros",
       "premiumList": "Variantes de bienvenida ilimitadas · Goodbye + returning · Imágenes personalizadas sin marca de agua · Role Rewards · Varios canales de Twitch · Publicaciones programadas y recurrentes · Personalización del bot"
     }
+  },
+  "imageUpload": {
+    "upload": "Subir imagen",
+    "replace": "Reemplazar imagen",
+    "remove": "Quitar",
+    "error": "Error de subida"
   }
 }
