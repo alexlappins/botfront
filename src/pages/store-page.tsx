@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { ChevronRight, Loader2, Search, ShoppingBag, Sparkles, Star, X } from "lucide-react"
 import {
   ApiError,
-  checkoutTemplate,
+  createStoreCheckout,
   getStoreFacets,
   getStoreFeatured,
   getStoreTemplates,
@@ -30,6 +30,8 @@ const TABS: { key: Tab; label: string; soon?: boolean }[] = [
 ]
 
 const CATEGORY_LABELS: Record<StoreCategory, string> = {
+  streamer: "Streamer",
+  vtuber: "VTuber",
   gaming: "Gaming",
   community: "Community",
   anime: "Anime",
@@ -193,8 +195,8 @@ function ServerTemplatesView() {
     setError(null)
     setSuccess(null)
     try {
-      await checkoutTemplate(templateId)
-      setSuccess("Покупка оформлена. Перейдите в «Список покупок» чтобы установить.")
+      const { url } = await createStoreCheckout(templateId)
+      window.location.href = url
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
       setError(e instanceof Error ? e.message : "Ошибка покупки")

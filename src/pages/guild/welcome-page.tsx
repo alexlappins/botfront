@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
+import i18n from "@/i18n"
 import { HandHeart, Loader2, Plus, Send, Wand2 } from "lucide-react"
 import {
   ApiError,
@@ -41,10 +42,12 @@ const VARIABLES: { key: string; i18nKey: string }[] = [
   { key: "{server.memberCount}", i18nKey: "serverMemberCount" },
 ]
 
-const DEFAULT_WELCOME_TEXT = "Hey {user}! Welcome to **{server.name}** 🎉"
-const DEFAULT_RETURNING_TEXT = "Welcome back, {user}!"
-const DEFAULT_GOODBYE_TEXT =
-  "{user.name} has left **{server.name}**. We are now {server.memberCount}."
+// Example texts follow the admin's interface language (Misha's TZ §2) —
+// resolved lazily through i18n so a language switch is picked up. The
+// {placeholders} are message variables, not i18n interpolation.
+const DEFAULT_WELCOME_TEXT = () => i18n.t("welcome.defaults.welcome")
+const DEFAULT_RETURNING_TEXT = () => i18n.t("welcome.defaults.returning")
+const DEFAULT_GOODBYE_TEXT = () => i18n.t("welcome.defaults.goodbye")
 
 export function WelcomePage() {
   const guildId = useCurrentGuildId()
@@ -201,7 +204,7 @@ function WelcomeTab({
       .filter((t) => t.role === "new_member")
       .sort((a, b) => a.orderIndex - b.orderIndex)
       .map(welcomeVariantToState)
-    return fromServer.length ? fromServer : [emptyVariant(DEFAULT_WELCOME_TEXT)]
+    return fromServer.length ? fromServer : [emptyVariant(DEFAULT_WELCOME_TEXT())]
   })
   const [returningVariants, setReturningVariants] = useState<VariantState[]>(() =>
     value.templates
@@ -316,7 +319,7 @@ function WelcomeTab({
           subtitle={t("welcome.variants.subtitle")}
           variants={newVariants}
           onChange={setNewVariants}
-          defaultText={DEFAULT_WELCOME_TEXT}
+          defaultText={DEFAULT_WELCOME_TEXT()}
           guildId={guildId}
           previewKind="welcome"
           onTest={(id) => handleTest(id, false)}
@@ -339,7 +342,7 @@ function WelcomeTab({
                 subtitle=""
                 variants={returningVariants}
                 onChange={setReturningVariants}
-                defaultText={DEFAULT_RETURNING_TEXT}
+                defaultText={DEFAULT_RETURNING_TEXT()}
                 guildId={guildId}
                 previewKind="welcome"
                 onTest={(id) => handleTest(id, true)}
@@ -404,7 +407,7 @@ function GoodbyeTab({
     const fromServer = value.templates
       .sort((a, b) => a.orderIndex - b.orderIndex)
       .map(goodbyeVariantToState)
-    return fromServer.length ? fromServer : [emptyVariant(DEFAULT_GOODBYE_TEXT)]
+    return fromServer.length ? fromServer : [emptyVariant(DEFAULT_GOODBYE_TEXT())]
   })
 
   const [saving, setSaving] = useState(false)
@@ -476,7 +479,7 @@ function GoodbyeTab({
           subtitle={t("welcome.variants.subtitle")}
           variants={variants}
           onChange={setVariants}
-          defaultText={DEFAULT_GOODBYE_TEXT}
+          defaultText={DEFAULT_GOODBYE_TEXT()}
           guildId={guildId}
           previewKind="goodbye"
           onTest={handleTest}

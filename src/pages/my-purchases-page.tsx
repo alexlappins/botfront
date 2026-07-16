@@ -1,26 +1,35 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { CheckCircle2, Loader2, Package, ScrollText } from "lucide-react"
-import { ApiError, getMyServerTemplates, type MyTemplateRow } from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { CheckCircle2, Loader2, Package, ShoppingBag } from "lucide-react"
+import { ApiError, getMyPurchases, type ShopPurchase } from "@/lib/api"
 
 /**
- * Purchase history. Behaviour depends on access.usageType:
- *  - 'oneShot' (default): once installed, "Install" button is replaced by a static info block
- *    showing the install date, price, target guild, etc.
- *  - 'multi': user can install/use any number of times.
- *
- * Backend returns each template + its access record (with installedAt, usageType, pricePaid, …).
+ * My Purchases (TZ-1 §5): shop orders with deploy state.
+ * Each row: cover, name, purchase date, status (Not installed / Installed on
+ * [server]) and one Install button that opens the Install Flow (TZ-2). The
+ * button disappears after a successful install — one purchase, one server.
+ * Landing here with ?status=success (Stripe success_url) shows a toast.
  */
 export function MyPurchasesPage() {
   const navigate = useNavigate()
-  const [items, setItems] = useState<MyTemplateRow[]>([])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [items, setItems] = useState<ShopPurchase[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (searchParams.get("status") === "success") {
+      setToast("Purchase successful — ready to deploy!")
+      setSearchParams({}, { replace: true })
+      const timer = setTimeout(() => setToast(null), 6000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams, setSearchParams])
 
   useEffect(() => {
     let alive = true
-    getMyServerTemplates()
+    getMyPurchases()
       .then((rows) => {
         if (alive) setItems(rows)
       })
@@ -38,13 +47,20 @@ export function MyPurchasesPage() {
 
   return (
     <div className="space-y-6">
+      {toast && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-4 py-3 text-sm text-emerald-300 shadow-xl backdrop-blur">
+          <CheckCircle2 className="h-4 w-4" />
+          {toast}
+        </div>
+      )}
+
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
-          <ScrollText className="h-7 w-7 text-violet-400" />
-          My purchases
+          <Package className="h-7 w-7 text-violet-400" />
+          My Purchases
         </h1>
         <p className="text-sm text-white/50 mt-1">
-          Everything you've bought. One-shot items flip to “Installed” once they've been used.
+          Your ready-made servers. Each one installs onto a brand-new Discord server.
         </p>
       </div>
 
@@ -61,23 +77,61 @@ export function MyPurchasesPage() {
       )}
 
       {!loading && !error && items.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-12 text-center">
-          <Package className="h-10 w-10 mx-auto text-white/30 mb-3" />
-          <p className="text-white/55">No purchases yet.</p>
-          <button
-            type="button"
-            onClick={() => navigate("/store")}
-            className="mt-4 px-4 h-9 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-sm font-medium hover:opacity-90"
+        <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] py-16 text-center space-y-4">
+          <ShoppingBag className="h-10 w-10 text-white/25 mx-auto" />
+          <p className="text-white/55">You haven't bought anything yet.</p>
+          <Link
+            to="/shop"
+            className="inline-flex items-center gap-2 rounded-lg bg-violet-600 hover:bg-violet-500 px-5 py-2.5 text-sm font-medium text-white"
           >
-            Open the shop
-          </button>
+            Browse the shop
+          </Link>
         </div>
       )}
 
-      {!loading && items.length > 0 && (
+      {!loading && !error && items.length > 0 && (
         <div className="space-y-3">
           {items.map((row) => (
-            <PurchaseRow key={row.id} row={row} />
+            <div
+              key={row.id}
+              className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+            >
+              <div className="h-16 w-28 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]">
+                {row.product.coverImageUrl ? (
+                  <img src={row.product.coverImageUrl} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="grid h-full w-full place-items-center text-white/25 text-xl">✦</div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-white truncate">{row.product.name}</p>
+                <p className="text-xs text-white/40">
+                  {new Date(row.createdAt).toLocaleDateString()} · {money(row.amount, row.currency)}
+                  {row.status === "refunded" && <span className="ml-2 text-red-400">refunded</span>}
+                </p>
+                <p className="text-xs mt-1">
+                  {row.deployedGuildId ? (
+                    <span className="text-emerald-400">
+                      ✓ Installed on {row.deployedGuildName ?? row.deployedGuildId}
+                    </span>
+                  ) : (
+                    <span className="text-white/50">Not installed yet</span>
+                  )}
+                </p>
+              </div>
+
+              {/* One Install button; gone after a successful install (TZ-2 §5). */}
+              {row.status === "paid" && !row.deployedGuildId && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/install/${row.id}`)}
+                  className="shrink-0 rounded-lg bg-violet-600 hover:bg-violet-500 px-4 py-2 text-sm font-medium text-white"
+                >
+                  Install
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -85,136 +139,6 @@ export function MyPurchasesPage() {
   )
 }
 
-function PurchaseRow({ row }: { row: MyTemplateRow }) {
-  const navigate = useNavigate()
-  const access = row.access
-  const isOneShot = access?.usageType !== "multi"
-  const isInstalled = !!access?.installedAt
-  const lockedAfterInstall = isOneShot && isInstalled
-
-  return (
-    <article className="rounded-2xl bg-[#11111c] border border-white/5 p-5 flex items-center gap-5">
-      <div className="w-16 h-16 shrink-0 rounded-xl bg-gradient-to-br from-violet-700/40 to-fuchsia-700/30 grid place-items-center overflow-hidden">
-        {row.iconUrl ? (
-          <img src={row.iconUrl} alt={row.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-2xl font-bold text-white/40">
-            {row.name?.[0]?.toUpperCase() ?? "?"}
-          </span>
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h3 className="text-lg font-semibold text-white">{row.name}</h3>
-          <UsageBadge usageType={access?.usageType ?? "oneShot"} />
-          {isInstalled && <InstalledBadge />}
-        </div>
-        {row.description && (
-          <p className="text-sm text-white/55 mt-1 line-clamp-2">{row.description}</p>
-        )}
-
-        <Meta access={access} createdAt={row.createdAt} />
-      </div>
-
-      <div className="shrink-0">
-        {lockedAfterInstall ? (
-          <div className="text-right">
-            <p className="text-xs text-white/40">Install used</p>
-            <p className="text-sm font-medium text-emerald-400 inline-flex items-center gap-1.5">
-              <CheckCircle2 className="h-4 w-4" />
-              Installed
-            </p>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => navigate(`/install/${row.id}`)}
-            className={cn(
-              "px-5 h-10 rounded-lg text-sm font-medium",
-              "bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:opacity-90",
-            )}
-          >
-            {isInstalled ? "Install again" : "Start install"}
-          </button>
-        )}
-      </div>
-    </article>
-  )
-}
-
-function UsageBadge({ usageType }: { usageType: "oneShot" | "multi" }) {
-  if (usageType === "multi") {
-    return (
-      <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">
-        Multi-use
-      </span>
-    )
-  }
-  return (
-    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-      One-shot
-    </span>
-  )
-}
-
-function InstalledBadge() {
-  return (
-    <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-      Installed
-    </span>
-  )
-}
-
-function Meta({
-  access,
-  createdAt,
-}: {
-  access: MyTemplateRow["access"]
-  createdAt: string
-}) {
-  const items: { k: string; v: string }[] = []
-  if (access?.grantedAt) {
-    items.push({ k: "Purchased", v: fmt(access.grantedAt) })
-  } else if (createdAt) {
-    items.push({ k: "Created", v: fmt(createdAt) })
-  }
-  if (access?.installedAt) {
-    items.push({ k: "Installed", v: fmt(access.installedAt) })
-  }
-  if (access?.pricePaid != null) {
-    items.push({
-      k: "Price",
-      v: access.currency === "USD"
-        ? `$${access.pricePaid.toFixed(2)}`
-        : `${access.pricePaid.toFixed(2)} ${access.currency ?? ""}`.trim(),
-    })
-  }
-  if (access?.installedGuildId) {
-    items.push({ k: "Server", v: access.installedGuildId })
-  }
-  if (items.length === 0) return null
-
-  return (
-    <dl className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-[11px]">
-      {items.map((m) => (
-        <div key={m.k}>
-          <dt className="text-white/40">{m.k}</dt>
-          <dd className="text-white/80 truncate">{m.v}</dd>
-        </div>
-      ))}
-    </dl>
-  )
-}
-
-function fmt(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-  } catch {
-    return iso
-  }
+function money(v: number, currency: string): string {
+  return currency === "USD" ? `$${v.toFixed(2)}` : `${v.toFixed(2)} ${currency}`
 }

@@ -1,5 +1,5 @@
 /** Базовый URL API. По умолчанию "/api" (тот же origin). Для деплоя на другой домен задать VITE_API_URL, например https://api.example.com/api */
-const API_BASE = import.meta.env.VITE_API_URL ?? "/api"
+export const API_BASE = import.meta.env.VITE_API_URL ?? "/api"
 
 const fetchOptions: RequestInit = {
   credentials: "include",
@@ -82,6 +82,12 @@ export async function uploadFile(file: File): Promise<{ url: string }> {
     body: formData,
     credentials: "include",
   })
+  // 413 usually comes from the reverse proxy (nginx client_max_body_size),
+  // whose HTML error page would otherwise surface as a cryptic JSON parse
+  // failure — translate it into an actionable message.
+  if (res.status === 413) {
+    throw new ApiError(413, "File is too large for the server (max upload size). Try a smaller image.")
+  }
   if (!res.ok) await throwApiError(res, "File upload error")
   const data = (await res.json()) as { url?: string }
   if (typeof data.url !== "string") throw new Error("Upload response missing url field")
@@ -724,6 +730,8 @@ export async function installServerTemplate(
 }
 
 export type StoreCategory =
+  | "streamer"
+  | "vtuber"
   | "gaming"
   | "community"
   | "anime"
@@ -733,16 +741,23 @@ export type StoreCategory =
 
 export type StoreSort = "newest" | "popular" | "price_asc" | "price_desc"
 
+export type ProductStatus = "draft" | "published" | "archived"
+
 export type StoreTemplateProduct = {
   id?: string
   templateId: string
+  slug?: string
   name: string
   description: string | null
   discordTemplateUrl: string | null
   iconUrl?: string | null
   price: number
+  oldPrice?: number | null
   currency: string
+  status?: ProductStatus
   isActive?: boolean
+  shortDescription?: string | null
+  coverImageUrl?: string | null
   longDescription?: string | null
   category?: StoreCategory | null
   tags?: string[]
@@ -750,6 +765,7 @@ export type StoreTemplateProduct = {
   featured?: boolean
   featuredOrder?: number
   purchaseCount?: number
+  salesCount?: number
   template?: {
     id: string
     name: string
@@ -757,6 +773,13 @@ export type StoreTemplateProduct = {
     discordTemplateUrl: string | null
     iconUrl?: string | null
   } | null
+}
+
+/** Category/channel/role tree for the product "What's inside" block. */
+export type StoreStructure = {
+  categories: { name: string; channels: { name: string; type: number }[] }[]
+  uncategorized: { name: string; type: number }[]
+  roles: { name: string; color: number }[]
 }
 
 export type StoreListResponse = {
@@ -849,10 +872,10 @@ function normaliseProduct(item: any): StoreTemplateProduct {
     templateId:
       typeof item?.templateId === "string" ? item.templateId : (nested?.id ?? ""),
     name:
-      typeof nested?.name === "string"
-        ? nested.name
-        : typeof item?.name === "string"
-          ? item.name
+      typeof item?.name === "string" && item.name
+        ? item.name
+        : typeof nested?.name === "string"
+          ? nested.name
           : "Untitled",
     description:
       typeof nested?.description === "string"
@@ -869,9 +892,15 @@ function normaliseProduct(item: any): StoreTemplateProduct {
     iconUrl:
       typeof nested?.iconUrl === "string" ? nested.iconUrl :
       typeof item?.iconUrl === "string" ? item.iconUrl : null,
+    slug: typeof item?.slug === "string" ? item.slug : undefined,
     price: typeof item?.price === "number" ? item.price : 0,
+    oldPrice: typeof item?.oldPrice === "number" ? item.oldPrice : null,
     currency: typeof item?.currency === "string" ? item.currency : "USD",
+    status: typeof item?.status === "string" ? (item.status as ProductStatus) : undefined,
     isActive: typeof item?.isActive === "boolean" ? item.isActive : undefined,
+    shortDescription: typeof item?.shortDescription === "string" ? item.shortDescription : null,
+    coverImageUrl: typeof item?.coverImageUrl === "string" ? item.coverImageUrl : null,
+    salesCount: typeof item?.salesCount === "number" ? item.salesCount : undefined,
     longDescription: typeof item?.longDescription === "string" ? item.longDescription : null,
     category: item?.category ?? null,
     tags: Array.isArray(item?.tags) ? item.tags : [],
@@ -917,11 +946,13 @@ export async function getStoreFacets(): Promise<StoreFacets> {
   }
 }
 
-export async function getStoreProduct(storeTemplateId: string): Promise<{
+export async function getStoreProduct(slugOrId: string): Promise<{
   product: StoreTemplateProduct
   contents: StoreContents | null
+  structure: StoreStructure | null
+  related: StoreTemplateProduct[]
 }> {
-  const res = await fetch(`${API_BASE}/store/templates/${storeTemplateId}`, {
+  const res = await fetch(`${API_BASE}/store/templates/${slugOrId}`, {
     ...fetchOptions,
     method: "GET",
   })
@@ -929,7 +960,9 @@ export async function getStoreProduct(storeTemplateId: string): Promise<{
   const raw = await res.json()
   return {
     product: normaliseProduct(raw?.product ?? {}),
-    contents: raw?.contents ?? null,
+    contents: raw?.specs ?? raw?.contents ?? null,
+    structure: raw?.structure ?? null,
+    related: Array.isArray(raw?.related) ? raw.related.map(normaliseProduct) : [],
   }
 }
 
@@ -944,8 +977,14 @@ export async function adminListStoreTemplates(): Promise<StoreTemplateProduct[]>
 
 export async function adminUpsertStoreTemplate(body: {
   templateId: string
+  slug?: string | null
+  name?: string | null
   price?: number
+  oldPrice?: number | null
   currency?: string
+  status?: ProductStatus
+  shortDescription?: string | null
+  coverImageUrl?: string | null
   isActive?: boolean
   longDescription?: string | null
   category?: StoreCategory | null
@@ -963,19 +1002,104 @@ export async function adminUpsertStoreTemplate(body: {
   return normaliseProduct(await res.json())
 }
 
-export async function checkoutTemplate(templateId: string): Promise<void> {
+/** Buy click → Stripe Checkout URL. Caller redirects the browser there. */
+export async function createStoreCheckout(productKey: string): Promise<{ url: string }> {
   const res = await fetch(`${API_BASE}/store/checkout`, {
     ...fetchOptions,
     method: "POST",
-    body: JSON.stringify({ templateId }),
+    body: JSON.stringify({ productId: productKey }),
   })
   if (!res.ok) await throwApiError(res, "Checkout failed")
+  return res.json()
 }
 
-export async function getMyPurchases(): Promise<Purchase[]> {
+export type ShopPurchase = {
+  id: string
+  status: "paid" | "refunded"
+  amount: number
+  currency: string
+  createdAt: string
+  deployedGuildId: string | null
+  deployedGuildName: string | null
+  deployedAt: string | null
+  product: StoreTemplateProduct
+}
+
+export async function getMyPurchases(): Promise<ShopPurchase[]> {
   const res = await fetch(`${API_BASE}/store/my-purchases`, { ...fetchOptions, method: "GET" })
   if (!res.ok) await throwApiError(res, "Failed to fetch purchases")
+  const raw = await res.json()
+  if (!Array.isArray(raw)) return []
+  return raw.map((r: any) => ({ ...r, product: normaliseProduct(r?.product ?? {}) }))
+}
+
+// ── Install flow (TZ-2) ──
+
+export type PendingInstallInfo = {
+  id: string
+  purchaseId: string
+  status: "waiting_server" | "deploying" | "completed" | "failed"
+  progress: string | null
+  error: string | null
+  guildId: string | null
+  guildName: string | null
+  productName: string | null
+  discordTemplateUrl: string | null
+  botInviteUrl: string | null
+  createdAt: string
+}
+
+export async function startPurchaseInstall(purchaseId: string): Promise<PendingInstallInfo> {
+  const res = await fetch(`${API_BASE}/store/installs`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ purchaseId }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to start installation")
   return res.json()
+}
+
+export async function getPurchaseInstall(id: string): Promise<PendingInstallInfo> {
+  const res = await fetch(`${API_BASE}/store/installs/${id}`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load installation")
+  return res.json()
+}
+
+export async function triggerPurchaseInstall(id: string): Promise<PendingInstallInfo> {
+  const res = await fetch(`${API_BASE}/store/installs/${id}/trigger`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to trigger installation")
+  return res.json()
+}
+
+export type AdminStoreOrder = {
+  id: string
+  buyerId: string
+  buyerTag: string | null
+  productName: string
+  amount: number
+  currency: string
+  status: "paid" | "refunded"
+  provider: string
+  deployedGuildId: string | null
+  deployedGuildName: string | null
+  createdAt: string
+}
+
+export async function adminListStoreOrders(): Promise<AdminStoreOrder[]> {
+  const res = await fetch(`${API_BASE}/admin/store/orders`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load orders")
+  return res.json()
+}
+
+export async function adminRefundStoreOrder(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/admin/store/orders/${id}/refund`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Refund failed")
 }
 
 export async function getMyServerTemplates(): Promise<MyTemplateRow[]> {

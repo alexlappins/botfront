@@ -172,7 +172,8 @@
       "popular": "Populares",
       "priceAsc": "Preço ↑",
       "priceDesc": "Preço ↓"
-    }
+    },
+    "buy": "Comprar"
   },
   "product": {
     "backToShop": "Voltar à Loja",
@@ -198,7 +199,38 @@
       "welcome": "Boas-vindas",
       "goodbye": "Despedidas",
       "leveling": "Sistema de níveis"
-    }
+    },
+    "buyDeploy": "Comprar e implantar",
+    "trustLine": "⚡ Implantação instantânea · 🔁 Tentativas de instalação ilimitadas · 🔒 Pagamento seguro via Stripe",
+    "insideEyebrow": "Conteúdo",
+    "fullStructure": "Árvore completa de categorias e canais",
+    "rolesTitle": "Cargos",
+    "hiwEyebrow": "Processo",
+    "hiwTitle": "Como funciona",
+    "hiw": {
+      "buyTitle": "Compre",
+      "buyBody": "Pagamento seguro via Stripe — compatível com Apple Pay, Google Pay e Link. Sem formulários nem cadastros.",
+      "createTitle": "Crie seu servidor",
+      "createBody": "Um clique abre o modelo do Discord: um servidor novo com toda a estrutura é criado na hora.",
+      "autoTitle": "O bot configura tudo",
+      "autoBody": "Adicione o Level Up ao novo servidor: ele publica mensagens, envia emojis, define permissões e configura funções."
+    },
+    "faqEyebrow": "Perguntas",
+    "faqTitle": "FAQ",
+    "faq": {
+      "existingQ": "Posso instalar no meu servidor atual?",
+      "existingA": "Os modelos são instalados apenas em um servidor novo — o suporte a servidores existentes chega em breve.",
+      "channelsQ": "Algo será apagado no meu servidor?",
+      "channelsA": "Nada a apagar: o produto é instalado em um servidor novo criado a partir de um modelo do Discord.",
+      "customizeQ": "Posso personalizar tudo depois?",
+      "customizeA": "Sim — após a implantação o servidor é totalmente seu: renomeie canais, edite cargos e ajuste o bot.",
+      "redeployQ": "Posso instalar mais de uma vez?",
+      "redeployA": "Uma compra = uma instalação de servidor. As tentativas de instalação são ilimitadas até dar certo.",
+      "supportQ": "E se algo der errado?",
+      "supportA": "As tentativas são ilimitadas e o suporte está a um clique no nosso servidor do Discord — vamos te ajudar."
+    },
+    "alsoLikeEyebrow": "Mais",
+    "alsoLike": "Você também pode gostar"
   },
   "welcome": {
     "title": "Boas-vindas",
@@ -291,6 +323,11 @@
         "fieldStrokeColor": "Cor da borda",
         "contentIsName": "(conteúdo = {{var}})"
       }
+    },
+    "defaults": {
+      "welcome": "Olá {user}! Bem-vindo ao **{server.name}** 🎉",
+      "returning": "Bem-vindo de volta, {user}!",
+      "goodbye": "{user.name} saiu de **{server.name}**. Agora somos {server.memberCount}."
     }
   },
   "twitch": {

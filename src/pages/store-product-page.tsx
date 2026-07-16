@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import {
   ApiError,
-  checkoutTemplate,
+  createStoreCheckout,
   getStoreProduct,
   type StoreContents,
   type StoreTemplateProduct,
@@ -77,8 +77,8 @@ export function StoreProductPage() {
     setError(null)
     setSuccess(null)
     try {
-      await checkoutTemplate(product.templateId)
-      setSuccess("Purchased! Install from the My Purchases page.")
+      const { url } = await createStoreCheckout(product.templateId)
+      window.location.href = url
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) return navigate("/login", { replace: true })
       setError(e instanceof Error ? e.message : "Checkout error")

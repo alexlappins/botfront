@@ -3,7 +3,9 @@ import type { ReactElement } from "react"
 import { AuthProvider } from "@/contexts/auth-context"
 import { useAuth } from "@/contexts/auth-context"
 import { LandingPage } from "@/pages/landing-page"
-import { ComingSoonPage } from "@/pages/coming-soon-page"
+import { PublicShopPage } from "@/pages/public-shop-page"
+import { PublicProductPage } from "@/pages/public-product-page"
+import { PurchaseInstallPage } from "@/pages/purchase-install-page"
 import { PrivacyPage, RefundPage, TermsPage } from "@/pages/legal-pages"
 import { LoginPage } from "@/pages/login-page"
 import { GuildPage } from "@/pages/guild-page"
@@ -54,9 +56,9 @@ function App() {
               so guests don't trigger /api/auth/me, the active-guild context,
               or any other dashboard-shaped infrastructure. */}
           <Route path="/" element={<LandingPage />} />
-          {/* Shop is a stub until launch (TZ §1): nav + hero button land here. */}
-          <Route path="/shop" element={<ComingSoonPage />} />
-          <Route path="/shop/:id" element={<ComingSoonPage />} />
+          {/* Shop (TZ-1): real catalog + product pages, no login required. */}
+          <Route path="/shop" element={<PublicShopPage />} />
+          <Route path="/shop/:id" element={<PublicProductPage />} />
           {/* Legal documents (TZ §11). */}
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
@@ -115,6 +117,8 @@ function App() {
             <Route path="/store" element={<StorePage />} />
             <Route path="/store/:id" element={<StoreProductPage />} />
             <Route path="/my-purchases" element={<MyPurchasesPage />} />
+            {/* Stripe success_url lands here (TZ-1 §4.4). */}
+            <Route path="/purchases" element={<MyPurchasesPage />} />
             <Route path="/server-messages" element={<GuildServerMessagesPage />} />
             <Route path="/welcome" element={<WelcomePage />} />
             <Route path="/leveling" element={<LevelingPage />} />
@@ -126,10 +130,19 @@ function App() {
             <Route path="/premium/success" element={<PremiumSuccessPage />} />
           </Route>
 
-          {/* Standalone install wizard (no admin shell). Admins can run it too —
-              that's how the owner installs templates onto test servers (TZ §14). */}
+          {/* Purchased-server install flow (TZ-2): /install/[purchase_id]. */}
           <Route
-            path="/install/:templateId"
+            path="/install/:purchaseId"
+            element={
+              <RequireRole role={["customer", "admin"]}>
+                <PurchaseInstallPage />
+              </RequireRole>
+            }
+          />
+          {/* Standalone TEMPLATE install wizard (no admin shell). Admins run it
+              to set templates up on test servers (TZ §14). */}
+          <Route
+            path="/install-template/:templateId"
             element={
               <RequireRole role={["customer", "admin"]}>
                 <InstallWizardPage />

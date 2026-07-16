@@ -172,7 +172,8 @@
       "popular": "Popular",
       "priceAsc": "Price ↑",
       "priceDesc": "Price ↓"
-    }
+    },
+    "buy": "Buy"
   },
   "product": {
     "backToShop": "Back to the Shop",
@@ -198,7 +199,38 @@
       "welcome": "Welcome flow",
       "goodbye": "Goodbye flow",
       "leveling": "Leveling system"
-    }
+    },
+    "buyDeploy": "Buy & Deploy",
+    "trustLine": "⚡ Instant deploy · 🔁 Unlimited install attempts · 🔒 Secure checkout via Stripe",
+    "insideEyebrow": "Contents",
+    "fullStructure": "Full channel & category tree",
+    "rolesTitle": "Roles",
+    "hiwEyebrow": "Process",
+    "hiwTitle": "How it works",
+    "hiw": {
+      "buyTitle": "Buy",
+      "buyBody": "Secure Stripe checkout — Apple Pay, Google Pay and Link supported. No forms, no sign-ups.",
+      "createTitle": "Create your server",
+      "createBody": "One click opens the Discord template — a new server with the full skeleton is created instantly.",
+      "autoTitle": "Bot sets up everything automatically",
+      "autoBody": "Add Level Up to the new server — it posts messages, uploads emojis, sets permissions and configures features."
+    },
+    "faqEyebrow": "Questions",
+    "faqTitle": "FAQ",
+    "faq": {
+      "existingQ": "Can I install this on my existing server?",
+      "existingA": "Templates install on a fresh new server only — support for existing servers is coming later.",
+      "channelsQ": "Will anything be deleted on my server?",
+      "channelsA": "Nothing to delete: the product installs on a brand-new server created from a Discord template, so none of your existing servers are touched.",
+      "customizeQ": "Can I customize everything after the install?",
+      "customizeA": "Yes — after the deploy the server is fully yours: rename channels, edit roles, tweak all bot features from the dashboard.",
+      "redeployQ": "Can I install it more than once?",
+      "redeployA": "One purchase = one server installation. Installation attempts are unlimited until it succeeds.",
+      "supportQ": "What if something goes wrong?",
+      "supportA": "Installation attempts are unlimited, and our support is one click away on the Discord support server — we will get you running."
+    },
+    "alsoLikeEyebrow": "More",
+    "alsoLike": "You may also like"
   },
   "welcome": {
     "title": "Welcome flow",
@@ -291,6 +323,11 @@
         "fieldStrokeColor": "Stroke color",
         "contentIsName": "(content = {{var}})"
       }
+    },
+    "defaults": {
+      "welcome": "Hey {user}! Welcome to **{server.name}** 🎉",
+      "returning": "Welcome back, {user}!",
+      "goodbye": "{user.name} has left **{server.name}**. We are now {server.memberCount}."
     }
   },
   "twitch": {

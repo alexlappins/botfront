@@ -169,7 +169,7 @@ export function ServerTemplatesListPage() {
                       {/* Owner shortcut (TZ §14): run the same install wizard
                           customers use to set this template up on a test server. */}
                       <Link
-                        to={`/install/${t.id}`}
+                        to={`/install-template/${t.id}`}
                         className="text-sm text-[hsl(var(--primary))] hover:underline"
                       >
                         Install to server

@@ -33,19 +33,9 @@ type NavItem = {
   end?: boolean
 }
 
-// Storefront is hidden until the real shop (payments, catalogue, refunds) ships.
-// Flip this to `true` (or wire it to VITE_ENABLE_STORE) when ready — the
-// underlying /store and /my-purchases pages still exist, they're just gone
-// from the sidebar.
-const STORE_ENABLED = import.meta.env.VITE_ENABLE_STORE === "true"
-
 const NAV: NavItem[] = [
-  ...(STORE_ENABLED
-    ? ([
-        { to: "/store", labelKey: "nav.store", icon: ShoppingBag },
-        { to: "/my-purchases", labelKey: "nav.purchases", icon: ScrollText },
-      ] satisfies NavItem[])
-    : []),
+  // The shop shipped (TZ-1) — purchases live in the sidebar again (§5).
+  { to: "/my-purchases", labelKey: "nav.purchases", icon: ShoppingBag },
   { to: "/server-messages", labelKey: "nav.serverMessages", icon: MessageSquareText },
   { to: "/welcome", labelKey: "nav.welcome", icon: HandHeart },
   { to: "/leveling", labelKey: "nav.leveling", icon: TrendingUp },

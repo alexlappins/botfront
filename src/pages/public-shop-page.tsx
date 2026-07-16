@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { useTranslation } from "react-i18next"
 import { PublicShell } from "@/components/public-shell"
 import {
@@ -11,8 +11,11 @@ import {
   type StoreSort,
   type StoreTemplateProduct,
 } from "@/lib/api"
+import { buyProduct } from "@/lib/shop-buy"
 
 const CATEGORY_LABELS: Record<StoreCategory, string> = {
+  streamer: "Streamer",
+  vtuber: "VTuber",
   gaming: "Gaming",
   community: "Community",
   anime: "Anime",
@@ -52,6 +55,20 @@ export function PublicShopPage() {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set())
   const [sort, setSort] = useState<StoreSort>("newest")
   const [page, setPage] = useState(0)
+
+  // SEO (TZ-1 §2).
+  useEffect(() => {
+    document.title = "Shop — ready-made Discord servers | Level Up"
+    const el =
+      document.head.querySelector<HTMLMetaElement>('meta[name="description"]') ??
+      (() => {
+        const m = document.createElement("meta")
+        m.name = "description"
+        document.head.appendChild(m)
+        return m
+      })()
+    el.content = "Ready-made Discord servers: buy, create a server, and the bot sets up everything automatically."
+  }, [])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 250)
@@ -138,10 +155,10 @@ export function PublicShopPage() {
             </div>
             <div className="featured-strip">
               {featured.map((p) => (
-                <Link key={p.id ?? p.templateId} to={`/shop/${p.id}`} className="public-card featured-tile">
+                <Link key={p.id ?? p.templateId} to={`/shop/${p.slug ?? p.id}`} className="public-card featured-tile">
                   <div className="ft-img">
-                    {p.screenshots?.[0] || p.iconUrl ? (
-                      <img src={p.screenshots?.[0] ?? p.iconUrl ?? ""} alt={p.name} />
+                    {p.coverImageUrl || p.screenshots?.[0] || p.iconUrl ? (
+                      <img src={p.coverImageUrl ?? p.screenshots?.[0] ?? p.iconUrl ?? ""} alt={p.name} />
                     ) : (
                       <span className="ft-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
                     )}
@@ -149,10 +166,8 @@ export function PublicShopPage() {
                   </div>
                   <div className="ft-body">
                     <h4>{p.name}</h4>
-                    {/* `description` is admin-authored — not part of the
-                        UI string set we translate. Empty placeholder uses
-                        the i18n key. */}
-                    <p>{p.description ?? "—"}</p>
+                    {/* Admin-authored copy — not part of the translated UI set. */}
+                    <p>{p.shortDescription ?? p.description ?? "—"}</p>
                     <div className="ft-foot">
                       <span className="ft-price">{priceLabel(p)}</span>
                       <span className="ft-cat">{p.category ? CATEGORY_LABELS[p.category] : ""}</span>
@@ -277,37 +292,7 @@ export function PublicShopPage() {
             <>
               <div className="catalogue-grid">
                 {items.map((p) => (
-                  <Link
-                    key={p.id ?? p.templateId}
-                    to={`/shop/${p.id}`}
-                    className="public-card prod-card"
-                  >
-                    <div className="prod-img">
-                      {p.screenshots?.[0] || p.iconUrl ? (
-                        <img src={p.screenshots?.[0] ?? p.iconUrl ?? ""} alt={p.name} />
-                      ) : (
-                        <span className="ft-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
-                      )}
-                      {p.featured && <span className="ft-badge">FEATURED</span>}
-                    </div>
-                    <div className="prod-body">
-                      <h4>{p.name}</h4>
-                      <p>{p.description ?? "—"}</p>
-                      {(p.tags?.length ?? 0) > 0 && (
-                        <div className="prod-tags">
-                          {p.tags!.slice(0, 3).map((tg) => (
-                            <span key={tg} className="prod-tag">
-                              {tg}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="prod-foot">
-                        <span className="prod-price">{priceLabel(p)}</span>
-                        <span className="prod-cta">{t("common.next")} →</span>
-                      </div>
-                    </div>
-                  </Link>
+                  <ProductCard key={p.id ?? p.templateId} product={p} />
                 ))}
               </div>
 
@@ -344,6 +329,93 @@ export function PublicShopPage() {
 
 function priceLabel(p: StoreTemplateProduct): string {
   return p.currency === "USD" ? `$${p.price.toFixed(2)}` : `${p.price.toFixed(2)} ${p.currency}`
+}
+
+/**
+ * Catalog card (TZ-1 §2): 16:9 cover, name, category + tags, price and a Buy
+ * button RIGHT ON THE CARD. Hovering the cover auto-cycles the first 3
+ * screenshots.
+ */
+function ProductCard({ product: p }: { product: StoreTemplateProduct }) {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const slugPath = `/shop/${p.slug ?? p.id}`
+  const shots = useMemo(() => {
+    const list = [p.coverImageUrl, ...(p.screenshots ?? [])].filter(Boolean) as string[]
+    return [...new Set(list)].slice(0, 3)
+  }, [p])
+  const [shotIdx, setShotIdx] = useState(0)
+  const [buying, setBuying] = useState(false)
+  const hoverTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  function startCycle() {
+    if (shots.length < 2 || hoverTimer.current) return
+    hoverTimer.current = setInterval(() => {
+      setShotIdx((i) => (i + 1) % shots.length)
+    }, 1100)
+  }
+  function stopCycle() {
+    if (hoverTimer.current) clearInterval(hoverTimer.current)
+    hoverTimer.current = null
+    setShotIdx(0)
+  }
+  useEffect(() => stopCycle, [])
+
+  async function handleBuy(e: React.MouseEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    if (buying) return
+    setBuying(true)
+    try {
+      await buyProduct(p.slug ?? p.id ?? "", p.slug ?? p.id ?? "")
+    } catch {
+      // On error fall back to the product page where the message is shown.
+      navigate(slugPath)
+    }
+  }
+
+  return (
+    <Link
+      to={slugPath}
+      className="public-card prod-card"
+      onMouseEnter={startCycle}
+      onMouseLeave={stopCycle}
+    >
+      <div className="prod-img">
+        {shots.length > 0 ? (
+          <img src={shots[Math.min(shotIdx, shots.length - 1)]} alt={p.name} />
+        ) : p.iconUrl ? (
+          <img src={p.iconUrl} alt={p.name} />
+        ) : (
+          <span className="ft-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
+        )}
+        {p.featured && <span className="ft-badge">FEATURED</span>}
+      </div>
+      <div className="prod-body">
+        <h4>{p.name}</h4>
+        <p>{p.shortDescription ?? p.description ?? "—"}</p>
+        <div className="prod-tags">
+          {p.category && <span className="prod-tag prod-tag-cat">{CATEGORY_LABELS[p.category] ?? p.category}</span>}
+          {(p.tags ?? []).slice(0, 2).map((tg) => (
+            <span key={tg} className="prod-tag">
+              {tg}
+            </span>
+          ))}
+        </div>
+        <div className="prod-foot">
+          <span className="prod-price">
+            {p.oldPrice != null && p.oldPrice > p.price && (
+              <span className="prod-old">{`$${p.oldPrice.toFixed(2)}`}</span>
+            )}
+            {priceLabel(p)}
+          </span>
+          <button type="button" className="prod-buy" onClick={handleBuy} disabled={buying}>
+            {buying ? "…" : t("shop.buy")}
+          </button>
+        </div>
+      </div>
+    </Link>
+  )
 }
 
 function ShopStyles() {
@@ -466,7 +538,7 @@ function ShopStyles() {
       }
       .prod-card { display: flex; flex-direction: column; overflow: hidden; }
       .prod-card .prod-img {
-        aspect-ratio: 1; position: relative; overflow: hidden;
+        aspect-ratio: 16/9; position: relative; overflow: hidden;
         background: linear-gradient(135deg, rgba(155,107,255,.2), rgba(201,164,74,.1));
       }
       .prod-card .prod-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
@@ -488,8 +560,17 @@ function ShopStyles() {
         display: flex; align-items: center; justify-content: space-between;
         padding-top: 10px; border-top: 1px solid var(--pub-line); margin-top: 4px;
       }
-      .prod-price { font-family: 'Cinzel'; font-size: 14px; color: var(--pub-gold-br); }
-      .prod-cta { font-family: 'Cinzel'; font-size: 10px; letter-spacing: .18em; color: var(--pub-violet-br); }
+      .prod-price { font-family: 'Cinzel'; font-size: 14px; color: var(--pub-gold-br); display: flex; align-items: baseline; gap: 8px; }
+      .prod-old { font-size: 11px; color: var(--pub-ink-mut); text-decoration: line-through; }
+      .prod-tag-cat { background: rgba(201,164,74,.12); color: var(--pub-gold-br); border-color: rgba(201,164,74,.3); }
+      .prod-buy {
+        font-family: 'Cinzel'; font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+        padding: 7px 16px; border-radius: 20px; cursor: pointer; transition: .2s;
+        background: linear-gradient(180deg, var(--pub-violet), var(--pub-violet-deep));
+        border: 1px solid var(--pub-violet-br); color: #fff;
+      }
+      .prod-buy:hover { filter: brightness(1.15); }
+      .prod-buy:disabled { opacity: .5; cursor: wait; }
       @media (max-width: 980px) { .catalogue-grid { grid-template-columns: repeat(3, 1fr); } }
       @media (max-width: 720px) { .catalogue-grid { grid-template-columns: repeat(2, 1fr); } }
       @media (max-width: 480px) { .catalogue-grid { grid-template-columns: 1fr; } }
