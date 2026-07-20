@@ -530,10 +530,14 @@ function ProductStyles() {
       .product-grid {
         display: grid; grid-template-columns: 1.4fr 1fr; gap: 36px;
       }
+      /* Grid children default to min-width:auto and can blow past the viewport. */
+      .product-grid > * { min-width: 0; }
       @media (max-width: 960px) { .product-grid { grid-template-columns: 1fr; } }
 
       /* Gallery */
-      .gallery { display: flex; flex-direction: column; gap: 10px; }
+      /* min-width: 0 — without it the thumb strip's intrinsic width forces
+         the grid column wider than the viewport and breaks mobile layout. */
+      .gallery { display: flex; flex-direction: column; gap: 10px; min-width: 0; max-width: 100%; }
       /* 16:9 so 1920×1080 screenshots show FULLY, никогда не обрезаются (TZ §5). */
       .gallery-main {
         position: relative; aspect-ratio: 16/9;
@@ -565,6 +569,8 @@ function ProductStyles() {
       }
       .gallery-strip {
         display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+        width: 100%; max-width: 100%;
+        -webkit-overflow-scrolling: touch;
       }
       .gallery-strip .thumb {
         flex-shrink: 0; width: 80px; height: 48px;
