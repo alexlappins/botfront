@@ -12,12 +12,10 @@ import pt from "./locales/pt.json"
  * App-wide i18n config. Adding a language = drop a new JSON, add it to
  * `resources`, list it in `LANGUAGES` exported below.
  *
- * Detection order:
- *   1. localStorage (`i18nextLng`) — user's explicit choice from the switcher
- *   2. navigator language — fall back to browser default on first visit
- *   3. `en` — final fallback (deliberate: a missing RU/UK key reads as polish
- *      if English fills in, vs Cyrillic showing up in an English UI which
- *      reads as "we forgot to translate this"). Per user preference.
+ * Detection: localStorage (`i18nextLng`) only — the user's explicit choice
+ * from the switcher. First visit deliberately IGNORES the browser language
+ * and lands on English (Misha's TZ: default is EN until the user picks
+ * otherwise); `fallbackLng: "en"` covers both first visit and missing keys.
  *
  * `react.useSuspense: false` keeps initial paint synchronous — translations
  * are bundled (not lazy-fetched), so we don't want a Suspense boundary just
@@ -51,7 +49,9 @@ void i18n
     supportedLngs: SUPPORTED_LANGS,
     interpolation: { escapeValue: false }, // React already escapes
     detection: {
-      order: ["localStorage", "navigator"],
+      // No "navigator": first visit must be English regardless of browser
+      // locale; only an explicit pick in the switcher changes the language.
+      order: ["localStorage"],
       lookupLocalStorage: "i18nextLng",
       caches: ["localStorage"],
     },

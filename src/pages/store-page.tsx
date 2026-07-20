@@ -13,6 +13,7 @@ import {
   type StoreTemplateProduct,
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { formatCents } from "@/lib/price"
 
 /**
  * Customer-facing store. Three product categories planned:
@@ -482,7 +483,7 @@ function Pagination({
 }
 
 function priceLabel(p: StoreTemplateProduct): string {
-  return p.currency === "USD" ? `$${p.price.toFixed(2)}` : `${p.price.toFixed(2)} ${p.currency}`
+  return formatCents(p.price, p.currency)
 }
 
 function ProductCard({

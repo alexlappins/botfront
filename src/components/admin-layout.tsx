@@ -7,6 +7,7 @@ import {
   HandHeart,
   Loader2,
   LogOut,
+  Menu,
   MessageSquareText,
   ShoppingBag,
   ScrollText,
@@ -15,6 +16,7 @@ import {
   Sparkles,
   TrendingUp,
   Twitch,
+  X,
 } from "lucide-react"
 import { LOGOUT_URL } from "@/lib/api"
 import { ActiveGuildProvider, useActiveGuild } from "@/contexts/active-guild-context"
@@ -60,14 +62,25 @@ export function AdminLayout({ children }: { children?: ReactNode }) {
 function AdminLayoutInner({ children }: { children?: ReactNode }) {
   // Layout strategy:
   // - Wrapper is `h-screen overflow-hidden flex` so the page never scrolls as a whole.
-  // - Sidebar has `h-screen` so it stays put.
+  // - Desktop (lg+): sidebar is a static 260px column, exactly as before.
+  // - Mobile: sidebar becomes an off-canvas drawer toggled from the TopBar
+  //   burger; a backdrop closes it, as does tapping any nav link.
   // - Right column has its own scroll inside `<main>`.
+  const [navOpen, setNavOpen] = useState(false)
   return (
     <div className="h-screen overflow-hidden bg-[#0b0b14] text-[#e7e7f0] flex">
-      <Sidebar />
+      {navOpen && (
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setNavOpen(false)}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+        />
+      )}
+      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="flex-1 flex flex-col min-w-0 h-screen">
-        <TopBar />
-        <main className="flex-1 overflow-y-auto px-8 py-6">
+        <TopBar onMenu={() => setNavOpen(true)} />
+        <main className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
           {children ?? <Outlet />}
         </main>
       </div>
@@ -75,16 +88,33 @@ function AdminLayoutInner({ children }: { children?: ReactNode }) {
   )
 }
 
-function Sidebar() {
+function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   // Full-height column. Top: server selector (sticky-feel because column is fixed height).
   // Middle: scrollable nav. Bottom: pinned premium block via mt-auto wrapper.
   const { t } = useTranslation()
   return (
-    <aside className="w-[260px] shrink-0 border-r border-white/5 bg-[#0e0e18] flex flex-col h-screen sticky top-0">
+    <aside
+      className={cn(
+        "w-[260px] shrink-0 border-r border-white/5 bg-[#0e0e18] flex flex-col h-screen",
+        // Mobile: fixed drawer sliding in from the left; desktop: back to static.
+        "fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:static lg:translate-x-0 lg:z-auto",
+        open ? "translate-x-0" : "-translate-x-full",
+      )}
+    >
       <div className="px-5 pt-6 pb-3 shrink-0">
-        <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
-          {t("nav.myServers")}
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-semibold tracking-[0.18em] text-white/40 uppercase">
+            {t("nav.myServers")}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close menu"
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/40 hover:bg-white/5 hover:text-white lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
         <div className="mt-2">
           <ServerSelector />
         </div>
@@ -96,6 +126,7 @@ function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.end}
+            onClick={onClose}
             className={({ isActive }) =>
               cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
@@ -272,29 +303,42 @@ function ServerSelector() {
   )
 }
 
-function TopBar() {
+function TopBar({ onMenu }: { onMenu: () => void }) {
   const { user } = useAuth()
   // Search input and notification bell are intentionally not rendered until
   // they actually do something. Both are coming back as real working features
   // (store search + news feed). Stub UI now would just confuse users.
   return (
-    <header className="flex items-center justify-end gap-4 px-8 h-16 border-b border-white/5 bg-[#0b0b14]/60 backdrop-blur">
+    <header className="flex items-center gap-2 sm:gap-4 px-3 sm:px-5 lg:px-8 h-14 lg:h-16 border-b border-white/5 bg-[#0b0b14]/60 backdrop-blur">
+      {/* Mobile burger — opens the sidebar drawer. */}
+      <button
+        type="button"
+        onClick={onMenu}
+        aria-label="Open menu"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-white/60 hover:bg-white/5 hover:text-white lg:hidden"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      <div className="flex-1" />
+
       {/* Language selector lives up here next to the user avatar (TZ §10). */}
       <LanguageSwitcher />
       {/* Premium status indicator for the active server (TZ §1.3). */}
       <PremiumBadge />
-      <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-sm font-semibold">
-            {user?.username?.[0]?.toUpperCase() ?? "U"}
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold text-white">{user?.username ?? "User"}</p>
-            {user?.role && <p className="text-[11px] text-white/40">{user.role}</p>}
-          </div>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 grid place-items-center text-sm font-semibold shrink-0">
+          {user?.username?.[0]?.toUpperCase() ?? "U"}
+        </div>
+        {/* Name + role hidden on phones — the avatar carries identity. */}
+        <div className="leading-tight hidden sm:block">
+          <p className="text-sm font-semibold text-white">{user?.username ?? "User"}</p>
+          {user?.role && <p className="text-[11px] text-white/40">{user.role}</p>}
+        </div>
         <a
           href={LOGOUT_URL}
           title="Sign out"
-          className="ml-2 grid place-items-center w-9 h-9 rounded-full hover:bg-white/5 text-white/50 hover:text-white"
+          className="sm:ml-2 grid place-items-center w-9 h-9 rounded-full hover:bg-white/5 text-white/50 hover:text-white shrink-0"
         >
           <LogOut className="h-4 w-4" />
         </a>

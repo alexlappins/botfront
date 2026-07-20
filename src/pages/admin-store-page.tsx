@@ -22,6 +22,7 @@ import {
   type StoreTemplateProduct,
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { centsToInput, formatCents, parsePriceToCents } from "@/lib/price"
 import { Loader2, Plus, RotateCcw, Star, Trash2, Upload } from "lucide-react"
 
 const CATEGORIES: { value: StoreCategory; label: string }[] = [
@@ -58,7 +59,6 @@ export function AdminStorePage() {
   const [oldPrice, setOldPrice] = useState("")
   const [currency, setCurrency] = useState("USD")
   const [status, setStatus] = useState<ProductStatus>("draft")
-  const [shortDescription, setShortDescription] = useState("")
   const [longDescription, setLongDescription] = useState("")
   const [category, setCategory] = useState<StoreCategory | "">("")
   const [tags, setTags] = useState<string[]>([])
@@ -108,11 +108,11 @@ export function AdminStorePage() {
     if (existing) {
       setName(existing.name ?? "")
       setSlug(existing.slug ?? "")
-      setPrice(String(existing.price))
-      setOldPrice(existing.oldPrice != null ? String(existing.oldPrice) : "")
+      // Prices live in cents in the DB; the form edits dollars (99.99).
+      setPrice(centsToInput(existing.price))
+      setOldPrice(existing.oldPrice != null ? centsToInput(existing.oldPrice) : "")
       setCurrency(existing.currency)
       setStatus(existing.status ?? (existing.isActive ? "published" : "draft"))
-      setShortDescription(existing.shortDescription ?? "")
       setLongDescription(existing.longDescription ?? "")
       setCategory((existing.category as StoreCategory | null) ?? "")
       setTags(existing.tags ?? [])
@@ -127,7 +127,6 @@ export function AdminStorePage() {
       setOldPrice("")
       setCurrency("USD")
       setStatus("draft")
-      setShortDescription("")
       setLongDescription("")
       setCategory("")
       setTags([])
@@ -139,8 +138,8 @@ export function AdminStorePage() {
   }
 
   async function uploadScreenshot(file: File) {
-    if (screenshots.length >= 12) {
-      setError("Максимум 12 скриншотов на товар.")
+    if (screenshots.length >= 20) {
+      setError("Максимум 20 скриншотов на товар.")
       return
     }
     setUploadingShot(true)
@@ -171,17 +170,27 @@ export function AdminStorePage() {
   async function submit() {
     setError(null)
     setSuccess(null)
+    // Dollars → cents; both "." and "," accepted (TZ §3).
+    const priceCents = parsePriceToCents(price)
+    if (priceCents == null || priceCents <= 0) {
+      setError("Некорректная цена. Примеры: 99, 99.99, 99,99")
+      return
+    }
+    const oldPriceCents = oldPrice.trim() ? parsePriceToCents(oldPrice) : null
+    if (oldPrice.trim() && oldPriceCents == null) {
+      setError("Некорректная старая цена.")
+      return
+    }
     setSaving(true)
     try {
       await adminUpsertStoreTemplate({
         templateId,
         name: name.trim() || null,
         ...(slug.trim() ? { slug: slug.trim() } : {}),
-        price: Number(price),
-        oldPrice: oldPrice.trim() ? Number(oldPrice) : null,
+        price: priceCents,
+        oldPrice: oldPriceCents,
         currency,
         status,
-        shortDescription: shortDescription.trim() || null,
         longDescription: longDescription.trim() || null,
         category: category || null,
         tags,
@@ -281,7 +290,7 @@ export function AdminStorePage() {
                       </span>
                     </div>
                     <div className="text-[11px] text-[hsl(var(--muted-foreground))] flex items-center gap-2">
-                      <span>{r.currency === "USD" ? `$${r.price}` : `${r.price} ${r.currency}`}</span>
+                      <span>{formatCents(r.price, r.currency)}</span>
                       {r.category && <span>· {r.category}</span>}
                       <span>· {r.salesCount ?? 0} sales</span>
                     </div>
@@ -330,15 +339,6 @@ export function AdminStorePage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Короткое описание (1-2 предложения, для карточки)</Label>
-              <Input
-                value={shortDescription}
-                onChange={(e) => setShortDescription(e.target.value)}
-                placeholder="Shown on the catalog card"
-              />
-            </div>
-
-            <div className="grid gap-2">
               <Label>Discord template URL (discord.new/… — для установки, ТЗ-2)</Label>
               <Input
                 value={discordTemplateUrl}
@@ -349,16 +349,20 @@ export function AdminStorePage() {
 
             <div className="grid sm:grid-cols-4 gap-3">
               <div className="grid gap-2">
-                <Label>Цена</Label>
-                <Input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min={0} step="0.01" />
+                <Label>Цена (99.99)</Label>
+                <Input
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="99.99"
+                />
               </div>
               <div className="grid gap-2">
                 <Label>Старая цена (скидка)</Label>
                 <Input
                   value={oldPrice}
                   onChange={(e) => setOldPrice(e.target.value)}
-                  type="number"
-                  min={0}
+                  inputMode="decimal"
                   placeholder="—"
                 />
               </div>
@@ -512,7 +516,7 @@ export function AdminStorePage() {
             </div>
 
             <div className="grid gap-2">
-              <Label>Галерея / скриншоты ({screenshots.length} / 12)</Label>
+              <Label>Галерея / скриншоты ({screenshots.length} / 20)</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {screenshots.map((src, i) => (
                   <div key={src + i} className="relative aspect-video rounded-md overflow-hidden border border-[hsl(var(--border))]">
@@ -535,7 +539,7 @@ export function AdminStorePage() {
                 <label
                   className={cn(
                     "aspect-video rounded-md border-2 border-dashed border-[hsl(var(--border))] grid place-items-center cursor-pointer hover:bg-[hsl(var(--muted)/0.3)]",
-                    (uploadingShot || screenshots.length >= 12) && "opacity-50 cursor-not-allowed",
+                    (uploadingShot || screenshots.length >= 20) && "opacity-50 cursor-not-allowed",
                   )}
                 >
                   {uploadingShot ? (
@@ -550,7 +554,7 @@ export function AdminStorePage() {
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/gif"
                     className="hidden"
-                    disabled={uploadingShot || screenshots.length >= 12}
+                    disabled={uploadingShot || screenshots.length >= 20}
                     onChange={(e) => {
                       const f = e.target.files?.[0]
                       if (f) void uploadScreenshot(f)
@@ -669,7 +673,7 @@ function OrdersTab() {
                     {o.status === "refunded" && <span className="ml-2 text-xs text-red-400">refunded</span>}
                   </p>
                   <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                    {o.buyerTag ?? o.buyerId} · {o.currency === "USD" ? `$${o.amount}` : `${o.amount} ${o.currency}`} ·{" "}
+                    {o.buyerTag ?? o.buyerId} · {formatCents(o.amount, o.currency)} ·{" "}
                     {new Date(o.createdAt).toLocaleString()} ·{" "}
                     {o.deployedGuildId ? `deployed on ${o.deployedGuildName ?? o.deployedGuildId}` : "not deployed"}
                   </p>

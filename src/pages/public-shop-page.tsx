@@ -12,6 +12,7 @@ import {
   type StoreTemplateProduct,
 } from "@/lib/api"
 import { buyProduct } from "@/lib/shop-buy"
+import { formatCents } from "@/lib/price"
 
 const CATEGORY_LABELS: Record<StoreCategory, string> = {
   streamer: "Streamer",
@@ -158,7 +159,7 @@ export function PublicShopPage() {
                 <Link key={p.id ?? p.templateId} to={`/shop/${p.slug ?? p.id}`} className="public-card featured-tile">
                   <div className="ft-img">
                     {p.coverImageUrl || p.screenshots?.[0] || p.iconUrl ? (
-                      <img src={p.coverImageUrl ?? p.screenshots?.[0] ?? p.iconUrl ?? ""} alt={p.name} />
+                      <img src={p.coverImageUrl ?? p.screenshots?.[0] ?? p.iconUrl ?? ""} alt={p.name} loading="lazy" decoding="async" />
                     ) : (
                       <span className="ft-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
                     )}
@@ -166,8 +167,6 @@ export function PublicShopPage() {
                   </div>
                   <div className="ft-body">
                     <h4>{p.name}</h4>
-                    {/* Admin-authored copy — not part of the translated UI set. */}
-                    <p>{p.shortDescription ?? p.description ?? "—"}</p>
                     <div className="ft-foot">
                       <span className="ft-price">{priceLabel(p)}</span>
                       <span className="ft-cat">{p.category ? CATEGORY_LABELS[p.category] : ""}</span>
@@ -328,7 +327,7 @@ export function PublicShopPage() {
 }
 
 function priceLabel(p: StoreTemplateProduct): string {
-  return p.currency === "USD" ? `$${p.price.toFixed(2)}` : `${p.price.toFixed(2)} ${p.currency}`
+  return formatCents(p.price, p.currency)
 }
 
 /**
@@ -383,9 +382,9 @@ function ProductCard({ product: p }: { product: StoreTemplateProduct }) {
     >
       <div className="prod-img">
         {shots.length > 0 ? (
-          <img src={shots[Math.min(shotIdx, shots.length - 1)]} alt={p.name} />
+          <img src={shots[Math.min(shotIdx, shots.length - 1)]} alt={p.name} loading="lazy" decoding="async" />
         ) : p.iconUrl ? (
-          <img src={p.iconUrl} alt={p.name} />
+          <img src={p.iconUrl} alt={p.name} loading="lazy" decoding="async" />
         ) : (
           <span className="ft-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
         )}
@@ -393,7 +392,6 @@ function ProductCard({ product: p }: { product: StoreTemplateProduct }) {
       </div>
       <div className="prod-body">
         <h4>{p.name}</h4>
-        <p>{p.shortDescription ?? p.description ?? "—"}</p>
         <div className="prod-tags">
           {p.category && <span className="prod-tag prod-tag-cat">{CATEGORY_LABELS[p.category] ?? p.category}</span>}
           {(p.tags ?? []).slice(0, 2).map((tg) => (
@@ -405,7 +403,7 @@ function ProductCard({ product: p }: { product: StoreTemplateProduct }) {
         <div className="prod-foot">
           <span className="prod-price">
             {p.oldPrice != null && p.oldPrice > p.price && (
-              <span className="prod-old">{`$${p.oldPrice.toFixed(2)}`}</span>
+              <span className="prod-old">{formatCents(p.oldPrice, p.currency)}</span>
             )}
             {priceLabel(p)}
           </span>

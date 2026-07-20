@@ -407,7 +407,19 @@ function PublicTheme() {
         .public-footer-in { grid-template-columns: 1fr 1fr; }
       }
       @media (max-width: 720px) {
-        .public-nav-toggle { display: inline-flex; }
+        .public-nav-toggle { display: inline-flex; flex-shrink: 0; width: 38px; height: 38px; }
+        /* Compact header row: smaller mascot + wordmark, tighter gaps, and a
+           CTA that doesn't shove the burger off the edge. */
+        .public-nav-in { height: 60px; gap: 8px; }
+        .public-logo { gap: 8px; font-size: 15px; }
+        .public-crest-img { height: 34px; }
+        .public-nav-cta { gap: 8px; min-width: 0; }
+        .public-nav-cta .public-btn {
+          padding: 9px 14px; font-size: 10.5px; letter-spacing: 0.08em;
+          white-space: nowrap;
+        }
+        .public-nav-cta .public-lang-trigger { padding: 7px 10px; }
+        .public-nav-links { top: 60px; }
         .public-nav-links {
           position: absolute; top: 70px; left: 0; right: 0; z-index: 40;
           flex-direction: column; align-items: stretch; gap: 0;
@@ -433,6 +445,10 @@ function PublicTheme() {
       }
       @media (max-width: 440px) {
         .public-footer-in { grid-template-columns: 1fr; }
+        /* Ultra-narrow: drop the wordmark (mascot stays), slim the controls. */
+        .public-logo > span:last-child { display: none; }
+        .public-nav-cta .public-btn { padding: 8px 11px; font-size: 10px; }
+        .public-nav-cta .public-lang-trigger .lang-globe { display: none; }
       }
     `}</style>
   )

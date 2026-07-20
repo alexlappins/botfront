@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { CheckCircle2, Loader2, Package, ShoppingBag } from "lucide-react"
 import { ApiError, getMyPurchases, type ShopPurchase } from "@/lib/api"
+import { formatCents } from "@/lib/price"
 
 /**
  * My Purchases (TZ-1 §5): shop orders with deploy state.
@@ -140,5 +141,5 @@ export function MyPurchasesPage() {
 }
 
 function money(v: number, currency: string): string {
-  return currency === "USD" ? `$${v.toFixed(2)}` : `${v.toFixed(2)} ${currency}`
+  return formatCents(v, currency)
 }

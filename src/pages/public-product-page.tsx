@@ -9,6 +9,7 @@ import {
   type StoreTemplateProduct,
 } from "@/lib/api"
 import { buyProduct } from "@/lib/shop-buy"
+import { formatCents } from "@/lib/price"
 
 /**
  * Public product page /shop/[slug] (TZ-1 §3).
@@ -62,9 +63,9 @@ export function PublicProductPage() {
   useEffect(() => {
     if (!product) return
     document.title = `${product.name} — Level Up Shop`
-    setMeta("description", product.shortDescription ?? `${product.name} — ready-made Discord server`)
+    setMeta("description", product.description ?? `${product.name} — ready-made Discord server`)
     setMeta("og:title", `${product.name} — Level Up Shop`, true)
-    setMeta("og:description", product.shortDescription ?? "", true)
+    setMeta("og:description", product.description ?? "", true)
     if (product.coverImageUrl) setMeta("og:image", product.coverImageUrl, true)
   }, [product])
 
@@ -120,8 +121,8 @@ export function PublicProductPage() {
                   {product.category ? product.category.toUpperCase() : "SERVER"}
                 </span>
                 <h1>{product.name}</h1>
-                {(product.shortDescription || product.description) && (
-                  <p className="product-desc">{product.shortDescription ?? product.description}</p>
+                {product.description && (
+                  <p className="product-desc">{product.description}</p>
                 )}
 
                 {(product.tags?.length ?? 0) > 0 && (
@@ -199,7 +200,7 @@ export function PublicProductPage() {
                     <Link key={p.id} to={`/shop/${p.slug ?? p.id}`} className="public-card also-card">
                       <div className="also-img">
                         {p.coverImageUrl ? (
-                          <img src={p.coverImageUrl} alt={p.name} />
+                          <img src={p.coverImageUrl} alt={p.name} loading="lazy" decoding="async" />
                         ) : (
                           <span className="ft-fallback">{p.name[0]?.toUpperCase() ?? "✦"}</span>
                         )}
@@ -270,9 +271,22 @@ function ProductGallery({
     )
   }
   const safe = Math.max(0, Math.min(shots.length - 1, index))
+
+  // Native swipe on touch devices — buttons are fiddly on a phone.
+  let touchX = 0
+  function onTouchStart(e: React.TouchEvent) {
+    touchX = e.touches[0].clientX
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    const dx = e.changedTouches[0].clientX - touchX
+    if (Math.abs(dx) < 40 || shots.length < 2) return
+    if (dx < 0) onIndex(safe === shots.length - 1 ? 0 : safe + 1)
+    else onIndex(safe === 0 ? shots.length - 1 : safe - 1)
+  }
+
   return (
     <div className="gallery">
-      <div className="gallery-main">
+      <div className="gallery-main" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <img src={shots[safe]} alt={`${product.name} screenshot ${safe + 1}`} />
         {shots.length > 1 && (
           <>
@@ -307,7 +321,7 @@ function ProductGallery({
               onClick={() => onIndex(i)}
               className={"thumb " + (i === safe ? "on" : "")}
             >
-              <img src={src} alt="" />
+              <img src={src} alt="" loading="lazy" decoding="async" />
             </button>
           ))}
         </div>
@@ -483,7 +497,7 @@ function ProductFaq() {
 }
 
 function money(v: number, currency: string): string {
-  return currency === "USD" ? `$${v.toFixed(2)}` : `${v.toFixed(2)} ${currency}`
+  return formatCents(v, currency)
 }
 
 function priceLabel(p: StoreTemplateProduct): string {
@@ -520,12 +534,13 @@ function ProductStyles() {
 
       /* Gallery */
       .gallery { display: flex; flex-direction: column; gap: 10px; }
+      /* 16:9 so 1920×1080 screenshots show FULLY, никогда не обрезаются (TZ §5). */
       .gallery-main {
-        position: relative; aspect-ratio: 16/10;
+        position: relative; aspect-ratio: 16/9;
         border: 1px solid var(--pub-line); border-radius: 12px; overflow: hidden;
-        background: linear-gradient(135deg, rgba(155,107,255,.2), rgba(201,164,74,.1));
+        background: rgba(10,8,16,.6);
       }
-      .gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+      .gallery-main img { width: 100%; height: 100%; object-fit: contain; }
       .gallery-empty {
         aspect-ratio: 16/10; border: 1px solid var(--pub-line); border-radius: 12px;
         display: grid; place-items: center; font-family: 'Cinzel'; font-size: 80px;
@@ -558,6 +573,28 @@ function ProductStyles() {
       }
       .gallery-strip .thumb.on { border-color: var(--pub-gold); }
       .gallery-strip .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+      /* Phone: the gallery must not crop screenshots or hide behind tiny
+         controls — full-bleed width, contain-fit image, swipe to navigate,
+         dots instead of overlapping arrows, bigger thumb targets. */
+      @media (max-width: 720px) {
+        .product-wrap { padding-top: 20px; }
+        .product-grid { gap: 20px; }
+        .gallery-main {
+          aspect-ratio: 16/9; border-radius: 10px;
+          background: rgba(10,8,16,.6);
+        }
+        .gallery-main img { object-fit: contain; }
+        .gallery-nav { display: none; }         /* swipe handles it */
+        .gallery-counter {
+          bottom: 8px; right: 8px; padding: 3px 10px; font-size: 10px;
+        }
+        .gallery-strip { gap: 8px; padding: 2px 2px 6px; }
+        .gallery-strip .thumb { width: 68px; height: 44px; border-radius: 8px; }
+        .product-side h1 { font-size: 24px; }
+        .buy-block { padding: 16px; }
+        .buy-price .big { font-size: 26px; }
+      }
 
       /* Side */
       .product-side { display: flex; flex-direction: column; gap: 14px; }

@@ -25,6 +25,7 @@ import {
   type StoreTemplateProduct,
 } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import { formatCents } from "@/lib/price"
 
 /**
  * Product detail page. URL: /store/:storeTemplateId
@@ -113,7 +114,7 @@ export function StoreProductPage() {
       ? [product.iconUrl]
       : []
   const priceLabel =
-    product.currency === "USD" ? `$${product.price.toFixed(2)}` : `${product.price.toFixed(2)} ${product.currency}`
+    formatCents(product.price, product.currency)
 
   return (
     <div className="space-y-6 max-w-5xl">
