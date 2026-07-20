@@ -40,7 +40,8 @@
     "reactionRoles": "Cargos por reação",
     "serverLogs": "Registros do servidor",
     "myServers": "Meus servidores",
-    "personalization": "Personalização do bot"
+    "personalization": "Personalização do bot",
+    "security": "Segurança"
   },
   "guildSelector": {
     "loading": "Carregando servidores…",
@@ -409,7 +410,7 @@
   },
   "serverLogs": {
     "title": "Registros do servidor",
-    "sub": "Escolha um canal para cada tipo de registro. Essas configurações também podem ser alteradas pelo comando <code>/logs set</code> no Discord.",
+    "sub": "Sete grupos de registros — ative um grupo e escolha para onde vão seus eventos.",
     "loadingError": "Erro ao carregar",
     "saveError": "Erro ao salvar",
     "disable": "— Desativar —",
@@ -419,6 +420,89 @@
       "moderation": "Moderação",
       "channel": "Canal",
       "banKick": "Ban / Kick"
+    },
+    "pickChannel": "Escolha um canal",
+    "tabs": {
+      "logs": "Registros",
+      "alerts": "Alertas"
+    },
+    "singleTitle": "Um canal para todos os registros",
+    "singleDesc": "Todos os grupos ativos publicam em um único canal.",
+    "auditWarnTitle": "O bot não tem a permissão View Audit Log",
+    "auditWarnBody": "Alguns dados (quem apagou, quem baniu) ficarão indisponíveis. Conceda ao bot «Ver registro de auditoria» nas configurações do servidor.",
+    "presets": {
+      "ban": {
+        "name": "Ban / Unban",
+        "desc": "Quem foi banido ou desbanido, por quem e por quê."
+      },
+      "joinLeave": {
+        "name": "Entradas / Saídas",
+        "desc": "Membros entrando e saindo do seu servidor."
+      },
+      "messages": {
+        "name": "Mensagens",
+        "desc": "Mensagens apagadas e editadas, incluindo exclusões em massa."
+      },
+      "moderation": {
+        "name": "Moderação",
+        "desc": "Mudanças de cargos, apelidos e ações de moderadores."
+      },
+      "channel": {
+        "name": "Canais",
+        "desc": "Canais criados, apagados ou modificados."
+      },
+      "server": {
+        "name": "Servidor",
+        "desc": "Mudanças em cargos, emojis, webhooks e configurações do servidor."
+      },
+      "voice": {
+        "name": "Voz",
+        "desc": "Entradas, saídas e movimentações em canais de voz."
+      }
+    },
+    "alerts": {
+      "enable": "Server Alerts",
+      "enableDesc": "Avisos em tempo real sobre atividade suspeita, por DM.",
+      "recipients": "Destinatários",
+      "ownerAlways": "sempre recebe alertas",
+      "searchPlaceholder": "Adicione até 3 membros pelo apelido…",
+      "detectors": "Detectores",
+      "d1": {
+        "name": "Detecção de raid",
+        "desc": "Uma onda de contas novas entrando ao mesmo tempo."
+      },
+      "d2": {
+        "name": "Proteção anti-nuke",
+        "desc": "Exclusão em massa de canais ou cargos por uma pessoa."
+      },
+      "d3": {
+        "name": "Bans/kicks em massa",
+        "desc": "Um moderador banindo ou expulsando muitos rapidamente."
+      },
+      "d4": {
+        "name": "Permissões perigosas concedidas",
+        "desc": "Permissões de administrador ou outras poderosas foram dadas."
+      },
+      "d5": {
+        "name": "Onda de saídas",
+        "desc": "Muitos membros saindo em uma hora."
+      },
+      "d6": {
+        "name": "Novo webhook",
+        "desc": "Um webhook criado por alguém que não é o nosso bot."
+      },
+      "d7": {
+        "name": "Bot adicionado",
+        "desc": "Um novo bot entrou no servidor."
+      },
+      "d8": {
+        "name": "Autoexclusão de mensagens",
+        "desc": "Um usuário apagando em massa as próprias mensagens."
+      },
+      "d9": {
+        "name": "Mudanças críticas do servidor",
+        "desc": "Nome, vanity URL ou nível de verificação alterados."
+      }
     }
   },
   "serverMessages": {
@@ -781,5 +865,117 @@
     "replace": "Substituir imagem",
     "remove": "Remover",
     "error": "Erro no envio"
+  },
+  "security": {
+    "title": "Segurança",
+    "sub": "Proteja seu servidor: raids, nukes e contas suspeitas são detectados e tratados automaticamente.",
+    "summary": "Módulos ativos",
+    "alertOnly": "apenas alerta",
+    "snapshotsSoon": "Snapshots e restauração chegam na próxima atualização.",
+    "tabs": {
+      "overview": "Visão geral",
+      "antiraid": "Anti-Raid",
+      "antinuke": "Anti-Nuke",
+      "quarantine": "Quarentena",
+      "whitelist": "Lista branca",
+      "shield": "Stream Shield",
+      "snapshots": "Snapshots"
+    },
+    "preset": {
+      "title": "Preset de segurança",
+      "desc": "Configuração em um clique; depois ajuste manualmente.",
+      "relaxed": "Relaxed",
+      "standard": "Standard",
+      "strict": "Strict"
+    },
+    "panic": {
+      "title": "Panic Mode",
+      "desc": "Pausa convites, eleva a verificação ao máximo, slowmode opcional. Tudo é restaurado ao desativar.",
+      "active": "🔒 ATIVO",
+      "inactive": "🔓 Desligado",
+      "turnOn": "Panic ON",
+      "turnOff": "Panic OFF",
+      "slowmode": "Também slowmode em todos os canais de texto (segundos)",
+      "panelChannel": "Canal do Security Panel (mensagem fixada com status e botões)"
+    },
+    "age": {
+      "title": "Filtro de idade da conta",
+      "desc": "O que fazer com contas mais novas que a idade mínima ao entrar.",
+      "enable": "Ativar filtro",
+      "minAge": "Idade mínima:",
+      "action": "Ação:",
+      "actAlert": "Apenas alerta",
+      "actQuarantine": "Quarentena",
+      "actKick": "Kick + DM",
+      "kickMessage": "Explicação por DM antes do kick ({days} = idade mínima)"
+    },
+    "raid": {
+      "title": "Ação em raid",
+      "desc": "O que fazer com contas que entram durante um raid (D1).",
+      "actAlert": "Apenas alerta",
+      "actQuarantine": "Quarentena nos novos",
+      "actKick": "Kick nos novos",
+      "actBan": "Ban nos novos",
+      "autoPanic": "Auto-ativar Panic Mode em raid"
+    },
+    "nuke": {
+      "title": "Ação em nuke",
+      "desc": "O que fazer com o executor de exclusões/bans em massa (D2/D3).",
+      "actAlert": "Apenas alerta",
+      "actStrip": "Remover cargos perigosos",
+      "actStripQ": "Remover cargos + quarentena",
+      "incidents": "Incidentes (cargos removidos)",
+      "noIncidents": "Sem incidentes.",
+      "restore": "Devolver cargos",
+      "restored": "restaurado"
+    },
+    "q": {
+      "title": "Configurar quarentena",
+      "desc": "Cria o cargo Quarantined e o canal #quarantine-review; quarentenados veem só esse canal.",
+      "setup": "Configurar quarentena",
+      "ready": "Quarentena configurada.",
+      "active": "Em quarentena agora",
+      "empty": "Ninguém em quarentena.",
+      "approve": "✅ Aprovar",
+      "kick": "👢 Kick",
+      "ban": "🔨 Ban"
+    },
+    "wl": {
+      "title": "Usuários e cargos confiáveis",
+      "desc": "Membros na lista branca não disparam auto-ações — mas o dono ainda recebe um alerta sobre as ações deles.",
+      "owner": "Dono do servidor (sempre)",
+      "addUser": "Adicionar usuário pelo apelido…",
+      "addRole": "Adicionar cargo…"
+    },
+    "shield": {
+      "title": "Stream Shield",
+      "desc": "Enquanto um canal da Twitch rastreado está ao vivo, o servidor opera com proteção reforçada.",
+      "enable": "Ativar Stream Shield",
+      "post": "Publicar anúncios",
+      "channel": "Canal de anúncios",
+      "hardening": "Reforços extras durante a live",
+      "hardeningDesc": "Medidas opcionais só durante a stream.",
+      "slowmode": "Slowmode nos canais selecionados (segundos)",
+      "age": "Filtro de idade mais rígido durante a stream (dias)"
+    },
+    "snap": {
+      "title": "Snapshots",
+      "desc": "Cópia automática diária da estrutura do servidor (canais, cargos, permissões). As últimas 7 são mantidas.",
+      "now": "Snapshot agora",
+      "empty": "Ainda não há snapshots — o primeiro automático é criado diariamente.",
+      "preview": "Prévia e restaurar",
+      "previewTitle": "Prévia da restauração",
+      "willCreate": "Será criado",
+      "noDelete": "A restauração só adiciona o que falta e corrige permissões — nada é apagado.",
+      "restore": "Restaurar do snapshot",
+      "cancel": "Cancelar",
+      "restoring": "Restaurando",
+      "restored": "Restauração concluída",
+      "roles": "cargos",
+      "categories": "categorias",
+      "channels": "canais",
+      "permsFixed": "permissões corrigidas",
+      "rebound": "configurações revinculadas"
+    }
   }
 }

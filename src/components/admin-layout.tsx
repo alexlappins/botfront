@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   ShoppingBag,
   ScrollText,
+  ShieldCheck,
   Server,
   Smile,
   Sparkles,
@@ -44,6 +45,7 @@ const NAV: NavItem[] = [
   { to: "/twitch", labelKey: "nav.twitch", icon: Twitch },
   { to: "/reaction-roles", labelKey: "nav.reactionRoles", icon: Smile },
   { to: "/server-logs", labelKey: "nav.serverLogs", icon: ScrollText },
+  { to: "/security", labelKey: "nav.security", icon: ShieldCheck },
   { to: "/personalization", labelKey: "nav.personalization", icon: Bot },
 ]
 

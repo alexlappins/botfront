@@ -40,7 +40,8 @@
     "reactionRoles": "Reaction roles",
     "serverLogs": "Server logs",
     "myServers": "My servers",
-    "personalization": "Bot Personalization"
+    "personalization": "Bot Personalization",
+    "security": "Security"
   },
   "guildSelector": {
     "loading": "Loading servers…",
@@ -409,7 +410,7 @@
   },
   "serverLogs": {
     "title": "Server logs",
-    "sub": "Pick a channel for each log type. These settings can also be changed via the <code>/logs set</code> command in Discord.",
+    "sub": "Seven log groups — flip a group on and pick where its events go.",
     "loadingError": "Loading error",
     "saveError": "Save error",
     "disable": "— Disable —",
@@ -419,6 +420,89 @@
       "moderation": "Moderation",
       "channel": "Channel",
       "banKick": "Ban / Kick"
+    },
+    "pickChannel": "Pick a channel",
+    "tabs": {
+      "logs": "Logs",
+      "alerts": "Alerts"
+    },
+    "singleTitle": "Use one channel for all logs",
+    "singleDesc": "Every enabled group posts into a single channel.",
+    "auditWarnTitle": "Bot is missing the View Audit Log permission",
+    "auditWarnBody": "Some details (who deleted, who banned) will be unavailable. Grant the bot \"View Audit Log\" in Server Settings → Roles.",
+    "presets": {
+      "ban": {
+        "name": "Ban / Unban",
+        "desc": "Who was banned or unbanned, by whom, and why."
+      },
+      "joinLeave": {
+        "name": "Join / Leave",
+        "desc": "Members joining and leaving your server."
+      },
+      "messages": {
+        "name": "Messages",
+        "desc": "Deleted and edited messages, including bulk deletions."
+      },
+      "moderation": {
+        "name": "Moderation",
+        "desc": "Role changes, nickname changes, and moderator actions."
+      },
+      "channel": {
+        "name": "Channels",
+        "desc": "Channels created, deleted, or modified."
+      },
+      "server": {
+        "name": "Server",
+        "desc": "Changes to roles, emojis, webhooks, and server settings."
+      },
+      "voice": {
+        "name": "Voice",
+        "desc": "Voice channel joins, leaves, and moves."
+      }
+    },
+    "alerts": {
+      "enable": "Server Alerts",
+      "enableDesc": "Real-time warnings about suspicious activity, delivered by DM.",
+      "recipients": "Recipients",
+      "ownerAlways": "always receives alerts",
+      "searchPlaceholder": "Add up to 3 members by nickname…",
+      "detectors": "Detectors",
+      "d1": {
+        "name": "Raid detection",
+        "desc": "A wave of new accounts joining at once."
+      },
+      "d2": {
+        "name": "Nuke protection",
+        "desc": "Mass deletion of channels or roles by one person."
+      },
+      "d3": {
+        "name": "Mass bans/kicks",
+        "desc": "One moderator banning or kicking many members quickly."
+      },
+      "d4": {
+        "name": "Dangerous permissions granted",
+        "desc": "Administrator or other powerful rights handed out."
+      },
+      "d5": {
+        "name": "Leave wave",
+        "desc": "Unusually many members leaving within an hour."
+      },
+      "d6": {
+        "name": "New webhook",
+        "desc": "A webhook created by someone other than our bot."
+      },
+      "d7": {
+        "name": "Bot added",
+        "desc": "A new bot joined the server."
+      },
+      "d8": {
+        "name": "Message self-wipe",
+        "desc": "A user mass-deleting their own messages."
+      },
+      "d9": {
+        "name": "Critical server changes",
+        "desc": "Server name, vanity URL or verification level changed."
+      }
     }
   },
   "serverMessages": {
@@ -781,5 +865,117 @@
     "replace": "Replace image",
     "remove": "Remove",
     "error": "Upload error"
+  },
+  "security": {
+    "title": "Security",
+    "sub": "Protect your server: raids, nukes, suspicious accounts — detected and handled automatically.",
+    "summary": "Enabled modules",
+    "alertOnly": "alert only",
+    "snapshotsSoon": "Snapshots & Restore are coming in the next update.",
+    "tabs": {
+      "overview": "Overview",
+      "antiraid": "Anti-Raid",
+      "antinuke": "Anti-Nuke",
+      "quarantine": "Quarantine",
+      "whitelist": "Whitelist",
+      "shield": "Stream Shield",
+      "snapshots": "Snapshots"
+    },
+    "preset": {
+      "title": "Security preset",
+      "desc": "One-click configuration; fine-tune anything afterwards.",
+      "relaxed": "Relaxed",
+      "standard": "Standard",
+      "strict": "Strict"
+    },
+    "panic": {
+      "title": "Panic Mode",
+      "desc": "Pauses invites, maxes verification, optional slowmode. Previous state is restored on deactivation.",
+      "active": "🔒 ACTIVE",
+      "inactive": "🔓 Off",
+      "turnOn": "Panic ON",
+      "turnOff": "Panic OFF",
+      "slowmode": "Also set slowmode on all text channels (seconds)",
+      "panelChannel": "Security Panel channel (pinned status message with buttons)"
+    },
+    "age": {
+      "title": "Account Age Filter",
+      "desc": "Handle accounts younger than the minimum age on join.",
+      "enable": "Enable age filter",
+      "minAge": "Minimum account age:",
+      "action": "Action:",
+      "actAlert": "Alert only",
+      "actQuarantine": "Quarantine",
+      "actKick": "Kick + DM",
+      "kickMessage": "DM explanation sent before the kick ({days} = minimum age)"
+    },
+    "raid": {
+      "title": "Action on raid detection",
+      "desc": "What to do with accounts that join during a detected raid (D1).",
+      "actAlert": "Alert only",
+      "actQuarantine": "Quarantine new joins",
+      "actKick": "Kick new joins",
+      "actBan": "Ban new joins",
+      "autoPanic": "Auto-activate Panic Mode on raid"
+    },
+    "nuke": {
+      "title": "Action on nuke detection",
+      "desc": "What to do with the executor of mass deletions/bans (D2/D3).",
+      "actAlert": "Alert only",
+      "actStrip": "Strip dangerous roles",
+      "actStripQ": "Strip roles + Quarantine",
+      "incidents": "Incidents (stripped roles)",
+      "noIncidents": "No incidents recorded.",
+      "restore": "Restore roles",
+      "restored": "restored"
+    },
+    "q": {
+      "title": "Quarantine setup",
+      "desc": "Creates a Quarantined role and a #quarantine-review channel; quarantined members see only that channel.",
+      "setup": "Set up quarantine",
+      "ready": "Quarantine is set up.",
+      "active": "Currently quarantined",
+      "empty": "Nobody is in quarantine.",
+      "approve": "✅ Approve",
+      "kick": "👢 Kick",
+      "ban": "🔨 Ban"
+    },
+    "wl": {
+      "title": "Trusted users & roles",
+      "desc": "Whitelisted members never trigger auto-actions — but the owner still gets a low-key alert about their actions.",
+      "owner": "Server owner (always)",
+      "addUser": "Add user by nickname…",
+      "addRole": "Add role…"
+    },
+    "shield": {
+      "title": "Stream Shield",
+      "desc": "While a tracked Twitch channel is live, the server runs under enhanced protection.",
+      "enable": "Enable Stream Shield",
+      "post": "Post announcements",
+      "channel": "Announcement channel",
+      "hardening": "Extra hardening while live",
+      "hardeningDesc": "Optional measures applied only during the stream.",
+      "slowmode": "Slowmode in selected channels (seconds)",
+      "age": "Stricter age filter during the stream (days)"
+    },
+    "snap": {
+      "title": "Snapshots",
+      "desc": "Daily automatic snapshot of your server structure (channels, roles, permissions). Last 7 are kept.",
+      "now": "Snapshot now",
+      "empty": "No snapshots yet - the first automatic one is taken daily.",
+      "preview": "Preview & restore",
+      "previewTitle": "Restore preview",
+      "willCreate": "Will be created",
+      "noDelete": "Restore only adds what is missing and fixes permissions - nothing is ever deleted.",
+      "restore": "Restore from snapshot",
+      "cancel": "Cancel",
+      "restoring": "Restoring",
+      "restored": "Restore complete",
+      "roles": "roles",
+      "categories": "categories",
+      "channels": "channels",
+      "permsFixed": "permission fixes",
+      "rebound": "rebound settings"
+    }
   }
 }

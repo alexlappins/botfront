@@ -1366,6 +1366,309 @@ export async function addGuildReactionRole(
   return res.json()
 }
 
+// ─── Server Logs 2.0: presets + alerts ──────────────────────────────────────
+
+export const LOG_PRESET_KEYS = [
+  "ban",
+  "joinLeave",
+  "messages",
+  "moderation",
+  "channel",
+  "server",
+  "voice",
+] as const
+export type LogPresetKey = (typeof LOG_PRESET_KEYS)[number]
+
+export type LogPresetSettings = {
+  singleChannelMode: boolean
+  singleChannelId: string | null
+  presets: Record<LogPresetKey, { enabled: boolean; channelId: string | null }>
+  auditLogAccess?: boolean
+}
+
+export async function getLogPresetSettings(guildId: string): Promise<LogPresetSettings> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/log-settings`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load log settings")
+  return res.json()
+}
+
+export async function updateLogPresetSettings(
+  guildId: string,
+  body: {
+    singleChannelMode?: boolean
+    singleChannelId?: string | null
+    presets?: Partial<Record<LogPresetKey, { enabled?: boolean; channelId?: string | null }>>
+  },
+): Promise<LogPresetSettings> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/log-settings`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save log settings")
+  return res.json()
+}
+
+export type DetectorKey = "d1" | "d2" | "d3" | "d4" | "d5" | "d6" | "d7" | "d8" | "d9"
+
+export type AlertRecipient = { id: string; tag: string | null; avatarUrl?: string | null }
+
+export type AlertSettingsWire = {
+  enabled: boolean
+  owner: { id: string; tag: string | null } | null
+  recipients: AlertRecipient[]
+  detectors: Record<DetectorKey, boolean>
+}
+
+export async function getAlertSettings(guildId: string): Promise<AlertSettingsWire> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/alert-settings`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load alert settings")
+  return res.json()
+}
+
+export async function updateAlertSettings(
+  guildId: string,
+  body: { enabled?: boolean; recipients?: string[]; detectors?: Partial<Record<DetectorKey, boolean>> },
+): Promise<AlertSettingsWire> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/alert-settings`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save alert settings")
+  return res.json()
+}
+
+export type GuildMemberHit = { id: string; tag: string; displayName: string; avatarUrl: string | null }
+
+export async function searchGuildMembers(guildId: string, q: string): Promise<GuildMemberHit[]> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/members/search?q=${encodeURIComponent(q)}`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Member search failed")
+  return res.json()
+}
+
+// ─── Security Suite ─────────────────────────────────────────────────────────
+
+export type SecuritySettingsWire = {
+  guildId: string
+  preset: "relaxed" | "standard" | "strict" | null
+  ageFilterEnabled: boolean
+  ageFilterMinDays: number
+  ageFilterAction: "alert" | "quarantine" | "kick"
+  ageFilterKickMessage: string | null
+  panicSlowmodeEnabled: boolean
+  panicSlowmodeSeconds: number
+  panelChannelId: string | null
+  antiRaidAction: "alert" | "quarantine" | "kick" | "ban"
+  antiRaidAutoPanic: boolean
+  antiNukeAction: "alert" | "strip" | "strip_quarantine"
+  quarantineRoleId: string | null
+  quarantineChannelId: string | null
+  shieldEnabled: boolean
+  shieldPostAnnouncements: boolean
+  shieldChannelId: string | null
+  shieldTriggerSubs: string[]
+  shieldSlowmodeEnabled: boolean
+  shieldSlowmodeSeconds: number
+  shieldSlowmodeChannels: string[]
+  shieldAgeFilterEnabled: boolean
+  shieldAgeFilterDays: number
+  shieldEmbedOn: Record<string, unknown> | null
+  shieldEmbedOff: Record<string, unknown> | null
+}
+
+export type SecurityOverview = {
+  settings: SecuritySettingsWire
+  panicActive: boolean
+  shieldActive: boolean
+  premium: boolean
+}
+
+const sec = (guildId: string) => `${API_BASE}/guilds/${guildId}/security`
+
+export async function getSecurityOverview(guildId: string): Promise<SecurityOverview> {
+  const res = await fetch(sec(guildId), { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load security settings")
+  return res.json()
+}
+
+export async function updateSecuritySettings(
+  guildId: string,
+  patch: Partial<SecuritySettingsWire>,
+): Promise<SecuritySettingsWire> {
+  const res = await fetch(`${sec(guildId)}/settings`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save security settings")
+  return res.json()
+}
+
+export async function applySecurityPreset(
+  guildId: string,
+  preset: "relaxed" | "standard" | "strict",
+): Promise<SecuritySettingsWire> {
+  const res = await fetch(`${sec(guildId)}/preset/${preset}`, { ...fetchOptions, method: "POST" })
+  if (!res.ok) await throwApiError(res, "Failed to apply preset")
+  return res.json()
+}
+
+export async function setPanicMode(
+  guildId: string,
+  on: boolean,
+): Promise<{ active: boolean; notes: string[] }> {
+  const res = await fetch(`${sec(guildId)}/panic/${on ? "on" : "off"}`, { ...fetchOptions, method: "POST" })
+  if (!res.ok) await throwApiError(res, "Failed to toggle Panic Mode")
+  return res.json()
+}
+
+export async function refreshSecurityPanel(guildId: string): Promise<void> {
+  const res = await fetch(`${sec(guildId)}/panel/refresh`, { ...fetchOptions, method: "POST" })
+  if (!res.ok) await throwApiError(res, "Failed to refresh panel")
+}
+
+export type WhitelistEntry = { id: string; entityType: "user" | "role"; entityId: string; name: string | null }
+
+export async function getSecurityWhitelist(guildId: string): Promise<WhitelistEntry[]> {
+  const res = await fetch(`${sec(guildId)}/whitelist`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load whitelist")
+  return res.json()
+}
+
+export async function addSecurityWhitelist(
+  guildId: string,
+  entityType: "user" | "role",
+  entityId: string,
+): Promise<void> {
+  const res = await fetch(`${sec(guildId)}/whitelist`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ entityType, entityId }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to add whitelist entry")
+}
+
+export async function removeSecurityWhitelist(guildId: string, id: string): Promise<void> {
+  const res = await fetch(`${sec(guildId)}/whitelist/${id}`, { ...fetchOptions, method: "DELETE" })
+  if (!res.ok) await throwApiError(res, "Failed to remove whitelist entry")
+}
+
+export type QuarantineRow = {
+  id: string
+  userId: string
+  userTag: string | null
+  reason: string | null
+  source: string
+  createdAt: string
+}
+
+export async function setupQuarantine(guildId: string): Promise<{ ok: boolean; warnings: string[] }> {
+  const res = await fetch(`${sec(guildId)}/quarantine/setup`, { ...fetchOptions, method: "POST" })
+  if (!res.ok) await throwApiError(res, "Quarantine setup failed")
+  return res.json()
+}
+
+export async function listQuarantine(guildId: string): Promise<QuarantineRow[]> {
+  const res = await fetch(`${sec(guildId)}/quarantine`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load quarantine")
+  return res.json()
+}
+
+export async function resolveQuarantine(
+  guildId: string,
+  recordId: string,
+  action: "approve" | "kick" | "ban",
+): Promise<void> {
+  const res = await fetch(`${sec(guildId)}/quarantine/${recordId}/${action}`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to resolve quarantine case")
+}
+
+export type NukeIncidentRow = {
+  id: string
+  userId: string
+  userTag: string | null
+  roles: string[]
+  detector: string
+  restored: boolean
+  createdAt: string
+}
+
+export async function listNukeIncidents(guildId: string): Promise<NukeIncidentRow[]> {
+  const res = await fetch(`${sec(guildId)}/nuke-incidents`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load incidents")
+  return res.json()
+}
+
+export async function restoreNukeIncident(
+  guildId: string,
+  id: string,
+): Promise<{ ok: boolean; note: string }> {
+  const res = await fetch(`${sec(guildId)}/nuke-incidents/${id}/restore`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Restore failed")
+  return res.json()
+}
+
+export type SnapshotRow = {
+  id: string
+  type: "auto" | "manual"
+  createdAt: string
+  counts: { roles: number; categories: number; channels: number }
+}
+
+export type SnapshotPreview = {
+  snapshot: { id: string; createdAt: string; type: string }
+  counts: { roles: number; categories: number; channels: number }
+  missingRoles: string[]
+  missingCategories: string[]
+  missingChannels: string[]
+}
+
+export type RestoreProgressWire = {
+  status: "idle" | "running" | "completed" | "failed"
+  step?: string
+  created?: { roles: number; categories: number; channels: number; permissionsFixed: number }
+  rebound?: string[]
+  error?: string | null
+}
+
+export async function listSnapshots(guildId: string): Promise<SnapshotRow[]> {
+  const res = await fetch(`${sec(guildId)}/snapshots`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load snapshots")
+  return res.json()
+}
+
+export async function takeSnapshot(guildId: string): Promise<void> {
+  const res = await fetch(`${sec(guildId)}/snapshots`, { ...fetchOptions, method: "POST" })
+  if (!res.ok) await throwApiError(res, "Snapshot failed")
+}
+
+export async function previewSnapshot(guildId: string, id: string): Promise<SnapshotPreview> {
+  const res = await fetch(`${sec(guildId)}/snapshots/${id}/preview`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Preview failed")
+  return res.json()
+}
+
+export async function restoreSnapshot(guildId: string, id: string): Promise<void> {
+  const res = await fetch(`${sec(guildId)}/snapshots/${id}/restore`, { ...fetchOptions, method: "POST" })
+  if (!res.ok) await throwApiError(res, "Restore failed")
+}
+
+export async function getRestoreProgress(guildId: string): Promise<RestoreProgressWire> {
+  const res = await fetch(`${sec(guildId)}/snapshots/restore/progress`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load restore progress")
+  return res.json()
+}
+
 // ─── Owner admin: manual subscriptions (TZ §15) ─────────────────────────────
 
 export interface AdminSubscriptionRow {

@@ -31,6 +31,7 @@ import { AdminSubscriptionsPage } from "@/pages/admin-subscriptions-page"
 import { AdminLayout } from "@/components/admin-layout"
 import { ServerLogsPage } from "@/pages/server-logs-page"
 import { PersonalizationPage } from "@/pages/guild/personalization-page"
+import { SecurityPage } from "@/pages/guild/security-page"
 import { PremiumSuccessPage, PricingPage } from "@/pages/pricing-page"
 
 /**
@@ -125,6 +126,7 @@ function App() {
             <Route path="/twitch" element={<TwitchPage />} />
             <Route path="/reaction-roles" element={<GuildAutoRolesPage />} />
             <Route path="/server-logs" element={<ServerLogsPage />} />
+            <Route path="/security" element={<SecurityPage />} />
             <Route path="/personalization" element={<PersonalizationPage />} />
             <Route path="/pricing" element={<PricingPage />} />
             <Route path="/premium/success" element={<PremiumSuccessPage />} />
