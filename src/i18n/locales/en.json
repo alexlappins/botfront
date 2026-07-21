@@ -134,7 +134,8 @@
         "Reaction roles",
         "Server logs",
         "1 Twitch channel",
-        "Default welcome images"
+        "Default welcome images",
+        "Live Role"
       ],
       "premiumFeatures": [
         "Everything in Free",
@@ -145,7 +146,8 @@
         "Custom welcome images",
         "Role rewards in leveling",
         "×3 Twitch channels",
-        "Bot personalization"
+        "Bot personalization",
+        "Advanced Live Role (filters, multiple configs)"
       ]
     }
   },
@@ -829,6 +831,19 @@
         "xp.ignore": "/xp ignore",
         "xp.recalc": "/xp recalc"
       }
+    },
+    "watch": {
+      "title": "Watch Time XP",
+      "desc": "Members earn XP for watching your Twitch streams. Premium.",
+      "enable": "Enable Watch Time XP",
+      "perTick": "XP per 5 minutes",
+      "dailyCap": "Daily XP cap",
+      "myLink": "Your Twitch link",
+      "link": "Link Twitch account",
+      "unlink": "Unlink",
+      "topFans": "Top Fans",
+      "topFansDesc": "Leaderboard by watch time. Also available via /topfans.",
+      "noFans": "No watch time recorded yet."
     }
   },
   "footer": {
@@ -976,6 +991,69 @@
       "channels": "channels",
       "permsFixed": "permission fixes",
       "rebound": "rebound settings"
+    }
+  },
+  "twitchFeat": {
+    "tabs": {
+      "channels": "Live notifications",
+      "connect": "Connect",
+      "liveRole": "Live Role",
+      "alerts": "Event Alerts",
+      "schedule": "Schedule"
+    },
+    "connect": {
+      "title": "Connect your Twitch account",
+      "desc": "Unlocks event alerts (subs, bits, raids) and Watch Time XP for this server.",
+      "cta": "Connect your Twitch account",
+      "empty": "No connected accounts yet.",
+      "reconnect": "Reconnect Twitch",
+      "disconnect": "Disconnect"
+    },
+    "liveRole": {
+      "title": "Live Role",
+      "desc": "Members automatically get a role while their Twitch channel is live.",
+      "pickRole": "Pick a role…",
+      "add": "Add configuration",
+      "enabled": "Enabled",
+      "hierarchy": "The Live Role is above the bot role — move the bot role higher.",
+      "filter": "Only when game/title contains (Premium)",
+      "member": "Member by nickname…",
+      "bind": "Bind"
+    },
+    "alerts": {
+      "types": {
+        "follow": "Follow",
+        "sub": "Subscription",
+        "resub": "Resub",
+        "gift": "Gift subs",
+        "bits": "Bits",
+        "raid": "Raid",
+        "hype_train": "Hype Train"
+      },
+      "channel": "Channel",
+      "fmt": {
+        "text": "Text",
+        "embed": "Embed",
+        "card": "Image Card"
+      },
+      "template": "Message template",
+      "templatePh": "Leave empty for the default",
+      "test": "Send test alert",
+      "testSent": "Test alert sent!",
+      "card": "Image Card settings",
+      "textColor": "Text color",
+      "copyAll": "Copy card settings to all events"
+    },
+    "schedule": {
+      "title": "Schedule Sync",
+      "desc": "Twitch stream schedule becomes Discord Scheduled Events — members press Interested and get reminders.",
+      "enable": "Sync every 6 hours",
+      "syncNow": "Sync now",
+      "result": "Result",
+      "noPerm": "Bot is missing the Manage Events permission.",
+      "titleTpl": "Event title template",
+      "descTpl": "Event description template",
+      "cover": "Event cover image"
     }
   }
 }

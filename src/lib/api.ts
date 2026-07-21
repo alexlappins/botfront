@@ -1450,6 +1450,223 @@ export async function searchGuildMembers(guildId: string, q: string): Promise<Gu
   return res.json()
 }
 
+// ─── Twitch Suite (TZ-A/TZ-B) ───────────────────────────────────────────────
+
+export type TwitchConnectionRow = {
+  id: string
+  twitchLogin: string
+  status: "active" | "revoked" | "expired"
+  discordUserId: string
+  createdAt: string
+}
+
+export async function getTwitchConnections(guildId: string): Promise<TwitchConnectionRow[]> {
+  const res = await fetch(`${API_BASE}/twitch/connections?guildId=${guildId}`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load Twitch connections")
+  return res.json()
+}
+
+export function twitchConnectUrl(guildId: string): string {
+  return `${API_BASE}/twitch/oauth/connect?guildId=${guildId}`
+}
+
+export async function disconnectTwitch(guildId: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/twitch/connections/${id}?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Disconnect failed")
+}
+
+export type LiveRoleConfigRow = {
+  id: string
+  roleId: string
+  enabled: boolean
+  filterText: string | null
+  blacklist: string[]
+  hierarchyWarning?: boolean
+}
+export type LiveRoleBindingRow = {
+  id: string
+  configId: string
+  discordUserId: string
+  twitchLogin: string
+  isLive: boolean
+  source: string
+}
+
+export async function getLiveRoleState(
+  guildId: string,
+): Promise<{ configs: LiveRoleConfigRow[]; bindings: LiveRoleBindingRow[] }> {
+  const res = await fetch(`${API_BASE}/twitch/live-role?guildId=${guildId}`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load Live Role")
+  return res.json()
+}
+
+export async function createLiveRoleConfig(guildId: string, roleId: string): Promise<LiveRoleConfigRow> {
+  const res = await fetch(`${API_BASE}/twitch/live-role/configs?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify({ roleId }),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to create Live Role")
+  return res.json()
+}
+
+export async function updateLiveRoleConfig(
+  guildId: string,
+  id: string,
+  patch: Partial<Pick<LiveRoleConfigRow, "roleId" | "enabled" | "filterText" | "blacklist">>,
+): Promise<LiveRoleConfigRow> {
+  const res = await fetch(`${API_BASE}/twitch/live-role/configs/${id}?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to update Live Role")
+  return res.json()
+}
+
+export async function deleteLiveRoleConfig(guildId: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/twitch/live-role/configs/${id}?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to delete Live Role")
+}
+
+export async function addLiveRoleBinding(
+  guildId: string,
+  body: { configId: string; discordUserId: string; twitchLogin: string },
+): Promise<LiveRoleBindingRow> {
+  const res = await fetch(`${API_BASE}/twitch/live-role/bindings?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "POST",
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to add binding")
+  return res.json()
+}
+
+export async function removeLiveRoleBinding(guildId: string, id: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/twitch/live-role/bindings/${id}?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "DELETE",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to remove binding")
+}
+
+export type AlertEventTypeKey = "follow" | "sub" | "resub" | "gift" | "bits" | "raid" | "hype_train"
+export const ALERT_EVENT_KEYS: AlertEventTypeKey[] = ["follow", "sub", "resub", "gift", "bits", "raid", "hype_train"]
+
+export type EventAlertRow = {
+  eventType: AlertEventTypeKey
+  enabled: boolean
+  channelId: string | null
+  format: "text" | "embed" | "card"
+  template: string | null
+  cardConfig: { backgroundUrl?: string; textColor?: string; font?: string } | null
+}
+
+export async function getEventAlerts(guildId: string): Promise<EventAlertRow[]> {
+  const res = await fetch(`${API_BASE}/twitch/event-alerts?guildId=${guildId}`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load event alerts")
+  return res.json()
+}
+
+export async function updateEventAlert(
+  guildId: string,
+  type: AlertEventTypeKey,
+  patch: Partial<EventAlertRow>,
+): Promise<EventAlertRow> {
+  const res = await fetch(`${API_BASE}/twitch/event-alerts/${type}?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save alert")
+  return res.json()
+}
+
+export async function testEventAlert(guildId: string, type: AlertEventTypeKey): Promise<void> {
+  const res = await fetch(`${API_BASE}/twitch/event-alerts/${type}/test?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Test alert failed")
+}
+
+export async function copyCardToAll(guildId: string, type: AlertEventTypeKey): Promise<void> {
+  const res = await fetch(`${API_BASE}/twitch/event-alerts/${type}/copy-card?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Copy failed")
+}
+
+export type ScheduleSyncWire = {
+  enabled: boolean
+  sourceSubs: string[]
+  titleTemplate: string | null
+  descriptionTemplate: string | null
+  coverUrl: string | null
+  manageEvents?: boolean
+}
+
+export async function getScheduleSync(guildId: string): Promise<ScheduleSyncWire> {
+  const res = await fetch(`${API_BASE}/twitch/schedule-sync?guildId=${guildId}`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load schedule sync")
+  return res.json()
+}
+
+export async function updateScheduleSync(guildId: string, patch: Partial<ScheduleSyncWire>): Promise<ScheduleSyncWire> {
+  const res = await fetch(`${API_BASE}/twitch/schedule-sync?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "PUT",
+    body: JSON.stringify(patch),
+  })
+  if (!res.ok) await throwApiError(res, "Failed to save schedule sync")
+  return res.json()
+}
+
+export async function scheduleSyncNow(guildId: string): Promise<{ created: number; updated: number; deleted: number }> {
+  const res = await fetch(`${API_BASE}/twitch/schedule-sync/now?guildId=${guildId}`, {
+    ...fetchOptions,
+    method: "POST",
+  })
+  if (!res.ok) await throwApiError(res, "Sync failed")
+  return res.json()
+}
+
+export async function getViewerLink(): Promise<{ linked: boolean; twitchLogin?: string }> {
+  const res = await fetch(`${API_BASE}/twitch/viewer-link`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load viewer link")
+  return res.json()
+}
+
+export function viewerLinkUrl(): string {
+  return `${API_BASE}/twitch/oauth/link-viewer`
+}
+
+export async function unlinkViewer(): Promise<void> {
+  const res = await fetch(`${API_BASE}/twitch/viewer-link`, { ...fetchOptions, method: "DELETE" })
+  if (!res.ok) await throwApiError(res, "Unlink failed")
+}
+
+export type TopFanRow = {
+  discordId: string
+  watchMinutes: number
+  level: number
+  tag: string | null
+  avatarUrl: string | null
+}
+
+export async function getTopFans(guildId: string): Promise<TopFanRow[]> {
+  const res = await fetch(`${API_BASE}/twitch/top-fans?guildId=${guildId}`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load top fans")
+  return res.json()
+}
+
 // ─── Security Suite ─────────────────────────────────────────────────────────
 
 export type SecuritySettingsWire = {
@@ -2001,6 +2218,9 @@ export type LevelingSettings = {
   voiceXpPerMinute: number
   voiceXpMinUsers: number
   voiceXpAfkMinutes: number
+  watchXpEnabled?: boolean
+  watchXpPerTick?: number
+  watchXpDailyCap?: number
   roleRewardsMode: "stack" | "replace"
   rankBgImageUrl: string | null
   rankBgColor: string

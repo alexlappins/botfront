@@ -25,6 +25,12 @@ import {
   type TwitchSubscription,
 } from "@/lib/api"
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
+import {
+  EventAlertsTab,
+  LiveRoleTab,
+  ScheduleSyncTab,
+  TwitchConnectTab,
+} from "@/pages/guild/twitch-features-tabs"
 import { usePremium } from "@/contexts/premium-context"
 import { PremiumChip, usePremiumModal } from "@/components/premium"
 import { cn } from "@/lib/utils"
@@ -67,6 +73,7 @@ function isTextChannel(c: Channel): boolean {
 }
 
 export function TwitchPage() {
+  const [featureTab, setFeatureTab] = useState<"channels" | "connect" | "liveRole" | "alerts" | "schedule">("channels")
   const guildId = useCurrentGuildId()
   const { t } = useTranslation()
   const [state, setState] = useState<TwitchListResponse | null>(null)
@@ -118,6 +125,33 @@ export function TwitchPage() {
         </p>
       </div>
 
+      {/* Twitch Suite tabs (TZ-A/TZ-B) */}
+      <div className="flex items-center gap-1 border-b border-white/5 overflow-x-auto">
+        {(["channels", "connect", "liveRole", "alerts", "schedule"] as const).map((tk) => (
+          <button
+            key={tk}
+            type="button"
+            onClick={() => setFeatureTab(tk)}
+            className={cn(
+              "px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap",
+              featureTab === tk
+                ? "border-violet-500 text-white"
+                : "border-transparent text-white/50 hover:text-white/80",
+            )}
+          >
+            {t(`twitchFeat.tabs.${tk}`)}
+          </button>
+        ))}
+      </div>
+
+      {featureTab === "connect" && <TwitchConnectTab guildId={guildId} />}
+      {featureTab === "liveRole" && <LiveRoleTab guildId={guildId} />}
+      {featureTab === "alerts" && <EventAlertsTab guildId={guildId} />}
+      {featureTab === "schedule" && <ScheduleSyncTab guildId={guildId} />}
+
+      {featureTab === "channels" && (
+      <>
+
       {loading && (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-6 w-6 animate-spin text-white/40" />
@@ -162,6 +196,8 @@ export function TwitchPage() {
             onChanged={load}
           />
         </>
+      )}
+      </>
       )}
     </div>
   )

@@ -37,6 +37,13 @@ import {
 import { useCurrentGuildId } from "@/lib/use-current-guild-id"
 import { PremiumGate } from "@/components/premium"
 import { ImageUploadField } from "@/components/image-upload-field"
+import {
+  getTopFans,
+  getViewerLink,
+  unlinkViewer,
+  viewerLinkUrl,
+  type TopFanRow,
+} from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 const PLACEHOLDER_KEYS = [
@@ -167,6 +174,12 @@ export function LevelingPage() {
             }}
           />
           <RankCardBlock guildId={guildId} initial={state.settings} channels={channels} />
+
+          {/* Twitch Watch Time XP (TZ-B §2, Premium) */}
+          <PremiumGate>
+            <WatchXpBlock guildId={guildId} initial={state.settings} />
+          </PremiumGate>
+          <TopFansBlock guildId={guildId} />
           <PermissionsBlock guildId={guildId} roles={roles} />
           <AdvancedBlock guildId={guildId} />
           <AuditLogBlock guildId={guildId} />
@@ -1670,4 +1683,113 @@ function normalizeHex(s: string): string {
   if (/^#[0-9a-f]{6}$/i.test(s)) return s
   if (/^#[0-9a-f]{3}$/i.test(s)) return "#" + s.slice(1).split("").map((c) => c + c).join("")
   return "#000000"
+}
+
+
+/** Twitch Watch Time XP settings (TZ-B §2.5). */
+function WatchXpBlock({ guildId, initial }: { guildId: string; initial: LevelingSettings }) {
+  const { t } = useTranslation()
+  const [enabled, setEnabled] = useState(Boolean(initial.watchXpEnabled))
+  const [perTick, setPerTick] = useState(initial.watchXpPerTick ?? 10)
+  const [cap, setCap] = useState(initial.watchXpDailyCap ?? 600)
+  const [link, setLink] = useState<{ linked: boolean; twitchLogin?: string } | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    getViewerLink().then(setLink).catch(() => null)
+  }, [])
+
+  async function save(patch: Partial<LevelingSettings>) {
+    setSaving(true)
+    try {
+      await updateLevelingSettings(guildId, patch)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Block title={t("leveling.watch.title")} description={t("leveling.watch.desc")}>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          disabled={saving}
+          onClick={() => {
+            setEnabled(!enabled)
+            void save({ watchXpEnabled: !enabled })
+          }}
+          className={cn(
+            "relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors",
+            enabled ? "bg-violet-500" : "bg-white/15",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform",
+              enabled && "translate-x-5",
+            )}
+          />
+        </button>
+        <span className="text-sm text-white/70">{t("leveling.watch.enable")}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 max-w-md">
+        <Field label={t("leveling.watch.perTick")}>
+          <NumberInput min={1} max={100} value={perTick} onChange={(v) => { setPerTick(v); void save({ watchXpPerTick: v }) }} />
+        </Field>
+        <Field label={t("leveling.watch.dailyCap")}>
+          <NumberInput min={10} max={100000} value={cap} onChange={(v) => { setCap(v); void save({ watchXpDailyCap: v }) }} />
+        </Field>
+      </div>
+      <div className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2 text-sm flex items-center gap-3 flex-wrap">
+        <span className="text-white/60">{t("leveling.watch.myLink")}:</span>
+        {link?.linked ? (
+          <>
+            <span className="text-emerald-400">twitch.tv/{link.twitchLogin}</span>
+            <button
+              type="button"
+              onClick={() => void unlinkViewer().then(() => setLink({ linked: false }))}
+              className="text-xs text-white/40 hover:text-red-400"
+            >
+              {t("leveling.watch.unlink")}
+            </button>
+          </>
+        ) : (
+          <a href={viewerLinkUrl()} className="text-violet-300 hover:text-violet-200 text-sm">
+            {t("leveling.watch.link")}
+          </a>
+        )}
+      </div>
+    </Block>
+  )
+}
+
+/** Top Fans leaderboard by watch time (TZ-B §2.5). */
+function TopFansBlock({ guildId }: { guildId: string }) {
+  const { t } = useTranslation()
+  const [rows, setRows] = useState<TopFanRow[] | null>(null)
+  useEffect(() => {
+    getTopFans(guildId).then(setRows).catch(() => setRows([]))
+  }, [guildId])
+  return (
+    <Block title={t("leveling.watch.topFans")} description={t("leveling.watch.topFansDesc")}>
+      {!rows ? (
+        <Loader2 className="h-4 w-4 animate-spin text-white/40" />
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-white/45">{t("leveling.watch.noFans")}</p>
+      ) : (
+        <div className="space-y-1.5">
+          {rows.map((r, i) => (
+            <div key={r.discordId} className="flex items-center gap-3 rounded-lg border border-white/10 px-3 py-2 text-sm">
+              <span className="text-white/40 w-6">#{i + 1}</span>
+              {r.avatarUrl && <img src={r.avatarUrl} alt="" className="h-6 w-6 rounded-full" />}
+              <span className="text-white/85 flex-1 truncate">{r.tag ?? r.discordId}</span>
+              <span className="text-white/50 text-xs">
+                {Math.floor(r.watchMinutes / 60)}h {r.watchMinutes % 60}m
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </Block>
+  )
 }

@@ -134,7 +134,8 @@
         "Cargos por reação",
         "Registros do servidor",
         "1 canal da Twitch",
-        "Imagens de boas-vindas padrão"
+        "Imagens de boas-vindas padrão",
+        "Live Role"
       ],
       "premiumFeatures": [
         "Tudo do Free",
@@ -145,7 +146,8 @@
         "Imagens de boas-vindas personalizadas",
         "Role rewards nos níveis",
         "×3 canais da Twitch",
-        "Personalização do bot"
+        "Personalização do bot",
+        "Live Role avançado (filtros, várias configurações)"
       ]
     }
   },
@@ -829,6 +831,19 @@
         "xp.ignore": "/xp ignore",
         "xp.recalc": "/xp recalc"
       }
+    },
+    "watch": {
+      "title": "Watch Time XP",
+      "desc": "Membros ganham XP por assistir às suas streams da Twitch. Premium.",
+      "enable": "Ativar Watch Time XP",
+      "perTick": "XP por 5 minutos",
+      "dailyCap": "Limite diário de XP",
+      "myLink": "Seu vínculo da Twitch",
+      "link": "Vincular conta da Twitch",
+      "unlink": "Desvincular",
+      "topFans": "Top Fans",
+      "topFansDesc": "Ranking por tempo assistido. Também via /topfans.",
+      "noFans": "Nenhum tempo registrado ainda."
     }
   },
   "footer": {
@@ -976,6 +991,69 @@
       "channels": "canais",
       "permsFixed": "permissões corrigidas",
       "rebound": "configurações revinculadas"
+    }
+  },
+  "twitchFeat": {
+    "tabs": {
+      "channels": "Notificações live",
+      "connect": "Conexão",
+      "liveRole": "Live Role",
+      "alerts": "Eventos da stream",
+      "schedule": "Agenda"
+    },
+    "connect": {
+      "title": "Conectar conta da Twitch",
+      "desc": "Desbloqueia alertas de eventos (subs, bits, raids) e Watch Time XP para este servidor.",
+      "cta": "Conectar conta da Twitch",
+      "empty": "Ainda não há contas conectadas.",
+      "reconnect": "Reconectar Twitch",
+      "disconnect": "Desconectar"
+    },
+    "liveRole": {
+      "title": "Live Role",
+      "desc": "Membros recebem um cargo automaticamente enquanto o canal deles está ao vivo.",
+      "pickRole": "Escolha um cargo…",
+      "add": "Adicionar configuração",
+      "enabled": "Ativado",
+      "hierarchy": "O cargo Live Role está acima do cargo do bot — suba o cargo do bot.",
+      "filter": "Só se o jogo/título contém (Premium)",
+      "member": "Membro pelo apelido…",
+      "bind": "Vincular"
+    },
+    "alerts": {
+      "types": {
+        "follow": "Follow",
+        "sub": "Assinatura",
+        "resub": "Resub",
+        "gift": "Subs de presente",
+        "bits": "Bits",
+        "raid": "Raid",
+        "hype_train": "Hype Train"
+      },
+      "channel": "Canal",
+      "fmt": {
+        "text": "Texto",
+        "embed": "Embed",
+        "card": "Image Card"
+      },
+      "template": "Modelo da mensagem",
+      "templatePh": "Vazio = texto padrão",
+      "test": "Alerta de teste",
+      "testSent": "Alerta de teste enviado!",
+      "card": "Configurações do Image Card",
+      "textColor": "Cor do texto",
+      "copyAll": "Copiar configurações para todos os eventos"
+    },
+    "schedule": {
+      "title": "Sincronização de agenda",
+      "desc": "A agenda de streams da Twitch vira eventos do Discord — membros clicam em Interested e recebem lembretes.",
+      "enable": "Sincronizar a cada 6 horas",
+      "syncNow": "Sincronizar agora",
+      "result": "Resultado",
+      "noPerm": "O bot não tem a permissão Manage Events.",
+      "titleTpl": "Modelo do título",
+      "descTpl": "Modelo da descrição",
+      "cover": "Capa do evento"
     }
   }
 }
