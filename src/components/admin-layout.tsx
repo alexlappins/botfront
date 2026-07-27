@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   ScrollText,
   ShieldCheck,
+  LayoutDashboard,
   Server,
   Smile,
   Sparkles,
@@ -37,6 +38,7 @@ type NavItem = {
 }
 
 const NAV: NavItem[] = [
+  { to: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   // The shop shipped (TZ-1) — purchases live in the sidebar again (§5).
   { to: "/my-purchases", labelKey: "nav.purchases", icon: ShoppingBag },
   { to: "/server-messages", labelKey: "nav.serverMessages", icon: MessageSquareText },

@@ -41,7 +41,8 @@
     "serverLogs": "Registros del servidor",
     "myServers": "Mis servidores",
     "personalization": "Personalización del bot",
-    "security": "Seguridad"
+    "security": "Seguridad",
+    "dashboard": "Panel"
   },
   "guildSelector": {
     "loading": "Cargando servidores…",
@@ -130,12 +131,15 @@
       "freeFeatures": [
         "Plantillas de mensajes",
         "1 variante de bienvenida",
-        "Niveles (XP de chat y voz)",
+        "Niveles (XP de chat + voz)",
         "Roles por reacción",
-        "Registros del servidor",
+        "Registros del servidor (7 grupos)",
         "1 canal de Twitch",
         "Imágenes de bienvenida estándar",
-        "Live Role"
+        "Live Role (1 configuración)",
+        "Panic Mode",
+        "Filtro de edad de cuenta",
+        "Lista blanca"
       ],
       "premiumFeatures": [
         "Todo lo de Free",
@@ -148,6 +152,47 @@
         "×3 canales de Twitch",
         "Personalización del bot",
         "Live Role avanzado (filtros, varias configuraciones)"
+      ],
+      "everythingInFree": "Todo lo de Free",
+      "premiumGroups": [
+        {
+          "title": "Para streamers",
+          "items": [
+            "Canales de Twitch ilimitados",
+            "Live Role avanzado (configs + filtros)",
+            "Alertas de eventos (subs, bits, raids, follows, Hype Train) con image cards",
+            "Horario de Twitch → eventos de Discord",
+            "Stream Shield",
+            "Watch Time XP"
+          ]
+        },
+        {
+          "title": "Seguridad",
+          "items": [
+            "Server Alerts (Watchdog)",
+            "Auto-acciones Anti-Raid y Anti-Nuke",
+            "Sistema de cuarentena",
+            "Botones de acción en alertas",
+            "Snapshot & Restore"
+          ]
+        },
+        {
+          "title": "Avanzado",
+          "items": [
+            "Programador de publicaciones",
+            "Variantes de bienvenida ilimitadas",
+            "Mensajes de goodbye + returning",
+            "Imágenes de bienvenida personalizadas",
+            "Recompensas de rol por nivel"
+          ]
+        },
+        {
+          "title": "Extras",
+          "items": [
+            "Personalización del bot (nombre y avatar)",
+            "Soporte prioritario"
+          ]
+        }
       ]
     }
   },
@@ -518,7 +563,8 @@
     "hide": "▲ ocultar",
     "tabs": {
       "text": "Texto",
-      "embed": "Embed"
+      "embed": "Embed",
+      "buttons": "Botones"
     },
     "save": "Guardar",
     "saved": "Guardado",
@@ -871,8 +917,8 @@
     "successBody": "Premium se está activando para tu servidor — suele tardar unos segundos. Actualiza el panel si la insignia aún no cambió.",
     "backToDashboard": "Volver al panel",
     "features": {
-      "freeList": "1 variante de bienvenida · 1 canal de Twitch · Imagen de bienvenida estándar (con marca de agua) · Niveles, roles por reacción, registros",
-      "premiumList": "Variantes de bienvenida ilimitadas · Goodbye + returning · Imágenes personalizadas sin marca de agua · Role Rewards · Varios canales de Twitch · Publicaciones programadas y recurrentes · Personalización del bot"
+      "freeList": "Plantillas de mensajes · 1 variante de bienvenida · Niveles (XP de chat + voz) · Roles por reacción · Registros del servidor (7 grupos) · 1 canal de Twitch · Imágenes de bienvenida estándar · Live Role (1 configuración) · Panic Mode · Filtro de edad de cuenta · Lista blanca",
+      "premiumList": "Todo lo de Free · Canales de Twitch ilimitados · Live Role avanzado (configs + filtros) · Alertas de eventos (subs, bits, raids, follows, Hype Train) con image cards · Horario de Twitch → eventos de Discord · Stream Shield · Watch Time XP · Server Alerts (Watchdog) · Auto-acciones Anti-Raid y Anti-Nuke · Sistema de cuarentena · Botones de acción en alertas · Snapshot & Restore · Programador de publicaciones · Variantes de bienvenida ilimitadas · Mensajes de goodbye + returning · Imágenes de bienvenida personalizadas · Recompensas de rol por nivel · Personalización del bot (nombre y avatar) · Soporte prioritario"
     }
   },
   "imageUpload": {
@@ -901,7 +947,13 @@
       "desc": "Configuración en un clic; luego puedes ajustar manualmente.",
       "relaxed": "Relaxed",
       "standard": "Standard",
-      "strict": "Strict"
+      "strict": "Strict",
+      "relaxedDesc": "Automatización mínima. Filtro de edad apagado, todo solo alertas — control total para ti.",
+      "standardDesc": "Protección equilibrada: filtro de 7 días, cuarentena en raids, quitar roles en nukes.",
+      "strictDesc": "Defensa máxima: filtro de 14 días con cuarentena, bans en raids, roles + cuarentena en nukes, slowmode listo.",
+      "current": "Activo",
+      "changed": "Qué cambió",
+      "noChanges": "La configuración ya coincidía con este preset."
     },
     "panic": {
       "title": "Panic Mode",
@@ -991,6 +1043,34 @@
       "channels": "canales",
       "permsFixed": "permisos corregidos",
       "rebound": "ajustes revinculados"
+    },
+    "mod": {
+      "panic": "Bloqueo de emergencia en un clic. Pausa invitaciones y sube la verificación durante un ataque.",
+      "antiraid": "Detecta y detiene automáticamente entradas masivas de cuentas falsas.",
+      "antinuke": "Impide que atacantes borren en masa canales, roles o baneen miembros.",
+      "age": "Bloquea cuentas recién creadas — la herramienta principal contra oleadas de raid.",
+      "quarantine": "Los miembros sospechosos se aíslan para revisión, no se banean. Menos falsos positivos.",
+      "whitelist": "Los admins y roles de confianza nunca se ven afectados por acciones automáticas.",
+      "shield": "Protección extra automática mientras estás en vivo en Twitch — cuando los raids son más probables.",
+      "snapshot": "Copias regulares de la estructura del servidor. Recupérate de un ataque en minutos."
+    },
+    "modName": {
+      "panic": "Panic Mode",
+      "antiraid": "Anti-Raid",
+      "antinuke": "Anti-Nuke",
+      "age": "Filtro de edad",
+      "quarantine": "Cuarentena",
+      "whitelist": "Lista blanca",
+      "shield": "Stream Shield",
+      "snapshot": "Snapshot & Restore"
+    },
+    "intro": {
+      "title": "¿No sabes qué configurar?",
+      "sub": "Elige un preset — ya lo configuramos por ti. Cámbialo cuando tu servidor crezca."
+    },
+    "level": {
+      "title": "Nivel de protección",
+      "hint": "Activa {{module}} para subir el nivel"
     }
   },
   "twitchFeat": {
@@ -1054,6 +1134,107 @@
       "titleTpl": "Plantilla del título",
       "descTpl": "Plantilla de la descripción",
       "cover": "Portada del evento"
+    }
+  },
+  "overview": {
+    "loadError": "No se pudo cargar el panel.",
+    "retry": "Reintentar",
+    "hero": {
+      "members": "Miembros",
+      "online": "En línea",
+      "messages": "Mensajes · 7d",
+      "age": "Edad del servidor",
+      "today": "hoy",
+      "inVoice": "en voz",
+      "since": "desde",
+      "communityFor": "Comunidad de",
+      "founded": "Creado",
+      "boostLevel": "Boost Level {{level}}",
+      "partnered": "Partner",
+      "verified": "Verificado"
+    },
+    "milestone": {
+      "title": "Hitos de crecimiento",
+      "rankOf": "Rango {{index}} de {{total}}",
+      "progress": "Progreso de rango",
+      "ofRank": "de este rango",
+      "more": "restantes",
+      "est": "≈ {{days}} días"
+    },
+    "security": {
+      "title": "Puntuación de seguridad",
+      "fix": "Corregir",
+      "goFix": "Ir",
+      "checks": {
+        "mfa": "2FA en mods",
+        "antiRaid": "Anti-Raid",
+        "antiNuke": "Anti-Nuke",
+        "snapshot": "Snapshot",
+        "watchdog": "Watchdog"
+      }
+    },
+    "emergency": {
+      "title": "Controles de emergencia",
+      "activate": "ACTIVAR PANIC MODE",
+      "deactivate": "DESACTIVAR PANIC MODE",
+      "quarantine": "Modo cuarentena",
+      "confirmPanicOn": "¿Activar Panic Mode?",
+      "confirmPanicOff": "¿Desactivar Panic Mode?",
+      "confirmQuarantine": "¿Configurar cuarentena?",
+      "confirm": "Confirmar",
+      "cancel": "Cancelar"
+    },
+    "invites": {
+      "title": "Fuentes de invitación",
+      "empty": "Aún no hay invitaciones rastreadas.",
+      "legend": "entraron · retenidos = activos tras 14d",
+      "pending": "retención disponible tras 14 días"
+    },
+    "emojis": {
+      "title": "Top emojis · esta semana",
+      "empty": "Sin reacciones esta semana."
+    },
+    "members": {
+      "title": "Miembros más activos",
+      "month": "Este mes",
+      "all": "Histórico",
+      "empty": "Sin actividad todavía. El XP se acumulará cuando escriban."
+    },
+    "events": {
+      "title": "Eventos recientes",
+      "empty": "Todo tranquilo. Los eventos aparecerán aquí.",
+      "join": "**{{user}}** entró al servidor",
+      "leave": "**{{user}}** salió del servidor",
+      "kick": "**{{user}}** expulsado por {{by}}",
+      "ban": "**{{user}}** baneado por {{by}}",
+      "timeout": "**{{user}}** recibió timeout",
+      "generic": "{{kind}}"
+    }
+  },
+  "templateButtons": {
+    "title": "Botones",
+    "add": "Añadir botón",
+    "remove": "Eliminar botón",
+    "empty": "Aún no hay botones. Añade hasta 3 botones de enlace bajo tu mensaje.",
+    "label": "Texto",
+    "labelPlaceholder": "Únete",
+    "style": "Estilo",
+    "styleLink": "Enlace",
+    "styleLocked": "Los botones con URL deben usar el estilo Link",
+    "emoji": "Emoji",
+    "url": "URL",
+    "urlHint": "La URL debe empezar por http://, https:// o discord://",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "preview": "Vista previa",
+    "showPreview": "Mostrar vista previa",
+    "hidePreview": "Ocultar vista previa",
+    "equalize": "Botones del mismo ancho",
+    "equalizeHint": "Añade espacios a los textos cortos para que todos los botones se vean iguales.",
+    "errors": {
+      "labelRequired": "Botón {{n}}: el texto es obligatorio",
+      "labelTooLong": "Botón {{n}}: el texto supera los 80 caracteres",
+      "badUrl": "Botón {{n}}: la URL debe empezar por http://, https:// o discord://"
     }
   }
 }

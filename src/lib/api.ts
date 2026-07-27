@@ -1263,6 +1263,13 @@ export const LOGOUT_URL = `${API_BASE}/auth/logout`
 
 // ─── Per-guild snapshots (User Admin Panel) ─────────────────────────────────
 
+export type TemplateButton = {
+  label: string
+  url: string
+  emoji?: string | null
+  style?: number
+}
+
 export type GuildMessage = {
   id: string
   guildId: string
@@ -1272,6 +1279,9 @@ export type GuildMessage = {
   content: string | null
   embedJson: Record<string, unknown> | null
   componentsJson: unknown[] | null
+  /** Flat link-button list for the editor (storage keeps action rows). */
+  buttons?: TemplateButton[]
+  buttonEqualizeWidth?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -1304,6 +1314,8 @@ export async function createGuildMessage(
     content?: string | null
     embedJson?: Record<string, unknown> | string | null
     componentsJson?: unknown[] | string | null
+    buttons?: TemplateButton[]
+    buttonEqualizeWidth?: boolean
   },
 ): Promise<GuildMessage> {
   const res = await fetch(`${guildData(guildId)}/messages`, {
@@ -1322,6 +1334,8 @@ export async function updateGuildMessage(
     content?: string | null
     embedJson?: Record<string, unknown> | string | null
     componentsJson?: unknown[] | string | null
+    buttons?: TemplateButton[]
+    buttonEqualizeWidth?: boolean
   },
 ): Promise<GuildMessage> {
   const res = await fetch(`${guildData(guildId)}/messages/${msgId}`, {
@@ -1447,6 +1461,97 @@ export async function searchGuildMembers(guildId: string, q: string): Promise<Gu
     method: "GET",
   })
   if (!res.ok) await throwApiError(res, "Member search failed")
+  return res.json()
+}
+
+// ─── Dashboard Overview ─────────────────────────────────────────────────────
+
+export type OverviewServer = {
+  id: string
+  name: string
+  iconUrl: string | null
+  ownerTag: string | null
+  createdAt: string
+  ageYears: number
+  ageMonths: number
+  boostLevel: number
+  partnered: boolean
+  verified: boolean
+  members: number
+  joinedToday: number
+  online: number
+  voice: number
+  messages7d: number
+  messagesTrendPercent: number | null
+}
+
+export type OverviewMilestone = {
+  ranks: number[]
+  members: number
+  currentRank: number
+  previousRank: number
+  rankIndex: number
+  ranksTotal: number
+  progressPercent: number
+  submilestones: number[]
+  remaining: number
+  estDays: number | null
+}
+
+export type OverviewSecurity = {
+  score: number
+  checks: { key: string; ok: boolean; tab: string }[]
+}
+
+export type OverviewInvite = {
+  code: string
+  inviterTag: string | null
+  joined: number
+  retention: number | null
+}
+
+export type OverviewEmoji = { key: string; name: string; display: string; isCustom: boolean; count: number }
+
+export type OverviewMember = {
+  discordId: string
+  tag: string
+  avatarUrl: string | null
+  xp: number
+  level: number
+  badge: string
+}
+
+export type OverviewEvent = {
+  id: string
+  kind: string
+  createdAt: string
+  payload: Record<string, unknown> | null
+}
+
+export type GuildOverview = {
+  server: OverviewServer
+  milestone: OverviewMilestone
+  security: OverviewSecurity
+  invites: OverviewInvite[]
+  emojis: OverviewEmoji[]
+  members: OverviewMember[]
+  events: OverviewEvent[]
+  premium: boolean
+  period: "month" | "all"
+}
+
+export async function getGuildOverview(guildId: string, period: "month" | "all"): Promise<GuildOverview> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/overview?period=${period}`, {
+    ...fetchOptions,
+    method: "GET",
+  })
+  if (!res.ok) await throwApiError(res, "Failed to load dashboard")
+  return res.json()
+}
+
+export async function getGuildLive(guildId: string): Promise<{ online: number; voice: number }> {
+  const res = await fetch(`${API_BASE}/guilds/${guildId}/live`, { ...fetchOptions, method: "GET" })
+  if (!res.ok) await throwApiError(res, "Failed to load live stats")
   return res.json()
 }
 

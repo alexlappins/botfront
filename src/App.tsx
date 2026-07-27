@@ -32,6 +32,7 @@ import { AdminLayout } from "@/components/admin-layout"
 import { ServerLogsPage } from "@/pages/server-logs-page"
 import { PersonalizationPage } from "@/pages/guild/personalization-page"
 import { SecurityPage } from "@/pages/guild/security-page"
+import { DashboardOverviewPage } from "@/pages/guild/dashboard-overview-page"
 import { PremiumSuccessPage, PricingPage } from "@/pages/pricing-page"
 
 /**
@@ -117,6 +118,7 @@ function App() {
           >
             <Route path="/store" element={<StorePage />} />
             <Route path="/store/:id" element={<StoreProductPage />} />
+            <Route path="/dashboard" element={<DashboardOverviewPage />} />
             <Route path="/my-purchases" element={<MyPurchasesPage />} />
             {/* Stripe success_url lands here (TZ-1 §4.4). */}
             <Route path="/purchases" element={<MyPurchasesPage />} />

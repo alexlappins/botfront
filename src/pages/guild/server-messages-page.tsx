@@ -35,10 +35,17 @@ import {
   type GuildRole,
   type ScheduledPost,
   type ScheduleKind,
+  type TemplateButton,
 } from "@/lib/api"
 import { usePremium } from "@/contexts/premium-context"
 import { PremiumChip, usePremiumModal } from "@/components/premium"
 import { friendlyToMentions, mentionsToFriendly } from "@/lib/discord-mentions"
+import {
+  TemplateButtonsEditor,
+  TemplateMessagePreview,
+  usableButtons,
+  validateButtonsClientSide,
+} from "@/components/template-buttons-editor"
 import { cn } from "@/lib/utils"
 
 /**
@@ -397,6 +404,9 @@ function EditScheduledPostModal({
             <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
               {t("serverMessages.modalEmbed")}
             </button>
+            <button type="button" onClick={() => setTab("buttons")} className={tabClass(tab === "buttons")}>
+              {t("serverMessages.tabs.buttons")}
+            </button>
           </div>
 
           {tab === "text" && (
@@ -548,7 +558,7 @@ function localHHMMToUtc(hhmm: string): string {
   return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`
 }
 
-type Tab = "text" | "embed"
+type Tab = "text" | "embed" | "buttons"
 
 function ServerMessageCard({
   guildId,
@@ -578,6 +588,9 @@ function ServerMessageCard({
     return parseEmbedJsonToForm(raw ?? null)
   })
 
+  const [buttons, setButtons] = useState<TemplateButton[]>(() => message.buttons ?? [])
+  const [equalizeWidth, setEqualizeWidth] = useState(Boolean(message.buttonEqualizeWidth))
+
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [savedMsg, setSavedMsg] = useState<string | null>(null)
@@ -603,11 +616,20 @@ function ServerMessageCard({
         ? (mentionsInObject(embedObj, channels, roles, "toRaw") as Record<string, unknown>)
         : null
 
-      // Buttons / componentsJson are managed in the "Roles by reaction" page,
-      // so we DO NOT touch componentsJson here — pass undefined to leave them as-is.
+      const buttonErr = validateButtonsClientSide(buttons, t)
+      if (buttonErr) {
+        setErr(buttonErr)
+        return
+      }
+
+      // `buttons` covers link buttons only. Self-role (custom_id) rows created on
+      // the "Roles by reaction" page live in the same componentsJson and are
+      // merged server-side, so they survive an edit made here.
       await updateGuildMessage(guildId, message.id, {
         content: rawContent.trim() || null,
         embedJson: embedRaw,
+        buttons: usableButtons(buttons),
+        buttonEqualizeWidth: equalizeWidth,
       })
       setSavedMsg(t("serverMessages.saved"))
       setTimeout(() => setSavedMsg(null), 2000)
@@ -678,6 +700,9 @@ function ServerMessageCard({
               <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
                 {t("serverMessages.tabs.embed")}
               </button>
+              <button type="button" onClick={() => setTab("buttons")} className={tabClass(tab === "buttons")}>
+                {t("serverMessages.tabs.buttons")}
+              </button>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <Button size="sm" onClick={() => void handleSave()} disabled={saving}>
@@ -718,6 +743,23 @@ function ServerMessageCard({
           )}
 
           {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+
+          {tab === "buttons" && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <TemplateButtonsEditor
+                buttons={buttons}
+                onChange={setButtons}
+                equalizeWidth={equalizeWidth}
+                onEqualizeChange={setEqualizeWidth}
+              />
+              <TemplateMessagePreview
+                content={content}
+                embedForm={embedForm}
+                buttons={buttons}
+                equalizeWidth={equalizeWidth}
+              />
+            </div>
+          )}
 
           {err && <p className="text-sm text-[hsl(var(--destructive))]">{err}</p>}
           {savedMsg && <p className="text-xs text-[hsl(var(--primary))]">{savedMsg}</p>}
@@ -1037,6 +1079,8 @@ function CreateMessageModal({
   const [channelId, setChannelId] = useState<string>("")
   const [content, setContent] = useState("")
   const [embedForm, setEmbedForm] = useState<EmbedFormState>(() => emptyEmbedForm())
+  const [buttons, setButtons] = useState<TemplateButton[]>([])
+  const [equalizeWidth, setEqualizeWidth] = useState(false)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
@@ -1092,6 +1136,12 @@ function CreateMessageModal({
       setErr(t("serverMessages.errors.needContent"))
       return
     }
+    const buttonErr = validateButtonsClientSide(buttons, t)
+    if (buttonErr) {
+      setErr(buttonErr)
+      return
+    }
+    const readyButtons = usableButtons(buttons)
     setSaving(true)
     try {
       if (scheduleMode === "now") {
@@ -1099,6 +1149,8 @@ function CreateMessageModal({
           discordChannelId: channelId,
           content: rawContent.trim() || null,
           embedJson: embedRaw,
+          buttons: readyButtons,
+          buttonEqualizeWidth: equalizeWidth,
         })
       } else if (scheduleMode === "later") {
         // datetime-local is in the admin's local tz; Date() converts to UTC ISO.
@@ -1178,6 +1230,9 @@ function CreateMessageModal({
             <button type="button" onClick={() => setTab("embed")} className={tabClass(tab === "embed")}>
               {t("serverMessages.modalEmbed")}
             </button>
+            <button type="button" onClick={() => setTab("buttons")} className={tabClass(tab === "buttons")}>
+              {t("serverMessages.tabs.buttons")}
+            </button>
           </div>
 
           {tab === "text" && (
@@ -1194,6 +1249,23 @@ function CreateMessageModal({
           )}
 
           {tab === "embed" && <TemplateEmbedBuilder form={embedForm} onChange={setEmbedForm} />}
+
+          {tab === "buttons" && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <TemplateButtonsEditor
+                buttons={buttons}
+                onChange={setButtons}
+                equalizeWidth={equalizeWidth}
+                onEqualizeChange={setEqualizeWidth}
+              />
+              <TemplateMessagePreview
+                content={content}
+                embedForm={embedForm}
+                buttons={buttons}
+                equalizeWidth={equalizeWidth}
+              />
+            </div>
+          )}
 
           {/* Schedule block (TZ v2.1 §2). Visible to everyone; later/recurring
               options are Premium — clicking them on free opens the modal. */}

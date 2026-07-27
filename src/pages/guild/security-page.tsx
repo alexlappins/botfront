@@ -137,7 +137,7 @@ export function SecurityPage() {
       {!loading && !error && overview && (
         <>
           {tab === "overview" && (
-            <OverviewTab guildId={guildId} overview={overview} channels={channels} onSave={save} onReload={reload} />
+            <OverviewTab guildId={guildId} overview={overview} channels={channels} onSave={save} onReload={reload} onSwitchTab={setTab} />
           )}
           {tab === "antiraid" && (
             <PremiumGate>
@@ -247,17 +247,20 @@ function OverviewTab({
   channels,
   onSave,
   onReload,
+  onSwitchTab,
 }: {
   guildId: string
   overview: SecurityOverview
   channels: Channel[]
   onSave: (p: Partial<SecuritySettingsWire>) => Promise<void>
   onReload: () => void
+  onSwitchTab: (tab: Tab) => void
 }) {
   const { t } = useTranslation()
   const s = overview.settings
   const [busy, setBusy] = useState<string | null>(null)
   const [panicNotes, setPanicNotes] = useState<string[]>([])
+  const [presetChanges, setPresetChanges] = useState<string[]>([])
   const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
 
   async function run(key: string, fn: () => Promise<unknown>) {
@@ -269,46 +272,188 @@ function OverviewTab({
     }
   }
 
+  /** §1.1 — human-readable diff after a preset switch. */
+  function diffSettings(before: SecuritySettingsWire, after: SecuritySettingsWire): string[] {
+    const out: string[] = []
+    const label = (v: string) => t(`security.age.act${v[0].toUpperCase()}${v.slice(1)}` as never, v)
+    if (before.ageFilterEnabled !== after.ageFilterEnabled) {
+      out.push(`${t("security.age.title")}: ${before.ageFilterEnabled ? "on" : "off"} → ${after.ageFilterEnabled ? "on" : "off"}`)
+    }
+    if (after.ageFilterEnabled && before.ageFilterMinDays !== after.ageFilterMinDays) {
+      out.push(`Age filter: ${before.ageFilterMinDays} days → ${after.ageFilterMinDays} days`)
+    }
+    if (before.ageFilterAction !== after.ageFilterAction) {
+      out.push(`Age filter action: ${label(before.ageFilterAction)} → ${label(after.ageFilterAction)}`)
+    }
+    if (before.antiRaidAction !== after.antiRaidAction) {
+      out.push(`Anti-Raid action: ${before.antiRaidAction} → ${after.antiRaidAction}`)
+    }
+    if (before.antiNukeAction !== after.antiNukeAction) {
+      out.push(`Anti-Nuke action: ${before.antiNukeAction.replace("_", " + ")} → ${after.antiNukeAction.replace("_", " + ")}`)
+    }
+    if (before.antiRaidAutoPanic !== after.antiRaidAutoPanic) {
+      out.push(`Auto-panic on raid: ${before.antiRaidAutoPanic ? "on" : "off"} → ${after.antiRaidAutoPanic ? "on" : "off"}`)
+    }
+    if (before.panicSlowmodeEnabled !== after.panicSlowmodeEnabled) {
+      out.push(`Panic slowmode: ${before.panicSlowmodeEnabled ? "on" : "off"} → ${after.panicSlowmodeEnabled ? "on" : "off"}`)
+    }
+    return out.length ? out : [t("security.preset.noChanges")]
+  }
+
+  async function applyPreset(preset: "relaxed" | "standard" | "strict") {
+    await run(`preset-${preset}`, async () => {
+      const before = { ...s }
+      const after = await applySecurityPreset(guildId, preset)
+      setPresetChanges(diffSettings(before, after))
+      setTimeout(() => setPresetChanges([]), 8000)
+      onReload()
+    })
+  }
+
+  // §1.2 — protection level from enabled modules.
+  const moduleStates: { key: string; on: boolean; premium: boolean; tab: Tab }[] = [
+    { key: "age", on: s.ageFilterEnabled, premium: false, tab: "overview" },
+    { key: "antiraid", on: s.antiRaidAction !== "alert", premium: true, tab: "antiraid" },
+    { key: "antinuke", on: s.antiNukeAction !== "alert", premium: true, tab: "antinuke" },
+    { key: "quarantine", on: Boolean(s.quarantineRoleId), premium: true, tab: "quarantine" },
+    { key: "whitelist", on: true, premium: false, tab: "whitelist" },
+    { key: "shield", on: s.shieldEnabled, premium: true, tab: "shield" },
+    { key: "snapshot", on: overview.premium, premium: true, tab: "snapshots" },
+  ]
+  const scored = moduleStates.filter((m) => m.key !== "whitelist")
+  const level = Math.round((scored.filter((m) => m.on).length / scored.length) * 100)
+  const hints = scored
+    .filter((m) => !m.on)
+    .slice(0, 2)
+    .map((m) => t("security.level.hint", { module: t(`security.tabs.${m.tab === "overview" ? "overview" : m.tab}` as never, m.key) }))
+
+  const PRESET_ICONS: Record<string, string> = { relaxed: "🌿", standard: "🛡️", strict: "🔒" }
+
   return (
-    <div className="space-y-4">
-      {/* §9 Presets */}
-      <Card title={t("security.preset.title")} desc={t("security.preset.desc")}>
-        <div className="flex gap-2 flex-wrap">
-          {(["relaxed", "standard", "strict"] as const).map((p) => (
+    <div className="space-y-5">
+      <style>{`
+        @keyframes secPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,.45);} 50% { box-shadow: 0 0 0 12px rgba(239,68,68,0);} }
+        .sec-panic-active { animation: secPulse 1.6s ease-in-out infinite; }
+        .sec-preset { transition: transform .2s ease, box-shadow .25s ease, border-color .25s ease, background .25s ease; }
+        .sec-preset:hover { transform: translateY(-2px); }
+        .sec-preset-active { box-shadow: 0 0 24px rgba(139,92,246,.35); }
+        .sec-fade-in { animation: secFade .35s ease; }
+        @keyframes secFade { from { opacity: 0; transform: translateY(-4px);} to { opacity: 1; transform: none;} }
+      `}</style>
+
+      {/* §1.1 intro (muted marketing lead-in) */}
+      <div>
+        <p className="text-base font-semibold text-white/85">{t("security.intro.title")}</p>
+        <p className="text-sm text-white/45">{t("security.intro.sub")}</p>
+      </div>
+
+      {/* §1.1 preset selector — the centrepiece */}
+      <div className="grid gap-3 sm:grid-cols-3">
+        {(["relaxed", "standard", "strict"] as const).map((p) => {
+          const active = s.preset === p
+          return (
             <button
               key={p}
               type="button"
               disabled={busy === `preset-${p}`}
-              onClick={() =>
-                void run(`preset-${p}`, async () => {
-                  await applySecurityPreset(guildId, p)
-                  onReload()
-                })
-              }
+              onClick={() => void applyPreset(p)}
               className={cn(
-                "px-4 py-2 rounded-lg text-sm font-medium border transition-colors",
-                s.preset === p
-                  ? "border-violet-500 bg-violet-500/15 text-white"
-                  : "border-white/10 text-white/70 hover:bg-white/[0.04]",
+                "sec-preset rounded-2xl border p-5 text-left space-y-2",
+                active
+                  ? "sec-preset-active border-violet-500 bg-violet-500/15"
+                  : "border-white/10 bg-white/[0.03] hover:border-white/25",
               )}
             >
-              {t(`security.preset.${p}`)}
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">{PRESET_ICONS[p]}</span>
+                <span className={cn("text-base font-bold", active ? "text-white" : "text-white/80")}>
+                  {t(`security.preset.${p}`)}
+                </span>
+                {active && (
+                  <span className="ml-auto rounded-full bg-violet-500/30 px-2 py-0.5 text-[10px] font-semibold text-violet-200">
+                    {t("security.preset.current")}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs leading-relaxed text-white/50">{t(`security.preset.${p}Desc`)}</p>
             </button>
-          ))}
-        </div>
-      </Card>
+          )
+        })}
+      </div>
 
-      {/* §3 Panic Mode */}
-      <Card title={t("security.panic.title")} desc={t("security.panic.desc")}>
-        <div className="flex items-center gap-3 flex-wrap">
-          <span
-            className={cn(
-              "px-3 py-1 rounded-full text-xs font-semibold",
-              overview.panicActive ? "bg-red-500/20 text-red-300" : "bg-white/5 text-white/50",
-            )}
-          >
-            {overview.panicActive ? t("security.panic.active") : t("security.panic.inactive")}
-          </span>
+      {presetChanges.length > 0 && (
+        <div className="sec-fade-in rounded-xl border border-violet-500/40 bg-violet-500/10 px-4 py-3">
+          <p className="text-xs font-semibold text-violet-200 mb-1">{t("security.preset.changed")}</p>
+          <ul className="text-xs text-white/70 space-y-0.5">
+            {presetChanges.map((c, i) => (
+              <li key={i}>• {c}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* §1.2 protection level */}
+      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 min-w-[220px] flex-1">
+            <span className="text-2xl">🛡️</span>
+            <div className="flex-1">
+              <div className="flex items-baseline justify-between">
+                <p className="text-sm font-semibold text-white">{t("security.level.title")}</p>
+                <p
+                  className={cn(
+                    "text-sm font-bold",
+                    level >= 70 ? "text-emerald-400" : level >= 40 ? "text-amber-300" : "text-red-400",
+                  )}
+                >
+                  {level}%
+                </p>
+              </div>
+              <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/10">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all duration-700",
+                    level >= 70
+                      ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                      : level >= 40
+                        ? "bg-gradient-to-r from-amber-500 to-amber-400"
+                        : "bg-gradient-to-r from-red-500 to-orange-400",
+                  )}
+                  style={{ width: `${Math.max(6, level)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+          {hints.length > 0 && (
+            <div className="text-xs text-white/45 space-y-0.5">
+              {hints.map((h, i) => (
+                <p key={i}>💡 {h}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* §1.3 Panic Mode zone */}
+      <div
+        className={cn(
+          "rounded-2xl border p-5",
+          overview.panicActive ? "border-red-500/50 bg-red-500/[0.08]" : "border-white/10 bg-white/[0.03]",
+        )}
+      >
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <p className="text-base font-bold text-white flex items-center gap-2">
+              {overview.panicActive ? "🚨" : "🧯"} {t("security.panic.title")}
+              {overview.panicActive && (
+                <span className="rounded-full bg-red-500/25 px-2 py-0.5 text-[11px] font-semibold text-red-300">
+                  {t("security.panic.active")}
+                </span>
+              )}
+            </p>
+            {/* §1.5 module explainer under the button zone */}
+            <p className="mt-1 text-xs text-white/45">{t("security.mod.panic")}</p>
+          </div>
           <button
             type="button"
             disabled={busy === "panic"}
@@ -320,68 +465,70 @@ function OverviewTab({
               })
             }
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium",
+              "rounded-xl px-6 py-3 text-sm font-bold text-white transition-colors",
               overview.panicActive
-                ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                : "bg-red-600 hover:bg-red-500 text-white",
+                ? "sec-panic-active bg-red-600 hover:bg-red-500"
+                : "bg-white/10 hover:bg-red-600/80 border border-red-500/30",
             )}
           >
-            {busy === "panic" ? "…" : overview.panicActive ? t("security.panic.turnOff") : t("security.panic.turnOn")}
+            {busy === "panic" ? "…" : overview.panicActive ? `🔓 ${t("security.panic.turnOff")}` : `🔒 ${t("security.panic.turnOn")}`}
           </button>
         </div>
         {panicNotes.length > 0 && (
-          <ul className="text-xs text-white/50 space-y-0.5">
+          <ul className="sec-fade-in mt-3 text-xs text-white/50 space-y-0.5">
             {panicNotes.map((n, i) => (
               <li key={i}>{n}</li>
             ))}
           </ul>
         )}
-        <div className="flex items-center gap-3 pt-1">
-          <Toggle
-            checked={s.panicSlowmodeEnabled}
-            busy={busy === "pslow"}
-            onChange={(v) => void run("pslow", () => onSave({ panicSlowmodeEnabled: v }))}
-          />
-          <span className="text-sm text-white/70">{t("security.panic.slowmode")}</span>
-          {s.panicSlowmodeEnabled && (
-            <input
-              type="number"
-              min={1}
-              max={21600}
-              value={s.panicSlowmodeSeconds}
-              onChange={(e) => void onSave({ panicSlowmodeSeconds: Number(e.target.value) || 30 })}
-              className="w-20 rounded-md border border-white/10 bg-[#15151f] px-2 py-1 text-sm text-white"
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center gap-3">
+            <Toggle
+              checked={s.panicSlowmodeEnabled}
+              busy={busy === "pslow"}
+              onChange={(v) => void run("pslow", () => onSave({ panicSlowmodeEnabled: v }))}
             />
-          )}
+            <span className="text-xs text-white/60">{t("security.panic.slowmode")}</span>
+            {s.panicSlowmodeEnabled && (
+              <input
+                type="number"
+                min={1}
+                max={21600}
+                value={s.panicSlowmodeSeconds}
+                onChange={(e) => void onSave({ panicSlowmodeSeconds: Number(e.target.value) || 30 })}
+                className="w-20 rounded-md border border-white/10 bg-[#15151f] px-2 py-1 text-sm text-white"
+              />
+            )}
+          </div>
+          <div className="grid gap-1">
+            <span className="text-xs text-white/50">{t("security.panic.panelChannel")}</span>
+            <Select
+              value={s.panelChannelId ?? "none"}
+              onValueChange={(v) =>
+                void run("panel", async () => {
+                  await onSave({ panelChannelId: v === "none" ? null : v })
+                  if (v !== "none") await refreshSecurityPanel(guildId).catch(() => null)
+                })
+              }
+            >
+              <SelectTrigger className="rounded-lg bg-white/[0.04] border-white/10">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">—</SelectItem>
+                {textChannels.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    # {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="grid gap-1.5 max-w-sm pt-1">
-          <span className="text-xs text-white/50">{t("security.panic.panelChannel")}</span>
-          <Select
-            value={s.panelChannelId ?? "none"}
-            onValueChange={(v) =>
-              void run("panel", async () => {
-                await onSave({ panelChannelId: v === "none" ? null : v })
-                if (v !== "none") await refreshSecurityPanel(guildId).catch(() => null)
-              })
-            }
-          >
-            <SelectTrigger className="rounded-lg bg-white/[0.04] border-white/10">
-              <SelectValue placeholder="—" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">—</SelectItem>
-              {textChannels.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  # {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
+      </div>
 
-      {/* §2 Age Filter */}
-      <Card title={t("security.age.title")} desc={t("security.age.desc")}>
+      {/* §2 Age Filter (kept on Overview, free tier) */}
+      <Card title={t("security.age.title")} desc={t("security.mod.age")}>
         <div className="flex items-center gap-3">
           <Toggle
             checked={s.ageFilterEnabled}
@@ -433,23 +580,39 @@ function OverviewTab({
         )}
       </Card>
 
-      {/* Summary */}
-      <Card title={t("security.summary")}>
-        <ul className="text-sm text-white/70 space-y-1">
-          <li>
-            {t("security.age.title")}: {s.ageFilterEnabled ? `✅ ${s.ageFilterMinDays}d / ${s.ageFilterAction}` : "—"}
-          </li>
-          <li>
-            Anti-Raid: {s.antiRaidAction !== "alert" ? `✅ ${s.antiRaidAction}` : t("security.alertOnly")}
-            {s.antiRaidAutoPanic ? " + auto-panic" : ""}
-          </li>
-          <li>Anti-Nuke: {s.antiNukeAction !== "alert" ? `✅ ${s.antiNukeAction}` : t("security.alertOnly")}</li>
-          <li>
-            Quarantine: {s.quarantineRoleId ? "✅" : "—"} · Stream Shield: {s.shieldEnabled ? "✅" : "—"}
-            {overview.shieldActive ? " (LIVE)" : ""}
-          </li>
-        </ul>
-      </Card>
+      {/* §1.4 module summary cards → click opens the tab */}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {moduleStates
+          .filter((m) => m.key !== "age")
+          .map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => onSwitchTab(m.tab)}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-left transition-colors hover:border-violet-500/40 hover:bg-white/[0.05]"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-white">
+                  {t(`security.modName.${m.key}` as never)}
+                </span>
+                {m.premium && !overview.premium ? (
+                  <PremiumChip />
+                ) : (
+                  <span
+                    className={cn(
+                      "ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                      m.on ? "bg-emerald-500/20 text-emerald-300" : "bg-white/10 text-white/40",
+                    )}
+                  >
+                    {m.on ? "ON" : "OFF"}
+                  </span>
+                )}
+              </div>
+              {/* §1.5 explainer */}
+              <p className="mt-1.5 text-xs leading-relaxed text-white/45">{t(`security.mod.${m.key}` as never)}</p>
+            </button>
+          ))}
+      </div>
     </div>
   )
 }
@@ -467,7 +630,7 @@ function AntiRaidTab({
   const s = overview.settings
   return (
     <div className="space-y-4">
-      <Card title={t("security.raid.title")} desc={t("security.raid.desc")}>
+      <Card title={t("security.raid.title")} desc={t("security.mod.antiraid")}>
         <RadioRow
           options={["alert", "quarantine", "kick", "ban"]}
           value={s.antiRaidAction}
@@ -510,7 +673,7 @@ function AntiNukeTab({
 
   return (
     <div className="space-y-4">
-      <Card title={t("security.nuke.title")} desc={t("security.nuke.desc")}>
+      <Card title={t("security.nuke.title")} desc={t("security.mod.antinuke")}>
         <RadioRow
           options={["alert", "strip", "strip_quarantine"]}
           value={s.antiNukeAction}
@@ -592,7 +755,7 @@ function QuarantineTab({
 
   return (
     <div className="space-y-4">
-      <Card title={t("security.q.title")} desc={t("security.q.desc")}>
+      <Card title={t("security.q.title")} desc={t("security.mod.quarantine")}>
         {s.quarantineRoleId ? (
           <p className="text-sm text-emerald-400">✅ {t("security.q.ready")}</p>
         ) : (
@@ -689,7 +852,7 @@ function WhitelistTab({ guildId, roles }: { guildId: string; roles: GuildRole[] 
 
   return (
     <div className="space-y-4">
-      <Card title={t("security.wl.title")} desc={t("security.wl.desc")}>
+      <Card title={t("security.wl.title")} desc={t("security.mod.whitelist")}>
         <div className="flex flex-wrap gap-2">
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-300">
             👑 {t("security.wl.owner")}
@@ -792,7 +955,7 @@ function ShieldTab({
   const textChannels = channels.filter((c) => c.type === 0 || c.type === 5)
   return (
     <div className="space-y-4">
-      <Card title={t("security.shield.title")} desc={t("security.shield.desc")}>
+      <Card title={t("security.shield.title")} desc={t("security.mod.shield")}>
         <div className="flex items-center gap-3">
           <Toggle checked={s.shieldEnabled} onChange={(v) => void onSave({ shieldEnabled: v })} />
           <span className="text-sm text-white/70">{t("security.shield.enable")}</span>
@@ -913,7 +1076,7 @@ function SnapshotsTab({ guildId }: { guildId: string }) {
 
   return (
     <div className="space-y-4">
-      <Card title={t("security.snap.title")} desc={t("security.snap.desc")}>
+      <Card title={t("security.snap.title")} desc={t("security.mod.snapshot")}>
         <button
           type="button"
           disabled={busy === "take"}

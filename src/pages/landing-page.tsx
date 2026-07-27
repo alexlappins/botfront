@@ -151,13 +151,25 @@ export function LandingPage() {
                 <span className="plan-period">{t("landing.plans.perMonth")}</span>
               </p>
               <span className="plan-launch">{t("landing.plans.launchPrice")}</span>
+              {/* §3.4: 20+ perks read better grouped than as one flat column. */}
               <ul className="plan-list">
-                {(t("landing.plans.premiumFeatures", { returnObjects: true }) as string[]).map(
-                  (f, i) => (
-                    <li key={i}>{f}</li>
-                  ),
-                )}
+                <li>{t("landing.plans.everythingInFree")}</li>
               </ul>
+              {(
+                t("landing.plans.premiumGroups", { returnObjects: true }) as {
+                  title: string
+                  items: string[]
+                }[]
+              ).map((g) => (
+                <div key={g.title} className="plan-group">
+                  <p className="plan-group-title">{g.title}</p>
+                  <ul className="plan-list">
+                    {g.items.map((f, i) => (
+                      <li key={i}>{f}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
               <Link to="/pricing" className="public-btn public-btn-fill plan-btn">
                 {t("landing.plans.getPremium")}
               </Link>
@@ -544,6 +556,11 @@ function LandingStyles() {
         flex: 1;
       }
       .plan-list li { padding-left: 22px; position: relative; }
+      .plan-group { margin-top: 14px; }
+      .plan-group-title {
+        font-family: 'Cinzel', sans-serif; font-size: 10px; letter-spacing: .2em;
+        text-transform: uppercase; color: var(--pub-ink-mut); margin-bottom: 8px;
+      }
       .plan-list li::before {
         content: "✓"; position: absolute; left: 0;
         color: var(--pub-blurple-br); font-weight: 700;
